@@ -16,7 +16,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # setups
     cfg.setup = edict()
     cfg.setup.use_cuda = False
-    cfg.setup.cell_type = -1
+    cfg.setup.cell_type = 3
     cfg.setup.stage = 1
     cfg.setup.version = 'first_attempt'
     cfg.setup.use_small = False
@@ -44,14 +44,15 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # model
     cfg.model = edict()
     cfg.model.arch = 'resnet34'
-    cfg.mode.pool = 'gem'
+    cfg.model.pool = 'gem'
     cfg.model.local_whitening = False
     cfg.model.regional = False
     cfg.model.whitening = False
     cfg.model.image_size = 512 # TODO: do not resize
     cfg.model.input_size = 512
     cfg.model.num_classes = 1108
-    cfg.mode.pretrained = True
+    cfg.model.pretrained = True
+    cfg.model.lr = 3e-4
     
     # train
     cfg.train = edict()

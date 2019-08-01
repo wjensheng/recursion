@@ -37,8 +37,7 @@ def get_two_sites(config, df, tsfm, mode):
 
 
 def get_dataset(config):
-    train_csv = 'train_small.csv' if config.setup.use_small else 'train.csv'
-    train_filename = 'train_small' if config.setup.use_small else 'train'
+    train_csv = 'U2OS_train.csv' if config.setup.use_small else 'train.csv'
     
     train_df = pd.read_csv(os.path.join(config.data.data_dir, train_csv))
     test_df = pd.read_csv(os.path.join(config.data.data_dir, 'test.csv'))
@@ -56,17 +55,15 @@ def get_dataset(config):
 
     # stage 0: train on all dataset
     if config.setup.stage == 0:        
-        train_ds = get_two_sites(config, train_df, train_tsfm, train_filename)
+        train_ds = get_two_sites(config, train_df, train_tsfm, 'train')
         valid_ds = test_ds = None
 
     # stage 1: smaller validation set    
     elif config.setup.stage == 1:
-        assert not config.setup.use_small, "Must use full dataset!"
-
         train_df, valid_df = manual_split(train_df)
         
-        train_ds = get_two_sites(config, train_df, train_tsfm, train_filename)
-        valid_ds = get_two_sites(config, valid_df, test_tsfm, train_filename)
+        train_ds = get_two_sites(config, train_df, train_tsfm, 'train')
+        valid_ds = get_two_sites(config, valid_df, test_tsfm, 'train')
         test_ds = None            
 
     # stage 2: larger validation set
@@ -76,8 +73,8 @@ def get_dataset(config):
                                                        split=config.setup.cell_type,
                                                        test_size=config.setup.test_size)
         
-        train_ds = get_two_sites(config, train_df, train_tsfm, train_filename)
-        valid_ds = get_two_sites(config, valid_df, test_tsfm, train_filename)
+        train_ds = get_two_sites(config, train_df, train_tsfm, 'train')
+        valid_ds = get_two_sites(config, valid_df, test_tsfm, 'train')
         test_ds = get_two_sites(config, test_df, test_tsfm, 'test')
                                 
     return train_ds, valid_ds, test_ds
@@ -113,7 +110,7 @@ if __name__ == "__main__":
     config.setup = edict()
     config.setup.use_small = False
     config.setup.stage = 2
-    config.setup.cell_type = -1
+    config.setup.cell_type = 3
     config.setup.combine = True
 
     train, valid, test = get_dataset(config)

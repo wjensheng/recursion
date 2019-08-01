@@ -61,8 +61,9 @@ def get_model(config):
 
     return model
 
-def get_criterion(config):    
-    if config.loss == 'contrastive':
+
+def get_criterion(config):
+    if config.loss.name == 'contrastive':
         criterion = ContrastiveLoss(margin=0.3)
     else:
         criterion = get_loss(config)
@@ -71,6 +72,7 @@ def get_criterion(config):
         criterion = criterion.cuda()
 
     return criterion
+
 
 def get_model_params(config, model):
     # parameters split into features, pool, whitening 
@@ -85,13 +87,13 @@ def get_model_params(config, model):
         parameters.append({'params': model.lwhiten.parameters()})
 
     # add pooling parameters (or regional whitening which is part of the pooling layer!)
-    if not args.regional:
+    if not config.model.regional:
         # global, only pooling parameter p weight decay should be 0
-        parameters.append({'params': model.pool.parameters(), 'lr': args.lr*10, 'weight_decay': 0})
+        parameters.append({'params': model.pool.parameters(), 'lr': config.model.lr*10, 'weight_decay': 0})
     else:
         # regional, pooling parameter p weight decay should be 0, 
         # and we want to add regional whitening if it is there
-        parameters.append({'params': model.pool.rpool.parameters(), 'lr': args.lr*10, 'weight_decay': 0})
+        parameters.append({'params': model.pool.rpool.parameters(), 'lr': config.model.lr*10, 'weight_decay': 0})
         if model.pool.whiten is not None:
             parameters.append({'params': model.pool.whiten.parameters()})
 
@@ -106,36 +108,32 @@ def train(config, train_loader, model, criterion, optimizer, epoch):
     batch_time = AverageMeter()
     losses = AverageMeter()
 
-    # create tuples for training
-    avg_neg_distance = train_loader.dataset.create_epoch_tuples(model)
-
     # switch to train mode
     model.train()
 
     end = time.time()
-    for i, data in enumerate(train_loader):
+
+
+    batch_size = config.val.batch_size
+    total_size = len(train_loader.dataset)
+    total_step = math.ceil(total_size / batch_size)
+
+    for i, data in tqdm(enumerate(train_loader), total=total_step):
         input, id_codes, target = data
+        
+        # if using gpu
+        if config.setup.use_cuda:
+            input, target = input.cuda(), target.cuda()
         
         optimizer.zero_grad()
 
-        nq = len(input) # number of training tuples
-        ni = len(input[0]) # number of images per tuple
+        output = model(input).squeeze()
 
-        for q in range(nq):
-            if config.setup.use_cuda: output = torch.zeros(model.meta['outputdim'], ni).cuda()
-            else: output = torch.zeros(model.meta['outputdim'], ni)
+        print(output.size())
 
-            for imi in range(ni):
-
-                 # compute output vector for image imi
-                if config.setup.use_cuda: output[:, imi] = model(input[q][imi].cuda()).squeeze()
-                else: output[:, imi] = model(input[q][imi]).squeeze()
-
-            if config.setup.use_cuda: loss = criterion(output, target[q].cuda())
-            else: loss = criterion(output, target[q])
-
-            losses.update(loss.item())
-            loss.backward()
+        loss = criterion(output, target)
+        losses.update(loss.item(), input.size(0))
+        loss.backward()
 
         # do one step for multiple batches
         # accumulated gradients are used
@@ -210,12 +208,14 @@ def run(config):
     lr_scheduler = get_scheduler(config, optimizer)    
     criterion = get_criterion(config)
 
-    for epoch in range(start_epoch, args.epochs):
+    start_epoch = 0
+
+    for epoch in range(start_epoch, config.train.num_epochs):
         # train for one epoch on train set
-        loss = train(train_loader, model, criterion, optimizer, epoch)
+        loss = train(config, train_loader, model, criterion, optimizer, epoch)
 
         # evaluate on validation set
-        loss = validate(val_loader, model, criterion, epoch)
+        loss = validate(config, val_loader, model, criterion, epoch)
 
         # adjust learning rate for each epoch
         scheduler.step()
@@ -230,7 +230,7 @@ def run(config):
             'state_dict': model.state_dict(),
             'min_loss': min_loss,
             'optimizer' : optimizer.state_dict(),
-        }, is_best, args.directory)
+        }, is_best, experiment_dir.directory)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='RXRX')
@@ -264,3 +264,25 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    # nq = len(input) # number of training tuples
+    #     ni = len(input[0]) # number of images per tuple
+
+    #     for q in range(nq):
+    #         if config.setup.use_cuda: output = torch.zeros(model.meta['outputdim'], ni).cuda()
+    #         else: output = torch.zeros(model.meta['outputdim'], ni)
+
+    #         for imi in range(ni):
+
+    #             print('output shape:', output.size())
+    #             print('input[q][imi]', input[q][imi].size())
+
+    #              # compute output vector for image imi
+    #             if config.setup.use_cuda: output[:, imi] = model(input[q][imi].cuda()).squeeze()
+    #             else: output[:, imi] = model(input[q][imi]).squeeze()
+
+    #         if config.setup.use_cuda: loss = criterion(output, target[q].cuda())
+    #         else: loss = criterion(output, target[q])
+
+    #         losses.update(loss.item())
+    #         loss.backward()    
