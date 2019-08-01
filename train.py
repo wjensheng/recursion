@@ -16,10 +16,11 @@ import torch
 import torch.nn.functional as F
 
 from datasets import get_dataloader
-from models import init_network
+from models import init_network, extract_vectors
 from losses import get_loss
 from optimizers import get_optimizer
 from schedulers import get_scheduler
+from layers.loss import ContrastiveLoss
 
 import utils
 from utils import create_logger, AverageMeter
@@ -27,10 +28,29 @@ import utils.config
 import utils.checkpoint
 import utils.metrics
 
-def create_model(config, logger):
-    logger.info(f'creating a model {config.model.arch}')
+def seed_everything():
+    torch.manual_seed(0)
+    torch.cuda.manual_seed_all(0)
+    np.random.seed(0)
 
-    model = get_custom_model(config)
+
+def save_checkpoint(state, is_best, directory):
+    filename = os.path.join(directory, 'model_epoch%d.pth.tar' % state['epoch'])
+    torch.save(state, filename)
+    if is_best:
+        filename_best = os.path.join(directory, 'model_best.pth.tar')
+        shutil.copyfile(filename, filename_best)
+
+
+def get_model(config):
+    model_params = {}
+    model_params['architecture'] = config.model.arch
+    model_params['pooling'] = config.model.pool
+    model_params['local_whitening'] = config.model.local_whitening
+    model_params['regional'] = config.model.regional
+    model_params['whitening'] = config.model.whitening
+    model_params['pretrained'] = config.model.pretrained
+    model = init_network(model_params)
 
     if config.setup.use_cuda and torch.cuda.device_count() > 1: 
         model = torch.nn.DataParallel(model)
@@ -41,193 +61,176 @@ def create_model(config, logger):
 
     return model
 
+def get_criterion(config):    
+    if config.loss == 'contrastive':
+        criterion = ContrastiveLoss(margin=0.3)
+    else:
+        criterion = get_loss(config)
 
-def save_checkpoint(logger, state: Dict[str, Any], filename: str, model_dir: str) -> None:
-    torch.save(state, os.path.join(model_dir, filename))
-    logger.info(f'A snapshot was saved to {filename}')
+    if config.setup.use_cuda:
+        criterion = criterion.cuda()
 
+    return criterion
 
-def inference(config, data_loader, model):
-    model.eval()
+def get_model_params(config, model):
+    # parameters split into features, pool, whitening 
+    # IMPORTANT: no weight decay for pooling parameter p in GeM or regional-GeM
+    parameters = []
 
-    all_predicts, all_targets = [], []
+    # add feature parameters
+    parameters.append({'params': model.features.parameters()})
 
-    with torch.no_grad():
-        batch_size = config.val.batch_size
-        total_size = len(data_loader.dataset)
-        total_step = math.ceil(total_size / batch_size)
+    # add local whitening if exists
+    if model.lwhiten is not None:
+        parameters.append({'params': model.lwhiten.parameters()})
 
-        for i, data in enumerate(tqdm(data_loader, total==total_size)):
-            if data_loader.dataset.mode != 'test':
-                input_, target = data
-            else:
-                input_, target = data, None
+    # add pooling parameters (or regional whitening which is part of the pooling layer!)
+    if not args.regional:
+        # global, only pooling parameter p weight decay should be 0
+        parameters.append({'params': model.pool.parameters(), 'lr': args.lr*10, 'weight_decay': 0})
+    else:
+        # regional, pooling parameter p weight decay should be 0, 
+        # and we want to add regional whitening if it is there
+        parameters.append({'params': model.pool.rpool.parameters(), 'lr': args.lr*10, 'weight_decay': 0})
+        if model.pool.whiten is not None:
+            parameters.append({'params': model.pool.whiten.parameters()})
 
-            # if using gpu
-            if config.setup.use_cuda:
-                input_, target = input_.cuda(), target.cuda()
-            
-            output = model(input_)            
-            loss = criterion(output, target)
-                        
-            _, predicts = torch.max(output.cpu(), dim=1)
-            all_predicts.append(predicts)    
+    # add final whitening if exists
+    if model.whiten is not None:
+        parameters.append({'params': model.whiten.parameters()})
 
-            if target is not None:
-                all_targets.append(target)
-
-    predicts = torch.cat(all_predicts)
-    targets = torch.cat(all_targets) if len(all_targets) else None
-
-    return predicts, targets
-
-
-def validate_one_epoch(logger, val_loader, model, epoch):
-    logger.info('validate()')
-
-    predicts, targets = inference(config, data_loader, model)
-    val_score = utils.metrics.accuracy(predicts, targets)
-
-    logger.info(f'{epoch} validation accuracy: {val_score}')
-    return val_score
+    return parameters
 
 
-def train_one_epoch(config, logger, train_loader, model, epoch, criterion, optimizer, lr_scheduler):
-
-    logger.info(f'epoch {epoch}')
-
+def train(config, train_loader, model, criterion, optimizer, epoch):
     batch_time = AverageMeter()
     losses = AverageMeter()
-    avg_score = AverageMeter()
 
+    # create tuples for training
+    avg_neg_distance = train_loader.dataset.create_epoch_tuples(model)
+
+    # switch to train mode
     model.train()
 
-    num_steps = len(train_loader)
-
     end = time.time()
-    lr_str = ''
-
-    batch_size = config.val.batch_size
-    total_size = len(train_loader.dataset)
-    total_step = math.ceil(total_size / batch_size)
-
-    for i, (input_, target) in tqdm(enumerate(train_loader), total=total_step):
-
-        # if using gpu
-        if config.setup.use_cuda:
-            input_, target = input_.cuda(), target.cuda()
+    for i, data in enumerate(train_loader):
+        input, id_codes, target = data
         
-        # compute output
-        output = model(input_)
-        
-        loss = criterion(output, target)
-
-        # get metric
-        _, predicts = torch.max(output.cpu(), dim=1)
-        avg_score.update(utils.metrics.accuracy(predicts, target))
-
-        # compute gradient and step
-        losses.update(loss.data.item(), input_.size(0))
         optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
 
-        lr_scheduler.step()
+        nq = len(input) # number of training tuples
+        ni = len(input[0]) # number of images per tuple
+
+        for q in range(nq):
+            if config.setup.use_cuda: output = torch.zeros(model.meta['outputdim'], ni).cuda()
+            else: output = torch.zeros(model.meta['outputdim'], ni)
+
+            for imi in range(ni):
+
+                 # compute output vector for image imi
+                if config.setup.use_cuda: output[:, imi] = model(input[q][imi].cuda()).squeeze()
+                else: output[:, imi] = model(input[q][imi]).squeeze()
+
+            if config.setup.use_cuda: loss = criterion(output, target[q].cuda())
+            else: loss = criterion(output, target[q])
+
+            losses.update(loss.item())
+            loss.backward()
+
+        # do one step for multiple batches
+        # accumulated gradients are used
+        optimizer.step()
 
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if i % config.train.log_freq == 0:
-            logger.info(f'{epoch} [{i}/{num_steps}]\t'
-                        f'time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                        f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
-                        f'accuracy {avg_score.val:.4f} ({avg_score.avg:.4f})'
-                        + lr_str)
+        if (i+1) % config.train.log_freq == 0 or i == 0 or (i+1) == len(train_loader):
+            print('>> Train: [{0}][{1}/{2}]\t'
+                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                  'Loss {loss.val:.4f} ({loss.avg:.4f})'.format(
+                   epoch+1, i+1, len(train_loader), batch_time=batch_time, loss=losses))
 
-    logger.info(f' * accuracy on train {avg_score.avg:.4f}')
+    return losses.avg
 
-    return avg_score.avg
+
+def validate(config, val_loader, model, criterion, epoch):
+    batch_time = AverageMeter()
+    losses = AverageMeter()
+
+    # switch to evaluate mode
+    model.eval()
+    
+    end = time.time()
+    for i, data in enumerate(val_loader):
+        input, id_codes, target = data
+
+        nq = len(input) # number of training tuples
+        ni = len(input[0]) # number of images per tuple
+        
+        if config.setup.use_cuda: output = torch.zeros(model.meta['outputdim'], nq*ni).cuda()
+        else: output = torch.zeros(model.meta['outputdim'], nq*ni)
+
+        for q in range(nq):
+            for imi in range(ni):
+
+                # compute output vector for image imi of query q
+                if config.setup.use_cuda: output[:, q*ni + imi] = model(input[q][imi].cuda()).squeeze()
+                else: output[:, q*ni + imi] = model(input[q][imi]).squeeze()
+
+        
+        if config.setup.use_cuda: loss = criterion(output, torch.cat(target).cuda())
+        else: loss = criterion(output, torch.cat(target))
+        
+        # record loss
+        losses.update(loss.item()/nq, nq)
+
+        # measure elapsed time
+        batch_time.update(time.time() - end)
+        end = time.time()
+
+        if (i+1) % config.train.log_freq == 0 or i == 0 or (i+1) == len(val_loader):
+            print('>> Val: [{0}][{1}/{2}]\t'
+                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                  'Loss {loss.val:.4f} ({loss.avg:.4f})'.format(
+                   epoch+1, i+1, len(val_loader), batch_time=batch_time, loss=losses))
+
+    return losses.avg
 
 
 def run(config):
-    # create logger
-    log_filename = f'log_training_{config.setup.version}.txt'
-    logger = create_logger(os.path.join(config.experiment_dir, log_filename))
-
-    # seed
-    np.random.seed(0)
-
-    # get the directory to store models
-    model_dir = config.experiment_dir
-
-    logger.info('=' * 50)
-
     # get dataloders
     train_loader, val_loader, test_loader = get_dataloader(config)
 
-    # valid_dl len: {len(val_loader)}
-    logger.info(f'train_dl len: {len(train_loader)}')
+    # model
+    model = get_model(config)
 
-    # get model    
-    model = create_model(config, logger)
-    
     # optimizer, lr_scheduler, criterion
-    optimizer = get_optimizer(config, model.parameters())
+    optimizer = get_optimizer(config, get_model_params(config, model))
     lr_scheduler = get_scheduler(config, optimizer)    
-    criterion = get_loss(config)
+    criterion = get_criterion(config)
 
-    # # TODO: shift loading weights to here or create 
-    # # another function to handle
-    # # decide to train from scratch?
-    # if args.weights is None:
-    last_epoch = 0
-    logger.info(f'training will start from epoch {last_epoch+1}')
-    # else:
-    #     last_checkpoint = torch.load(args.weights)
-    
-    best_score = 0.0
-    best_epoch = 0
+    for epoch in range(start_epoch, args.epochs):
+        # train for one epoch on train set
+        loss = train(train_loader, model, criterion, optimizer, epoch)
 
-    # TODO: ignore gen_features for now
+        # evaluate on validation set
+        loss = validate(val_loader, model, criterion, epoch)
 
-    # TODO: ignore gen_predict for now
+        # adjust learning rate for each epoch
+        scheduler.step()
 
-    # best_model_path = args.weights
+        # remember best loss and save checkpoint
+        is_best = loss < min_loss
+        min_loss = min(loss, min_loss)
 
-    for epoch in range(last_epoch + 1, config.train.num_epochs + 1):
-        logger.info('-' * 50)
-        
-        # start training
-        train_score = train_one_epoch(config, logger, train_loader, model, epoch, criterion, optimizer, lr_scheduler)
-
-        if config.stage == 1:
-            score = train_score
-        else:
-            score = validate_one_epoch(logger, val_loader, model, epoch)
-        
-        # save best score, model
-        if score > best_score:
-            best_score = score
-            best_epoch = epoch
-
-            data_to_save = {
-                'epoch': epoch,
-                'arch': config.model.arch,
-                'state_dict': model.state_dict(),
-                'best_score': best_score,
-                'score': score,
-                'optimizer': optimizer.state_dict(),
-                'options': config
-            }
-
-            # TODO: what is config.version?
-            filename = config.setup.version 
-            best_model_path = f'{filename}_e{epoch:02d}_{score:.04f}.pth'
-            save_checkpoint(logger, data_to_save, best_model_path, model_dir)
-
-    logger.info(f'best score: {best_score:.04f}')
-
+        save_checkpoint({
+            'epoch': epoch + 1,
+            'meta': model.meta,
+            'state_dict': model.state_dict(),
+            'min_loss': min_loss,
+            'optimizer' : optimizer.state_dict(),
+        }, is_best, args.directory)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='RXRX')
@@ -253,20 +256,11 @@ def main():
     if not os.path.exists(config.experiment_dir):
         os.makedirs(config.experiment_dir)    
 
+    seed_everything()
     run(config)
 
     print('complete!')
 
 
 if __name__ == "__main__":
-    model_params = {}
-    model_params['architecture'] = 'resnet18'
-    model_params['pooling'] = 'gem'
-    model_params['local_whitening'] = False
-    model_params['regional'] = False
-    model_params['whitening'] = False
-    # model_params['mean'] = ...  # will use default
-    # model_params['std'] = ...  # will use default
-    model_params['pretrained'] = True
-    model = init_network(model_params)
-    print(model)
+    main()

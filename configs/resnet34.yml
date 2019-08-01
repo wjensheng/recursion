@@ -22,7 +22,7 @@ train:
   num_epochs: 2
 
 loss:
-  name: 'cross_entropy'
+  name: 'contrastive'
 
 optimizer:
   name: 'adam'

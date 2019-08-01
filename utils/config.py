@@ -44,9 +44,14 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # model
     cfg.model = edict()
     cfg.model.arch = 'resnet34'
+    cfg.mode.pool = 'gem'
+    cfg.model.local_whitening = False
+    cfg.model.regional = False
+    cfg.model.whitening = False
     cfg.model.image_size = 512 # TODO: do not resize
     cfg.model.input_size = 512
     cfg.model.num_classes = 1108
+    cfg.mode.pretrained = True
     
     # train
     cfg.train = edict()
