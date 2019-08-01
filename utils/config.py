@@ -18,7 +18,6 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.setup.use_cuda = False
     cfg.setup.cell_type = -1
     cfg.setup.stage = 1
-    cfg.setup.combine = True
     cfg.setup.version = 'first_attempt'
     cfg.setup.use_small = False
     cfg.setup.test_size = 0.1

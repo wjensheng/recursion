@@ -20,51 +20,35 @@ from PIL import Image
 # 2. how to account for controls
 
 class RCICDefaultDataset(Dataset):
-    def __init__(self, df, img_dir, 
-                 tsfm, mode='train', site=1, 
-                 channels=[1,2,3,4,5,6]):        
+    def __init__(self, df, img_dir, tsfm=None, mode='train', site=1, channels=[1,2,3,4,5,6]):        
         self.records = df.to_records(index=False)
         self.channels = channels
         self.site = site
         self.mode = mode
         self.img_dir = img_dir
-        self.len = df.shape[0]        
-        self.tsfm = tsfm    
-
-    def _load_img_as_tensor(self, file_name):
-        img = Image.open(file_name)
+        self.len = df.shape[0]
+        self.tsfm = tsfm
         
-        if self.tsfm:
-            img = self.tsfm(img)
-
+    def _load_img_as_tensor(self, file_name):
+        img = Image.open(file_name)                
+        if self.tsfm: img = self.tsfm(img)
         return img
 
     def _get_img_path(self, index, channel):
-        experiment = self.records[index].experiment
-        well = self.records[index].well
-        plate = self.records[index].plate
-
-        return '/'.join([self.img_dir, 
-                         self.mode,experiment,
-                         f'Plate{plate}',
-                         f'{well}_s{self.site}_w{channel}.png'])
-    
-            
+        experiment, plate, well = self.records[index].experiment, self.records[index].plate, self.records[index].well
+        return '/'.join([self.img_dir,self.mode,experiment,f'Plate{plate}',f'{well}_s{self.site}_w{channel}.png'])
+        
     def __getitem__(self, index):
-        paths = [self._get_img_path(index, ch) for ch in self.channels]
-
-        img = torch.cat([self._load_img_as_tensor(img_path) \
-                        for img_path in paths])        
-
+        paths = [self._get_img_path(index, ch) for ch in self.channels]        
+        img = torch.cat([self._load_img_as_tensor(img_path) for img_path in paths])
+        
         if self.mode == 'train':
-            return img, int(self.records[index].sirna)
+            return img, self.records[index].id_code, int(self.records[index].sirna)
         else:
             return img, self.records[index].id_code
 
-            
     def __len__(self):
         return self.len
-
 
     def item(self, index):
         return self.records[index].id_code
