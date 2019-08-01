@@ -16,7 +16,7 @@ import torch
 import torch.nn.functional as F
 
 from datasets import get_dataloader
-from models import get_custom_model
+from models import init_network
 from losses import get_loss
 from optimizers import get_optimizer
 from schedulers import get_scheduler
@@ -259,4 +259,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    model_params = {}
+    model_params['architecture'] = 'resnet18'
+    model_params['pooling'] = 'gem'
+    model_params['local_whitening'] = False
+    model_params['regional'] = False
+    model_params['whitening'] = False
+    # model_params['mean'] = ...  # will use default
+    # model_params['std'] = ...  # will use default
+    model_params['pretrained'] = True
+    model = init_network(model_params)
+    print(model)
