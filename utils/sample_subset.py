@@ -8,6 +8,18 @@ from tqdm import tqdm
 
 DATA_DIR = 'data'
 
+CELL_TYPE = ['HEPG2', 'HUVEC', 'RPE', 'U2OS']
+
+def split_experiments(df):
+    df['cell_type'] = df['experiment'].apply(lambda o: o.split('-')[0])
+    return df
+
+
+def filter_experiments(df, cell_type):
+    df = split_experiments(df)
+    return df[df['cell_type'] == CELL_TYPE[cell_type]]
+
+
 def seed_torch(seed=1108):
     random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -15,6 +27,7 @@ def seed_torch(seed=1108):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
+
 
 def smaller_train_set(pct=0.2):
     df = pd.read_csv(os.path.join(DATA_DIR, 'train.csv'))
@@ -80,14 +93,27 @@ def transfer_back(subset):
 
             shutil.move(img_src, img_dst)    
 
+def save_cell_df(filename, cell_type):
+    df = pd.read_csv(os.path.join(DATA_DIR, filename))
+
+    df = filter_experiments(df, cell_type)
+
+    new_filename = CELL_TYPE[cell_type] + '_' + filename
+
+    print(len(df))    
+
+    df.to_csv(os.path.join(DATA_DIR, new_filename), index=False)
+
+    print(os.path.join(DATA_DIR, new_filename))
 
 
 
 if __name__ == "__main__":
     seed_torch()
-    df_subset = smaller_train_set(0.01)
+    # df_subset = smaller_train_set(0.01)
 
-    print(len(df_subset))
-
+    # print(len(df_subset))
     # sample_smaller_train_pics(df_subset)
     # transfer_back('train_subset.csv')
+
+    save_cell_df('train.csv', 3)
