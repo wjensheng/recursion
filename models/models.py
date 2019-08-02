@@ -3,13 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pretrainedmodels
 
-from layers import pooling
-from .metric_learning import ArcMarginProduct, AddMarginProduct, AdaCos
+import pooling
+from metric_learning import ArcMarginProduct, AddMarginProduct, AdaCos
 
 ROOT = '../'
 
 
-class LandmarkNet(nn.Module):
+class RcicNet(nn.Module):
 
     DIVIDABLE_BY = 32
 
@@ -33,9 +33,21 @@ class LandmarkNet(nn.Module):
         :param pooling: One of ('SPoC', 'MAC', 'RMAC', 'GeM', 'Rpool', 'Flatten', 'CompactBilinearPooling')
         :param loss_module: One of ('arcface', 'cosface', 'softmax')
         """
-        super(LandmarkNet, self).__init__()
+        super(RcicNet, self).__init__()        
 
         self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
+
+        # transfer weight from pretrained network
+        trained_kernel = self.backbone.conv1.weight
+
+        new_conv = nn.Conv2d(6, 64, kernel_size=7, stride=2, padding=3, bias=False)
+
+        with torch.no_grad():
+            new_conv.weight[:,:] = torch.stack([torch.mean(trained_kernel, 1)]*6, dim=1)
+
+        self.backbone.conv1 = new_conv
+
+
         final_in_features = self.backbone.last_linear.in_features
         # HACK: work around for this issue https://github.com/Cadene/pretrained-models.pytorch/issues/120
         self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
@@ -87,5 +99,31 @@ class LandmarkNet(nn.Module):
 
         return x
 
+def get_model(config):
+    n_classes = config.model.num_classes
+    model_name = config.model.arch
+    pool = config.model.pool
+    args_pooling = {}
+    use_fc = False
+    fc_dim = 512
+    dropout = 0.0
+    loss_module = 'softmax'
+    s = 30.0
+    margin = 0.50
+    ls_eps = 0.0
+    theta_zero = 0.785
+
+    net = RcicNet(n_classes, model_name, pool, args_pooling,
+                  use_fc, fc_dim, dropout, loss_module, 
+                  s, margin, ls_eps, theta_zero)
+    return net
+
 if __name__ == "__main__":
-    net = LandmarkNet(1108, 'resnet18')
+    net = RcicNet(1108, 'resnet18')
+
+    t = torch.randn(16, 6, 512, 512)
+    labels = torch.randn(16,)
+
+    # print(labels.size())
+
+    print(net(t, labels).size())

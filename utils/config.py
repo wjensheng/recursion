@@ -44,7 +44,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # model
     cfg.model = edict()
     cfg.model.arch = 'resnet34'
-    cfg.model.pool = 'gem'
+    cfg.model.pool = 'GeM'
     cfg.model.local_whitening = False
     cfg.model.regional = False
     cfg.model.whitening = False

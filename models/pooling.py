@@ -1,6 +1,123 @@
 import numpy as np
 import torch
-from torch import nn
+import torch.nn as nn
+from torch.nn.parameter import Parameter
+
+import functional as LF
+from normalization import L2N
+
+
+# --------------------------------------
+# Pooling layers
+# --------------------------------------
+
+class Flatten(nn.Module):
+
+    def __init__(self):
+        super(Flatten, self).__init__()
+
+    def forward(self, x):
+        return x.view(x.shape[0], x.shape[1], -1)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+
+
+class MAC(nn.Module):
+
+    def __init__(self):
+        super(MAC, self).__init__()
+
+    def forward(self, x):
+        return LF.mac(x)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+
+
+class SPoC(nn.Module):
+
+    def __init__(self):
+        super(SPoC, self).__init__()
+
+    def forward(self, x):
+        return LF.spoc(x)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+
+
+class GeM(nn.Module):
+
+    def __init__(self, p=3.0, eps=1e-6, freeze_p=True):
+        super(GeM, self).__init__()
+        self.p = p if freeze_p else Parameter(torch.ones(1) * p)
+        self.eps = eps
+
+    def forward(self, x):
+        return LF.gem(x, p=self.p, eps=self.eps)
+
+    def __repr__(self):
+        if isinstance(self.p, float):
+            p = self.p
+        else:
+            p = self.p.data.tolist()[0]
+        return self.__class__.__name__ +\
+               '(' + 'p=' + '{:.4f}'.format(p) +\
+               ', ' + 'eps=' + str(self.eps) + ')'
+
+
+class RMAC(nn.Module):
+
+    def __init__(self, L=3, eps=1e-6):
+        super(RMAC, self).__init__()
+        self.L = L
+        self.eps = eps
+
+    def forward(self, x):
+        return LF.rmac(x, L=self.L, eps=self.eps)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(' + 'L=' + '{}'.format(self.L) + ')'
+
+
+class Rpool(nn.Module):
+
+    def __init__(self, rpool, whiten=None, L=3, eps=1e-6):
+        super(Rpool, self).__init__()
+        self.rpool = rpool
+        self.L = L
+        self.whiten = whiten
+        self.norm = L2N()
+        self.eps = eps
+
+    def forward(self, x, aggregate=True):
+        # features -> roipool
+        o = LF.roipool(x, self.rpool, self.L, self.eps)  # size: #im, #reg, D, 1, 1
+
+        # concatenate regions from all images in the batch
+        s = o.size()
+        o = o.view(s[0] * s[1], s[2], s[3], s[4])  # size: #im x #reg, D, 1, 1
+
+        # rvecs -> norm
+        o = self.norm(o)
+
+        # rvecs -> whiten -> norm
+        if self.whiten is not None:
+            o = self.norm(self.whiten(o.squeeze(-1).squeeze(-1)))
+
+        # reshape back to regions per image
+        o = o.view(s[0], s[1], s[2], s[3], s[4])  # size: #im, #reg, D, 1, 1
+
+        # aggregate regions into a single global vector per image
+        if aggregate:
+            # rvecs -> sumpool -> norm
+            o = self.norm(o.sum(1, keepdim=False))  # size: #im, D, 1, 1
+
+        return o
+
+    def __repr__(self):
+        return super(Rpool, self).__repr__() + '(' + 'L=' + '{}'.format(self.L) + ')'
 
 
 class CompactBilinearPooling(nn.Module):
@@ -33,31 +150,30 @@ class CompactBilinearPooling(nn.Module):
                   None.
     """
 
-    def __init__(self, input_dim1, input_dim2, output_dim,
+    def __init__(self, input_dim=2048, output_dim=2048,
                  sum_pool=True, cuda=True,
                  rand_h_1=None, rand_s_1=None, rand_h_2=None, rand_s_2=None):
         super(CompactBilinearPooling, self).__init__()
-        self.input_dim1 = input_dim1
-        self.input_dim2 = input_dim2
+        self.input_dim = input_dim
         self.output_dim = output_dim
         self.sum_pool = sum_pool
 
         if rand_h_1 is None:
             np.random.seed(1)
-            rand_h_1 = np.random.randint(output_dim, size=self.input_dim1)
+            rand_h_1 = np.random.randint(output_dim, size=self.input_dim)
         if rand_s_1 is None:
             np.random.seed(3)
-            rand_s_1 = 2 * np.random.randint(2, size=self.input_dim1) - 1
+            rand_s_1 = 2 * np.random.randint(2, size=self.input_dim) - 1
 
         self.sparse_sketch_matrix1 = self.generate_sketch_matrix(
             rand_h_1, rand_s_1, self.output_dim)
 
         if rand_h_2 is None:
             np.random.seed(5)
-            rand_h_2 = np.random.randint(output_dim, size=self.input_dim2)
+            rand_h_2 = np.random.randint(output_dim, size=self.input_dim)
         if rand_s_2 is None:
             np.random.seed(7)
-            rand_s_2 = 2 * np.random.randint(2, size=self.input_dim2) - 1
+            rand_s_2 = 2 * np.random.randint(2, size=self.input_dim) - 1
 
         self.sparse_sketch_matrix2 = self.generate_sketch_matrix(
             rand_h_2, rand_s_2, self.output_dim)
@@ -70,7 +186,7 @@ class CompactBilinearPooling(nn.Module):
 
         batch_size, _, height, width = bottom.size()
 
-        bottom_flat = bottom.permute(0, 2, 3, 1).contiguous().view(-1, self.input_dim1)
+        bottom_flat = bottom.permute(0, 2, 3, 1).contiguous().view(-1, self.input_dim)
 
         sketch_1 = bottom_flat.mm(self.sparse_sketch_matrix1)
         sketch_2 = bottom_flat.mm(self.sparse_sketch_matrix2)
@@ -123,15 +239,3 @@ class CompactBilinearPooling(nn.Module):
         sparse_sketch_matrix = torch.sparse.FloatTensor(
             indices.t(), rand_s, torch.Size([input_dim, output_dim]))
         return sparse_sketch_matrix.to_dense()
-
-
-if __name__ == '__main__':
-
-    bottom1 = torch.randn(128, 512, 14, 14).cuda()
-    bottom2 = torch.randn(128, 512, 14, 14).cuda()
-
-    layer = CompactBilinearPooling(512, 512, 8000)
-    layer.cuda()
-    layer.train()
-
-    out = layer(bottom1, bottom2)

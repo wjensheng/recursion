@@ -16,7 +16,7 @@ import torch
 import torch.nn.functional as F
 
 from datasets import get_dataloader
-from models import init_network, extract_vectors
+from models import init_network, extract_vectors, get_model
 from losses import get_loss
 from optimizers import get_optimizer
 from schedulers import get_scheduler
@@ -42,15 +42,8 @@ def save_checkpoint(state, is_best, directory):
         shutil.copyfile(filename, filename_best)
 
 
-def get_model(config):
-    model_params = {}
-    model_params['architecture'] = config.model.arch
-    model_params['pooling'] = config.model.pool
-    model_params['local_whitening'] = config.model.local_whitening
-    model_params['regional'] = config.model.regional
-    model_params['whitening'] = config.model.whitening
-    model_params['pretrained'] = config.model.pretrained
-    model = init_network(model_params)
+def create_model(config):
+    model = get_model(config)
 
     if config.setup.use_cuda and torch.cuda.device_count() > 1: 
         model = torch.nn.DataParallel(model)
@@ -201,7 +194,7 @@ def run(config):
     train_loader, val_loader, test_loader = get_dataloader(config)
 
     # model
-    model = get_model(config)
+    model = create_model(config)
 
     # optimizer, lr_scheduler, criterion
     optimizer = get_optimizer(config, get_model_params(config, model))
