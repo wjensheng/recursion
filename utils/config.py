@@ -27,7 +27,6 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # saved model
     cfg.saved = edict()
     cfg.saved.model_dir = 'experiments/models'
-    # cfg.saved.pth_fn = args.pth_fn
     
     # data
     cfg.data = edict()
@@ -47,6 +46,12 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.model.arch = 'resnet34'
     cfg.model.pool = 'GeM'
     cfg.model.local_whitening = False
+    cfg.model.use_fc = False
+    cfg.model.fc_dim = 512
+    cfg.model.dropout = 0
+    cfg.model.loss_module = 'arcface'
+    cfg.model.s = 30.0
+    cfg.model.margin = 0.5
     cfg.model.regional = False
     cfg.model.whitening = False
     cfg.model.image_size = 512 # TODO: do not resize
@@ -58,7 +63,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # train
     cfg.train = edict()
     cfg.train.batch_size = 16 # * torch.cuda.device_count()
-    cfg.train.num_epochs = 40
+    cfg.train.num_epochs = 50
     cfg.train.log_freq = 100
     cfg.train.lr_scheduler = None
     # cfg.train.num_ttas = 1

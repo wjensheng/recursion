@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from .functional import *
+from models.functional import *
 
 
 # --------------------------------------

@@ -14,16 +14,13 @@ from typing import *
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from datasets import get_dataloader
-from models import init_network, extract_vectors, get_model
+from models import get_model
 from losses import get_loss
 from optimizers import get_optimizer
 from schedulers import get_scheduler
-from layers.loss import ContrastiveLoss
 
-import utils
 from utils import create_logger, AverageMeter
 import utils.config
 import utils.checkpoint
@@ -173,14 +170,11 @@ def run(config):
     # optimizer, lr_scheduler, criterion
     optimizer = optimizer = get_optimizer(config, model.parameters())
     criterion = get_loss(config)
-    lr_scheduler = CosineAnnealingLR(optimizer, 
-                                     T_max=config.train.num_epochs * len(train_loader), 
-                                     eta_min=3e-6)
+    lr_scheduler = get_scheduler(config, optimizer)
 
     last_epoch = 0
     best_score = 0.0
     best_epoch = 0
-
 
     for epoch in range(last_epoch + 1, config.train.num_epochs + 1):
         logger.info('-' * 50)
@@ -236,7 +230,7 @@ def main():
         os.makedirs(config.experiment_dir)    
 
     seed_everything()
-    run(config)
+    # run(config)
 
     print('complete!')
 

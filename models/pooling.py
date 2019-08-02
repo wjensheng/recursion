@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 from torch.nn.parameter import Parameter
 
-from .functional import mac, spoc, gem, rmac, roipool
-from .normalization import L2N
+from models.functional import mac, spoc, gem, rmac, roipool
+from models.normalization import L2N
 
 
 # --------------------------------------
