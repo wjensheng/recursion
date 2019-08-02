@@ -53,123 +53,167 @@ def create_model(config):
     return model
 
 
-def train(config, train_loader, model, criterion, optimizer, epoch):
+def train_one_epoch(config, logger, train_loader, model, epoch, criterion, optimizer, lr_scheduler):
+
+    logger.info(f'epoch {epoch}')
+
     batch_time = AverageMeter()
     losses = AverageMeter()
+    avg_score = AverageMeter()
 
-    # switch to train mode
     model.train()
 
+    num_steps = len(train_loader)
+
     end = time.time()
+    lr_str = ''
 
     batch_size = config.val.batch_size
     total_size = len(train_loader.dataset)
     total_step = math.ceil(total_size / batch_size)
 
     for i, data in tqdm(enumerate(train_loader), total=total_step):
-        input, id_codes, target = data
-        
+        input_, id_codes, target = data
+
         # if using gpu
         if config.setup.use_cuda:
-            input, target = input.cuda(), target.cuda()
+            input_, target = input_.cuda(), target.cuda()
         
-        optimizer.zero_grad()
-
-        output = model(input).squeeze()
-
-        print(output.size())
-
+        output = model(input_, target)
+        
         loss = criterion(output, target)
-        losses.update(loss.item(), input.size(0))
-        loss.backward()
 
-        # do one step for multiple batches
-        # accumulated gradients are used
+        # get metric
+        _, predicts = torch.max(output.cpu(), dim=1)
+        avg_score.update(utils.metrics.accuracy(predicts, target))
+
+        # compute gradient and step
+        losses.update(loss.data.item(), input_.size(0))
+        optimizer.zero_grad()
+        loss.backward()
         optimizer.step()
 
+        lr_scheduler.step()
+
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if (i+1) % config.train.log_freq == 0 or i == 0 or (i+1) == len(train_loader):
-            print('>> Train: [{0}][{1}/{2}]\t'
-                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})'.format(
-                   epoch+1, i+1, len(train_loader), batch_time=batch_time, loss=losses))
+        if i % config.train.log_freq == 0:
+            logger.info(f'{epoch} [{i}/{num_steps}]\t'
+                        f'time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                        f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
+                        f'accuracy {avg_score.val:.4f} ({avg_score.avg:.4f})'
+                        + lr_str)
 
-    return losses.avg
+    logger.info(f' * accuracy on train {avg_score.avg:.4f}')
+
+    return avg_score.avg
 
 
-def validate(config, val_loader, model, criterion, epoch):
-    batch_time = AverageMeter()
-    losses = AverageMeter()
+def validate_one_epoch(config, logger, val_loader, model, epoch):
+    logger.info('validate()')
 
-    # switch to evaluate mode
     model.eval()
-    
-    end = time.time()
-    for i, data in enumerate(val_loader):
-        input, id_codes, target = data
 
-        nq = len(input) # number of training tuples
-        ni = len(input[0]) # number of images per tuple
+    all_predicts, all_targets = [], []
+
+    with torch.no_grad():
+        batch_size = config.val.batch_size
+        total_size = len(data_loader.dataset)
+        total_step = math.ceil(total_size / batch_size)
+
+        for i, data in enumerate(tqdm(data_loader, total==total_size)):
+            input_, id_codes, target = data
         
-        if config.setup.use_cuda: output = torch.zeros(model.meta['outputdim'], nq*ni).cuda()
-        else: output = torch.zeros(model.meta['outputdim'], nq*ni)
+            # if using gpu
+            if config.setup.use_cuda:
+                input_, target = input_.cuda(), target.cuda()
+            
+            output = model(input_, target)
+            loss = criterion(output, target)
+                        
+            _, predicts = torch.max(output.cpu(), dim=1)
+            all_predicts.append(predicts)    
 
-        for q in range(nq):
-            for imi in range(ni):
+            if target is not None:
+                all_targets.append(target)
 
-                # compute output vector for image imi of query q
-                if config.setup.use_cuda: output[:, q*ni + imi] = model(input[q][imi].cuda()).squeeze()
-                else: output[:, q*ni + imi] = model(input[q][imi]).squeeze()
+    predicts = torch.cat(all_predicts)
+    targets = torch.cat(all_targets) if len(all_targets) else None
 
-        
-        if config.setup.use_cuda: loss = criterion(output, torch.cat(target).cuda())
-        else: loss = criterion(output, torch.cat(target))
-        
-        # record loss
-        losses.update(loss.item()/nq, nq)
+    val_score = utils.metrics.accuracy(predicts, targets)
 
-        # measure elapsed time
-        batch_time.update(time.time() - end)
-        end = time.time()
-
-        if (i+1) % config.train.log_freq == 0 or i == 0 or (i+1) == len(val_loader):
-            print('>> Val: [{0}][{1}/{2}]\t'
-                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})'.format(
-                   epoch+1, i+1, len(val_loader), batch_time=batch_time, loss=losses))
-
-    return losses.avg
+    logger.info(f'{epoch} validation accuracy: {val_score}')
+    return val_score
 
 
 def run(config):
+    # create logger
+    log_filename = f'log_training_{config.setup.version}.txt'
+    logger = create_logger(os.path.join(config.experiment_dir, log_filename))
+
+    # seed
+    np.random.seed(0)
+
+    # get the directory to store models
+    model_dir = config.experiment_dir
+
     # get dataloders
     train_loader, val_loader, test_loader = get_dataloader(config)
 
+    logger.info('=' * 50)
+
+    # valid_dl len: {len(val_loader)}
+    logger.info(f'train_dl len: {len(train_loader)}')
+    
     # model
     model = create_model(config)
 
     # optimizer, lr_scheduler, criterion
-    optimizer = get_optimizer(config, get_model_params(config, model))
-    criterion = nn.CrossEntropyLoss()
-    scheduler = CosineAnnealingLR(optimizer, 
-                                  T_max=config.train.num_epochs * len(train_loader), 
-                                  eta_min=3e-6)
+    optimizer = optimizer = get_optimizer(config, model.parameters())
+    criterion = get_loss(config)
+    lr_scheduler = CosineAnnealingLR(optimizer, 
+                                     T_max=config.train.num_epochs * len(train_loader), 
+                                     eta_min=3e-6)
 
-    start_epoch = 0
+    last_epoch = 0
+    best_score = 0.0
+    best_epoch = 0
 
-    for epoch in range(start_epoch, config.train.num_epochs):
-        # train for one epoch on train set
-        loss = train(config, train_loader, model, criterion, optimizer, epoch)
 
-        # evaluate on validation set
-        loss = validate(config, val_loader, model, criterion, epoch)
+    for epoch in range(last_epoch + 1, config.train.num_epochs + 1):
+        logger.info('-' * 50)
+        
+        # start training
+        train_score = train_one_epoch(config, logger, train_loader, model, epoch, criterion, optimizer, lr_scheduler)
 
-        # adjust learning rate for each epoch
-        scheduler.step()
+        if config.setup.stage == 0:
+            score = train_score
+        else:
+            score = validate_one_epoch(config, logger, val_loader, model, epoch)
+        
+        # save best score, model
+        if score > best_score:
+            best_score = score
+            best_epoch = epoch
 
+            data_to_save = {
+                'epoch': epoch,
+                'arch': config.model.arch,
+                'state_dict': model.state_dict(),
+                'best_score': best_score,
+                'score': score,
+                'optimizer': optimizer.state_dict(),
+                'options': config
+            }
+
+            # TODO: what is config.version?
+            filename = config.setup.version 
+            best_model_path = f'{filename}_e{epoch:02d}_{score:.04f}.pth'
+            save_checkpoint(logger, data_to_save, best_model_path, model_dir)
+
+    logger.info(f'best score: {best_score:.04f}')
 
 
         
@@ -199,25 +243,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    # nq = len(input) # number of training tuples
-    #     ni = len(input[0]) # number of images per tuple
-
-    #     for q in range(nq):
-    #         if config.setup.use_cuda: output = torch.zeros(model.meta['outputdim'], ni).cuda()
-    #         else: output = torch.zeros(model.meta['outputdim'], ni)
-
-    #         for imi in range(ni):
-
-    #             print('output shape:', output.size())
-    #             print('input[q][imi]', input[q][imi].size())
-
-    #              # compute output vector for image imi
-    #             if config.setup.use_cuda: output[:, imi] = model(input[q][imi].cuda()).squeeze()
-    #             else: output[:, imi] = model(input[q][imi]).squeeze()
-
-    #         if config.setup.use_cuda: loss = criterion(output, target[q].cuda())
-    #         else: loss = criterion(output, target[q])
-
-    #         losses.update(loss.item())
-    #         loss.backward()    

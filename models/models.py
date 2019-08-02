@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pretrainedmodels
 
-import pooling
-from metric_learning import ArcMarginProduct, AddMarginProduct, AdaCos
+import models.pooling as pooling
+from .metric_learning import ArcMarginProduct, AddMarginProduct, AdaCos
 
 ROOT = '../'
 

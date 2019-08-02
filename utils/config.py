@@ -22,6 +22,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.setup.use_small = False
     cfg.setup.test_size = 0.1
     cfg.setup.val_set = False
+    cfg.setup.is_control = False
 
     # saved model
     cfg.saved = edict()

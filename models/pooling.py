@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 from torch.nn.parameter import Parameter
 
-import functional as LF
-from normalization import L2N
+from .functional import mac, spoc, gem, rmac, roipool
+from .normalization import L2N
 
 
 # --------------------------------------
@@ -29,7 +29,7 @@ class MAC(nn.Module):
         super(MAC, self).__init__()
 
     def forward(self, x):
-        return LF.mac(x)
+        return mac(x)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -41,7 +41,7 @@ class SPoC(nn.Module):
         super(SPoC, self).__init__()
 
     def forward(self, x):
-        return LF.spoc(x)
+        return spoc(x)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -55,7 +55,7 @@ class GeM(nn.Module):
         self.eps = eps
 
     def forward(self, x):
-        return LF.gem(x, p=self.p, eps=self.eps)
+        return gem(x, p=self.p, eps=self.eps)
 
     def __repr__(self):
         if isinstance(self.p, float):
@@ -75,7 +75,7 @@ class RMAC(nn.Module):
         self.eps = eps
 
     def forward(self, x):
-        return LF.rmac(x, L=self.L, eps=self.eps)
+        return rmac(x, L=self.L, eps=self.eps)
 
     def __repr__(self):
         return self.__class__.__name__ + '(' + 'L=' + '{}'.format(self.L) + ')'
@@ -93,7 +93,7 @@ class Rpool(nn.Module):
 
     def forward(self, x, aggregate=True):
         # features -> roipool
-        o = LF.roipool(x, self.rpool, self.L, self.eps)  # size: #im, #reg, D, 1, 1
+        o = roipool(x, self.rpool, self.L, self.eps)  # size: #im, #reg, D, 1, 1
 
         # concatenate regions from all images in the batch
         s = o.size()

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-import functional as LF
+from .functional import *
 
 
 # --------------------------------------
@@ -15,7 +15,7 @@ class L2N(nn.Module):
         self.eps = eps
 
     def forward(self, x):
-        return LF.l2n(x, eps=self.eps)
+        return l2n(x, eps=self.eps)
 
     def __repr__(self):
         return self.__class__.__name__ + '(' + 'eps=' + str(self.eps) + ')'
@@ -28,7 +28,7 @@ class PowerLaw(nn.Module):
         self.eps = eps
 
     def forward(self, x):
-        return LF.powerlaw(x, eps=self.eps)
+        return powerlaw(x, eps=self.eps)
 
     def __repr__(self):
         return self.__class__.__name__ + '(' + 'eps=' + str(self.eps) + ')'

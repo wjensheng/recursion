@@ -6,8 +6,8 @@ import torch.utils.model_zoo as model_zoo
 
 import torchvision
 
-from layers.pooling import MAC, SPoC, GeM, RMAC, Rpool
-from layers.normalization import L2N, PowerLaw
+from .pooling import MAC, SPoC, GeM, RMAC, Rpool
+from .normalization import L2N, PowerLaw
 from datasets import get_dataset, get_dataloader
 
 # possible global pooling layers, each on of these can be made regional
