@@ -107,7 +107,7 @@ def get_model(config):
     use_fc = False
     fc_dim = 512
     dropout = 0.0
-    loss_module = 'softmax'
+    loss_module = 'arcface'
     s = 30.0
     margin = 0.50
     ls_eps = 0.0

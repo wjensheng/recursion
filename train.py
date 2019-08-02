@@ -14,6 +14,7 @@ from typing import *
 import numpy as np
 import torch
 import torch.nn.functional as F
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from datasets import get_dataloader
 from models import init_network, extract_vectors, get_model
@@ -34,12 +35,9 @@ def seed_everything():
     np.random.seed(0)
 
 
-def save_checkpoint(state, is_best, directory):
-    filename = os.path.join(directory, 'model_epoch%d.pth.tar' % state['epoch'])
-    torch.save(state, filename)
-    if is_best:
-        filename_best = os.path.join(directory, 'model_best.pth.tar')
-        shutil.copyfile(filename, filename_best)
+def save_checkpoint(logger, state: Dict[str, Any], filename: str, model_dir: str) -> None:
+    torch.save(state, os.path.join(model_dir, filename))
+    logger.info(f'A snapshot was saved to {filename}')
 
 
 def create_model(config):
@@ -55,48 +53,6 @@ def create_model(config):
     return model
 
 
-def get_criterion(config):
-    if config.loss.name == 'contrastive':
-        criterion = ContrastiveLoss(margin=0.3)
-    else:
-        criterion = get_loss(config)
-
-    if config.setup.use_cuda:
-        criterion = criterion.cuda()
-
-    return criterion
-
-
-def get_model_params(config, model):
-    # parameters split into features, pool, whitening 
-    # IMPORTANT: no weight decay for pooling parameter p in GeM or regional-GeM
-    parameters = []
-
-    # add feature parameters
-    parameters.append({'params': model.features.parameters()})
-
-    # add local whitening if exists
-    if model.lwhiten is not None:
-        parameters.append({'params': model.lwhiten.parameters()})
-
-    # add pooling parameters (or regional whitening which is part of the pooling layer!)
-    if not config.model.regional:
-        # global, only pooling parameter p weight decay should be 0
-        parameters.append({'params': model.pool.parameters(), 'lr': config.model.lr*10, 'weight_decay': 0})
-    else:
-        # regional, pooling parameter p weight decay should be 0, 
-        # and we want to add regional whitening if it is there
-        parameters.append({'params': model.pool.rpool.parameters(), 'lr': config.model.lr*10, 'weight_decay': 0})
-        if model.pool.whiten is not None:
-            parameters.append({'params': model.pool.whiten.parameters()})
-
-    # add final whitening if exists
-    if model.whiten is not None:
-        parameters.append({'params': model.whiten.parameters()})
-
-    return parameters
-
-
 def train(config, train_loader, model, criterion, optimizer, epoch):
     batch_time = AverageMeter()
     losses = AverageMeter()
@@ -105,7 +61,6 @@ def train(config, train_loader, model, criterion, optimizer, epoch):
     model.train()
 
     end = time.time()
-
 
     batch_size = config.val.batch_size
     total_size = len(train_loader.dataset)
@@ -198,8 +153,10 @@ def run(config):
 
     # optimizer, lr_scheduler, criterion
     optimizer = get_optimizer(config, get_model_params(config, model))
-    lr_scheduler = get_scheduler(config, optimizer)    
-    criterion = get_criterion(config)
+    criterion = nn.CrossEntropyLoss()
+    scheduler = CosineAnnealingLR(optimizer, 
+                                  T_max=config.train.num_epochs * len(train_loader), 
+                                  eta_min=3e-6)
 
     start_epoch = 0
 
@@ -213,29 +170,14 @@ def run(config):
         # adjust learning rate for each epoch
         scheduler.step()
 
-        # remember best loss and save checkpoint
-        is_best = loss < min_loss
-        min_loss = min(loss, min_loss)
 
-        save_checkpoint({
-            'epoch': epoch + 1,
-            'meta': model.meta,
-            'state_dict': model.state_dict(),
-            'min_loss': min_loss,
-            'optimizer' : optimizer.state_dict(),
-        }, is_best, experiment_dir.directory)
 
+        
 def parse_args():
     parser = argparse.ArgumentParser(description='RXRX')
-
-    parser.add_argument('--config', help='model configuration file (YAML)', 
-                        type=str, required=True)    
-    # parser.add_argument('--weights', help='model to resume training', type=str)    
-    # parser.add_argument('--gen_predict', help='make predictions for the testset and return', action='store_true')
-    # parser.add_argument('--gen_features', help='calculate features for the given set', action='store_true')
-    # parser.add_argument('--summary', help='show model summary', action='store_true')
-    # parser.add_argument('--num_ttas', help='override number of TTAs', type=int, default=0)
-    
+    parser.add_argument('--config', 
+                        help='model configuration file (YAML)', 
+                        type=str, required=True)                        
     args = parser.parse_args()
     return args
 
