@@ -1,5 +1,6 @@
 import logging
 import pandas as pd
+import numpy as np
 import os
 import torch
 
@@ -11,6 +12,25 @@ import warnings
 warnings.filterwarnings('ignore')
 
 DATA_DIR = '../data'
+
+def seed_everything():
+    torch.manual_seed(0)
+    torch.cuda.manual_seed_all(0)
+    np.random.seed(0)
+
+
+def save_checkpoint(logger, state: Dict[str, Any], filename: str, model_dir: str) -> None:
+    torch.save(state, os.path.join(model_dir, filename))
+    logger.info(f'A snapshot was saved to {filename}')
+
+
+def check_cuda(logger):
+    if torch.cuda.is_available():
+        num_gpus = torch.cuda.device_count()
+        logger.info(f'{num_gpus} gpu(s) available!')
+    else:
+        logger.info('Using cpu!')
+    
 
 def create_logger(filename: str) -> Any:
     logger_name = 'logger'

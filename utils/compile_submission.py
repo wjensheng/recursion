@@ -7,7 +7,7 @@ if __name__ == "__main__":
 
     SUMBISSION_DIR = 'data/submissions'
 
-    for file in glob.glob(os.path.join(SUMBISSION_DIR, "rn34-2sites_submission*")):
+    for file in glob.glob(os.path.join(SUMBISSION_DIR, "log_rn34-arcfaceloss-*")):
         print(file)
         tmp = pd.read_csv(file)
         df = pd.concat([df, tmp], axis=0)

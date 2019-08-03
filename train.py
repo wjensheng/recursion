@@ -24,17 +24,7 @@ from schedulers import get_scheduler
 from utils import create_logger, AverageMeter
 import utils.config
 import utils.checkpoint
-import utils.metrics
-
-def seed_everything():
-    torch.manual_seed(0)
-    torch.cuda.manual_seed_all(0)
-    np.random.seed(0)
-
-
-def save_checkpoint(logger, state: Dict[str, Any], filename: str, model_dir: str) -> None:
-    torch.save(state, os.path.join(model_dir, filename))
-    logger.info(f'A snapshot was saved to {filename}')
+import utils.metrics # TODO: for combined accuracy 
 
 
 def create_model(config):
@@ -150,8 +140,7 @@ def run(config):
     log_filename = f'log_training_{config.setup.version}.txt'
     logger = create_logger(os.path.join(config.experiment_dir, log_filename))
 
-    # seed
-    np.random.seed(0)
+    check_cuda(logger)
 
     # get the directory to store models
     model_dir = config.experiment_dir
@@ -229,8 +218,8 @@ def main():
     if not os.path.exists(config.experiment_dir):
         os.makedirs(config.experiment_dir)    
 
-    seed_everything()
-    # run(config)
+    seed_everything()    
+    run(config)
 
     print('complete!')
 
