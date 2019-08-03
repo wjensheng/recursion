@@ -36,8 +36,8 @@ def get_two_sites(config, df, tsfm, mode):
     return ds
 
 def get_dataframes(config):    
-    train_df = pd.read_csv(os.path.join(config.data.data_dir, cfg.data.train))
-    test_df = pd.read_csv(os.path.join(config.data.data_dir, cfg.data.test))
+    train_df = pd.read_csv(os.path.join(config.data.data_dir, config.data.train))
+    test_df = pd.read_csv(os.path.join(config.data.data_dir, config.data.test))
 
     # stage 0: train on all dataset
     if config.setup.stage == 0:        
@@ -61,6 +61,17 @@ def get_dataframes(config):
 
 
 def get_dataset(config, train_tsfm, test_tsfm):
+
+    train_tsfm = T.Compose([
+        T.RandomRotation(degrees=(-90, 90)),
+        T.RandomVerticalFlip(),
+        T.RandomHorizontalFlip(),
+        T.ToTensor(),
+    ])
+
+    test_tsfm = T.Compose([
+        T.ToTensor(),
+    ])
     
     # stage 0: train on all dataset
     if config.setup.stage == 0:  
@@ -85,8 +96,8 @@ def get_dataset(config, train_tsfm, test_tsfm):
     return train_ds, valid_ds, test_ds
 
 
-def get_dataloader(config, train_tsfm, test_tsfm):    
-    train_ds, valid_ds, test_ds = get_dataset(config, train_tsfm, test_tsfm)
+def get_dataloader(config):    
+    train_ds, valid_ds, test_ds = get_dataset(config)
 
     train_dl = DataLoader(train_ds, shuffle=True,
                           batch_size=config.train.batch_size,

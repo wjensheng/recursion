@@ -15,13 +15,14 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from datasets import get_dataloader
+from datasets import get_dataloader, get_dataframes
 from models import get_model
 from losses import get_loss
 from optimizers import get_optimizer
 from schedulers import get_scheduler
+from transforms import get_transform
 
-from utils import create_logger, AverageMeter
+from utils import * # create_logger, AverageMeter, seed_everything, check_cuda, save_checkpoint
 import utils.config
 import utils.checkpoint
 import utils.metrics # TODO: for combined accuracy 
@@ -141,12 +142,11 @@ def run(config):
     # get the directory to store models
     model_dir = config.experiment_dir
 
-    # get transformations setting
-    train_tsfm = get_transform(config, 'train')
-    test_tsfm = get_transform(config, 'test')
+    # valid_df for combined_accuracy
+    _, valid_df = get_dataframes(config)
 
     # get dataloders
-    train_loader, val_loader, test_loader = get_dataloader(config, train_tsfm, test_tsfm)
+    train_loader, val_loader, test_loader = get_dataloader(config)
 
     # valid_dl len: {len(val_loader)}
     logger.info(f'train_dl len: {len(train_loader)}')

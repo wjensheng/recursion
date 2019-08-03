@@ -32,11 +32,11 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.data.test = 'test.csv'
 
     # transforms
-    c.transform = edict()
-    c.transform.train = 'default_train'
-    c.transform.test = 'default_test'
-    c.transform.num_preprocessor = 4
-    c.transform.params = edict()
+    cfg.transform = edict()
+    cfg.transform.train = 'default_train'
+    cfg.transform.test = 'default_test'
+    cfg.transform.num_preprocessor = 4
+    cfg.transform.params = edict()
 
     # num works
     cfg.num_workers = 4
