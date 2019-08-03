@@ -108,7 +108,7 @@ def train_one_epoch(config, logger, train_loader, model, epoch, criterion, optim
     return avg_score.avg
 
 
-def validate_one_epoch(config, logger, val_loader, model, epoch):
+def validate_one_epoch(config, logger, val_loader, model, criterion):
     logger.info('validate()')
 
     model.eval()
@@ -117,10 +117,10 @@ def validate_one_epoch(config, logger, val_loader, model, epoch):
 
     with torch.no_grad():
         batch_size = config.val.batch_size
-        total_size = len(data_loader.dataset)
+        total_size = len(val_loader.dataset)
         total_step = math.ceil(total_size / batch_size)
 
-        for i, data in enumerate(tqdm(data_loader, total==total_size)):
+        for i, data in enumerate(tqdm(data_loader, total==total_step)):
             input_, id_codes, target = data
         
             # if using gpu
