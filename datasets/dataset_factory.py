@@ -60,7 +60,7 @@ def get_dataframes(config):
         raise ValueError('Unknown stage!')    
 
 
-def get_dataset(config, train_tsfm, test_tsfm):
+def get_dataset(config):
 
     train_tsfm = T.Compose([
         T.RandomRotation(degrees=(-90, 90)),

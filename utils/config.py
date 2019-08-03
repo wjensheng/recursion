@@ -31,19 +31,19 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.data.train = 'U2OS_train.csv' # 'U2OS_train.csv'
     cfg.data.test = 'test.csv'
 
-    # transforms
-    cfg.transform = edict()
-    cfg.transform.train = 'default_train'
-    cfg.transform.test = 'default_test'
-    cfg.transform.num_preprocessor = 4
-    cfg.transform.params = edict()
+    # # transforms
+    # cfg.transform = edict()
+    # cfg.transform.train = 'default_train'
+    # cfg.transform.test = 'default_test'
+    # cfg.transform.num_preprocessor = 4
+    # cfg.transform.params = edict()
 
     # num works
     cfg.num_workers = 4
 
     # model
     cfg.model = edict()
-    cfg.model.arch = 'resnet34'
+    cfg.model.arch = 'resnet18'
     cfg.model.pool = 'GeM'
     cfg.model.local_whitening = False
     cfg.model.use_fc = False
@@ -71,14 +71,14 @@ def _get_default_config(filename: str, args: Any) -> edict:
     
     # valid
     cfg.val = edict()
-    cfg.val.batch_size = 16 # * torch.cuda.device_count()
+    cfg.val.batch_size = 64 # * torch.cuda.device_count()
     cfg.val.log_freq = 100
     # cfg.test.num_ttas = 1
 
     # test
     cfg.test = edict()
-    cfg.test.batch_size = 16 # * torch.cuda.device_count()
-    cfg.test.num_ttas = 1
+    cfg.test.batch_size = 64 # * torch.cuda.device_count()
+    # cfg.test.num_ttas = 1
 
     # optimizer
     cfg.optimizer = edict()

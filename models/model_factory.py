@@ -105,7 +105,7 @@ def get_model(config):
     fc_dim = config.model.fc_dim
     dropout = config.model.dropout
     loss_module = config.model.loss_module
-    s = config.model.self
+    s = config.model.s
     margin = config.model.margin    
 
     net = RcicNet(n_classes, model_name, pool, args_pooling,

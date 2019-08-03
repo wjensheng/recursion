@@ -129,21 +129,24 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
     combined_valid_accuracy = utils.metrics.combined_accuracy(valid_fc_dict, valid_df)
 
     return losses.avg, combined_valid_accuracy
-
-
+    
 
 def run(config):
+
     # create logger
     log_filename = f'log_training_{config.setup.version}.txt'
     logger = create_logger(os.path.join(config.experiment_dir, log_filename))
 
+    logger.info('=' * 50)
+
+    # check gpu status
     check_cuda(logger)
 
     # get the directory to store models
     model_dir = config.experiment_dir
 
     # valid_df for combined_accuracy
-    _, valid_df = get_dataframes(config)
+    _, _, valid_df = get_dataframes(config)
 
     # get dataloders
     train_loader, val_loader, test_loader = get_dataloader(config)
@@ -151,8 +154,6 @@ def run(config):
     # valid_dl len: {len(val_loader)}
     logger.info(f'train_dl len: {len(train_loader)}')
     logger.info(f'valid_dl len: {len(val_loader)}')
-    
-    logger.info('=' * 50)
     
     # model
     model = create_model(config)
@@ -166,9 +167,7 @@ def run(config):
     best_score = 0.0
     best_epoch = 0
 
-    for epoch in range(last_epoch + 1, config.train.num_epochs + 1):
-        logger.info('-' * 50)
-        
+    for epoch in range(last_epoch + 1, config.train.num_epochs + 1):        
         train_loss = train_one_epoch(config, logger, train_loader, model, criterion, optimizer, config.train.num_grad_acc)
     
         train_logstr = (f'Epoch: {epoch}\t'
