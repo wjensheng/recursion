@@ -31,6 +31,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # data
     cfg.data = edict()
     cfg.data.data_dir = 'data/'
+    cfg.data.train = 'train.csv' # 'U2OS_train.csv'
     # cfg.data.params = edict()
 
     # augmentations

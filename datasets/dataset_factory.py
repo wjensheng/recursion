@@ -35,13 +35,33 @@ def get_two_sites(config, df, tsfm, mode):
 
     return ds
 
+def get_dataframes(config):    
+    train_df = pd.read_csv(os.path.join(config.data.data_dir, cfg.data.train))
+    test_df = pd.read_csv(os.path.join(config.data.data_dir, cfg.data.test))
+
+    # stage 0: train on all dataset
+    if config.setup.stage == 0:        
+        return train_df, None, None
+
+    # stage 1: smaller validation set    
+    elif config.setup.stage == 1:
+        train_df, valid_df = manual_split(train_df)
+        return train_df, valid_df, None
+
+    # stage 2: larger validation set
+    elif config.setup.stage == 2:
+        train_df, valid_df, test_df = train_valid_test(train=train_df, 
+                                                       test=test_df,
+                                                       split=config.setup.cell_type,
+                                                       test_size=config.setup.test_size)
+        return train_df, valid_df, test_df
+
+    else:
+        raise ValueError('Unknown stage!')    
+
 
 def get_dataset(config):
-    train_csv = 'U2OS_train.csv' if config.setup.use_small else 'train.csv'
     
-    train_df = pd.read_csv(os.path.join(config.data.data_dir, train_csv))
-    test_df = pd.read_csv(os.path.join(config.data.data_dir, 'test.csv'))
-
     train_tsfm = T.Compose([
         T.RandomRotation(degrees=(-90, 90)),
         T.RandomVerticalFlip(),
@@ -54,25 +74,21 @@ def get_dataset(config):
     ])
 
     # stage 0: train on all dataset
-    if config.setup.stage == 0:        
+    if config.setup.stage == 0:  
+        train_df, _, _ = get_dataframes(config)
         train_ds = get_two_sites(config, train_df, train_tsfm, 'train')
         valid_ds = test_ds = None
 
     # stage 1: smaller validation set    
     elif config.setup.stage == 1:
-        train_df, valid_df = manual_split(train_df)
-        
+        train_df, valid_df, _ = get_dataframes(config)
         train_ds = get_two_sites(config, train_df, train_tsfm, 'train')
         valid_ds = get_two_sites(config, valid_df, test_tsfm, 'train')
         test_ds = None            
 
     # stage 2: larger validation set
     elif config.setup.stage == 2:
-        train_df, valid_df, test_df = train_valid_test(train=train_df, 
-                                                       test=test_df,
-                                                       split=config.setup.cell_type,
-                                                       test_size=config.setup.test_size)
-        
+        train_df, valid_df, test_df = get_dataframes(config)
         train_ds = get_two_sites(config, train_df, train_tsfm, 'train')
         valid_ds = get_two_sites(config, valid_df, test_tsfm, 'train')
         test_ds = get_two_sites(config, test_df, test_tsfm, 'test')
