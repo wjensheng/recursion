@@ -39,27 +39,21 @@ def create_model(config):
 
     return model
 
-
-def train_one_epoch(config, logger, train_loader, model, epoch, criterion, optimizer, lr_scheduler):
-
-    logger.info(f'epoch {epoch}')
+def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, num_grad_acc):
+    logger.info('training')
 
     batch_time = AverageMeter()
     losses = AverageMeter()
     avg_score = AverageMeter()
 
     model.train()
+    # train_momentum(model)
 
     num_steps = len(train_loader)
 
     end = time.time()
-    lr_str = ''
 
-    batch_size = config.val.batch_size
-    total_size = len(train_loader.dataset)
-    total_step = math.ceil(total_size / batch_size)
-
-    for i, data in tqdm(enumerate(train_loader), total=total_step):
+    for idx, data in enumerate(tqdm(train_loader)):
         input_, id_codes, target = data
 
         # if using gpu
@@ -67,72 +61,74 @@ def train_one_epoch(config, logger, train_loader, model, epoch, criterion, optim
             input_, target = input_.cuda(), target.cuda()
         
         output = model(input_, target)
-        
+
         loss = criterion(output, target)
-
-        # get metric
-        _, predicts = torch.max(output.cpu(), dim=1)
-        avg_score.update(utils.metrics.accuracy(predicts, target))
-
-        # compute gradient and step
+                
+        _, predicts = torch.max(output.detach(), dim=1)
+        
         losses.update(loss.data.item(), input_.size(0))
-        optimizer.zero_grad()
+
         loss.backward()
-        optimizer.step()
-
-        lr_scheduler.step()
-
-        # measure elapsed time
+        
+        if num_grad_acc is None:
+            optimizer.step()
+            optimizer.zero_grad()
+        elif (idx+1) % num_grad_acc == 0:
+            optimizer.step()
+            optimizer.zero_grad()
+            
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if i % config.train.log_freq == 0:
-            logger.info(f'{epoch} [{i}/{num_steps}]\t'
-                        f'time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                        f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
-                        f'accuracy {avg_score.val:.4f} ({avg_score.avg:.4f})'
-                        + lr_str)
+        # if idx % config.train.log_freq == 0:
+        #     logger.info(f'[{idx}/{num_steps}]\t'
+        #                 f'time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+        #                 f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
+        #               # f'accuracy {avg_score.val:.4f} ({avg_score.avg:.4f})'
+        #                 + lr_str)
 
-    logger.info(f' * accuracy on train {avg_score.avg:.4f}')
-
-    return avg_score.avg
+    return losses.avg
 
 
-def validate_one_epoch(config, logger, val_loader, model, criterion):
-    logger.info('validate()')
-
+def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
+    logger.info('validatation')
+    
+    losses = AverageMeter()
+    
     model.eval()
+    # eval_momentum(model)
 
-    all_predicts, all_targets = [], []
+    valid_fc_dict = defaultdict(list)
+
+    num_steps = len(val_loader)
 
     with torch.no_grad():
-        batch_size = config.val.batch_size
-        total_size = len(val_loader.dataset)
-        total_step = math.ceil(total_size / batch_size)
+        for idx, data in enumerate(tqdm(val_loader)):
+            input_, id_codes, target = data            
 
-        for i, data in enumerate(tqdm(data_loader, total==total_step)):
-            input_, id_codes, target = data
-        
             # if using gpu
             if config.setup.use_cuda:
                 input_, target = input_.cuda(), target.cuda()
-            
+                        
             output = model(input_, target)
             loss = criterion(output, target)
                         
-            _, predicts = torch.max(output.cpu(), dim=1)
-            all_predicts.append(predicts)    
+            losses.update(loss.data.item(), input_.size(0))            
+            _, predicts = torch.max(output.detach(), dim=1)
+            
+            for i in range(len(id_codes)):
+                valid_fc_dict[id_codes[i]] += output[i],
+                
+        # if idx % config.valid.log_freq == 0:
+        #     logger.info(f'[{idx}/{num_steps}]\t'
+        #                 f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
+        #               # f'accuracy {avg_score.val:.4f} ({avg_score.avg:.4f})'
+        #                 + lr_str)
+    
+    combined_valid_accuracy = utils.metrics.combined_accuracy(valid_fc_dict, valid_df)
 
-            if target is not None:
-                all_targets.append(target)
+    return losses.avg, combined_valid_accuracy
 
-    predicts = torch.cat(all_predicts)
-    targets = torch.cat(all_targets) if len(all_targets) else None
-
-    val_score = utils.metrics.accuracy(predicts, targets)
-
-    logger.info(f'{epoch} validation accuracy: {val_score}')
-    return val_score
 
 
 def run(config):
@@ -145,17 +141,18 @@ def run(config):
     # get the directory to store models
     model_dir = config.experiment_dir
 
+    # get transformations setting
     train_tsfm = get_transform(config, 'train')
     test_tsfm = get_transform(config, 'test')
 
     # get dataloders
     train_loader, val_loader, test_loader = get_dataloader(config, train_tsfm, test_tsfm)
 
-    logger.info('=' * 50)
-
     # valid_dl len: {len(val_loader)}
     logger.info(f'train_dl len: {len(train_loader)}')
     logger.info(f'valid_dl len: {len(val_loader)}')
+    
+    logger.info('=' * 50)
     
     # model
     model = create_model(config)
@@ -172,17 +169,24 @@ def run(config):
     for epoch in range(last_epoch + 1, config.train.num_epochs + 1):
         logger.info('-' * 50)
         
-        # start training
-        train_score = train_one_epoch(config, logger, train_loader, model, epoch, criterion, optimizer, lr_scheduler)
+        train_loss = train_one_epoch(config, logger, train_loader, model, criterion, optimizer, config.train.num_grad_acc)
+    
+        train_logstr = (f'Epoch: {epoch}\t'
+                        f'Train loss: {train_loss:.3f}\t')
+    
+        valid_loss, valid_accuracy = validate_one_epoch(config, logger, val_loader, model, criterion, valid_df)
+    
+        valid_logstr = (f'Val loss: {valid_loss:.3f}\t'
+                        f'Val accuracy: {valid_accuracy:.3f}\t')
+    
+        lr_scheduler.step()
+        # current_lr = lr_scheduler.get_lr()
 
-        if config.setup.stage == 0:
-            score = train_score
-        else:
-            score = validate_one_epoch(config, logger, val_loader, model, criterion)
-        
+        logger.info(train_logstr, valid_logstr)
+    
         # save best score, model
-        if score > best_score:
-            best_score = score
+        if valid_accuracy > best_score:
+            best_score = valid_accuracy
             best_epoch = epoch
 
             data_to_save = {
@@ -195,12 +199,11 @@ def run(config):
                 'options': config
             }
 
-            # TODO: what is config.version?
             filename = config.setup.version 
             best_model_path = f'{filename}_e{epoch:02d}_{score:.04f}.pth'
             save_checkpoint(logger, data_to_save, best_model_path, model_dir)
 
-    logger.info(f'best score: {best_score:.04f}')
+    logger.info(f'best score: {best_score:.3f}')
 
 
         

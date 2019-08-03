@@ -33,7 +33,8 @@ def _get_default_config(filename: str, args: Any) -> edict:
 
     # transforms
     c.transform = edict()
-    c.transform.name = 'default_transform'
+    c.transform.train = 'default_train'
+    c.transform.test = 'default_test'
     c.transform.num_preprocessor = 4
     c.transform.params = edict()
 
@@ -71,6 +72,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # valid
     cfg.val = edict()
     cfg.val.batch_size = 16 # * torch.cuda.device_count()
+    cfg.val.log_freq = 100
     # cfg.test.num_ttas = 1
 
     # test

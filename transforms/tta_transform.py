@@ -6,10 +6,29 @@ import random
 
 import cv2
 import numpy as np
+from torchvision import transforms as T
 from albumentations import Resize
+from albumentations import Compose, RandomRotate90, Flip, Transpose, Resize
 
-def default_transform():
-    return 
+def default_train():
+    train_tsfm = T.Compose([
+        T.RandomRotation(degrees=(-90, 90)),
+        T.RandomVerticalFlip(),
+        T.RandomHorizontalFlip(),
+        T.ToTensor(),
+    ])
+    return train_tsfm
+    # base_aug = Compose([
+    #     RandomRotate90(),
+    #     Flip()
+    # ])
+    # return base_aug
+
+def default_test():
+    test_tsfm = T.Compose([
+        T.ToTensor(),
+    ])
+    return test_tsfm
 
 def tta_transform(split,
                   size=512,
