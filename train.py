@@ -185,7 +185,7 @@ def run(config):
         if config.setup.stage == 0:
             score = train_score
         else:
-            score = validate_one_epoch(config, logger, val_loader, model, epoch)
+            score = validate_one_epoch(config, logger, val_loader, model, criterion)
         
         # save best score, model
         if score > best_score:

@@ -5,7 +5,6 @@ from typing import *
 
 from sklearn.model_selection import train_test_split
 
-
 CELL_TYPE = ['HEPG2', 'HUVEC', 'RPE', 'U2OS']
 
 def split_experiments(df):
@@ -64,6 +63,7 @@ def manual_split(df):
     train_df = df[~df['experiment'].isin(last_batch)]
     return train_df, valid_df
 
+
 def train_valid_test(train, test, split=-1, test_size=0.1):
     if split == -1:
         train_df, valid_df = train_test_split(train, test_size=test_size, 
@@ -76,6 +76,7 @@ def train_valid_test(train, test, split=-1, test_size=0.1):
         train_df, valid_df = train_val_exp_split(train, test)
 
     return train_df, valid_df, test_df
+
 
 if __name__ == "__main__":
     df = pd.read_csv('data/train.csv')

@@ -19,9 +19,6 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.setup.cell_type = 3
     cfg.setup.stage = 1
     cfg.setup.version = 'first_attempt'
-    cfg.setup.use_small = False
-    cfg.setup.test_size = 0.1
-    cfg.setup.val_set = False
     cfg.setup.is_control = False
 
     # saved model
@@ -31,8 +28,8 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # data
     cfg.data = edict()
     cfg.data.data_dir = 'data/'
-    cfg.data.train = 'train.csv' # 'U2OS_train.csv'
-    # cfg.data.params = edict()
+    cfg.data.train = 'U2OS_train.csv' # 'U2OS_train.csv'
+    cfg.data.test = 'test.csv'
 
     # augmentations
     # cfg.augmentations = edict()
