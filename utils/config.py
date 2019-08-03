@@ -31,13 +31,14 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.data.train = 'U2OS_train.csv' # 'U2OS_train.csv'
     cfg.data.test = 'test.csv'
 
-    # augmentations
-    # cfg.augmentations = edict()
-    # cfg.augmentations.blur = 0
-    # cfg.augmentations.color = 0
+    # transforms
+    c.transform = edict()
+    c.transform.name = 'default_transform'
+    c.transform.num_preprocessor = 4
+    c.transform.params = edict()
 
     # num works
-    cfg.num_workers = 2
+    cfg.num_workers = 4
 
     # model
     cfg.model = edict()
@@ -61,6 +62,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # train
     cfg.train = edict()
     cfg.train.batch_size = 16 # * torch.cuda.device_count()
+    cfg.train.num_grad_acc = None # 2?
     cfg.train.num_epochs = 50
     cfg.train.log_freq = 100
     cfg.train.lr_scheduler = None

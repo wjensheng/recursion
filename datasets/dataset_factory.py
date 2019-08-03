@@ -60,19 +60,8 @@ def get_dataframes(config):
         raise ValueError('Unknown stage!')    
 
 
-def get_dataset(config):
+def get_dataset(config, train_tsfm, test_tsfm):
     
-    train_tsfm = T.Compose([
-        T.RandomRotation(degrees=(-90, 90)),
-        T.RandomVerticalFlip(),
-        T.RandomHorizontalFlip(),
-        T.ToTensor(),
-    ])
-
-    test_tsfm = T.Compose([
-        T.ToTensor(),
-    ])
-
     # stage 0: train on all dataset
     if config.setup.stage == 0:  
         train_df, _, _ = get_dataframes(config)
@@ -96,8 +85,8 @@ def get_dataset(config):
     return train_ds, valid_ds, test_ds
 
 
-def get_dataloader(config):    
-    train_ds, valid_ds, test_ds = get_dataset(config)
+def get_dataloader(config, train_tsfm, test_tsfm):    
+    train_ds, valid_ds, test_ds = get_dataset(config, train_tsfm, test_tsfm)
 
     train_dl = DataLoader(train_ds, shuffle=True,
                           batch_size=config.train.batch_size,

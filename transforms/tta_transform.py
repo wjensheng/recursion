@@ -8,6 +8,9 @@ import cv2
 import numpy as np
 from albumentations import Resize
 
+def default_transform():
+    return 
+
 def tta_transform(split,
                   size=512,
                   num_tta=4,

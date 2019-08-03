@@ -145,13 +145,17 @@ def run(config):
     # get the directory to store models
     model_dir = config.experiment_dir
 
+    train_tsfm = get_transform(config, 'train')
+    test_tsfm = get_transform(config, 'test')
+
     # get dataloders
-    train_loader, val_loader, test_loader = get_dataloader(config)
+    train_loader, val_loader, test_loader = get_dataloader(config, train_tsfm, test_tsfm)
 
     logger.info('=' * 50)
 
     # valid_dl len: {len(val_loader)}
     logger.info(f'train_dl len: {len(train_loader)}')
+    logger.info(f'valid_dl len: {len(val_loader)}')
     
     # model
     model = create_model(config)
