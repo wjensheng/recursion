@@ -67,6 +67,11 @@ class P2SGrad(torch.autograd.Function):
         input_hat, weight_hat = input / norm_input, weight / norm_weight
         cosine = F.linear(input_hat, weight_hat)  # NxC
 
+        # if torch.cuda.is_available():
+        #     one_hot = torch.zeros(cosine.size(), device='cuda')
+        # else:
+        #     one_hot = torch.zeros(cosine.size())
+
         one_hot = torch.zeros((input.shape[0], weight.shape[0]), device='cuda')
         one_hot.scatter_(1, label.view(-1, 1).long(), 1)  # NxC
 
@@ -131,7 +136,12 @@ class ArcMarginProduct(nn.Module):
             phi = torch.where(cosine > self.th, phi, cosine - self.mm)
         # --------------------------- convert label to one-hot ---------------------------
         # one_hot = torch.zeros(cosine.size(), requires_grad=True, device='cuda')
-        one_hot = torch.zeros(cosine.size()) # , device='cuda'
+
+        if torch.cuda.is_available():
+            one_hot = torch.zeros(cosine.size(), device='cuda')
+        else:
+            one_hot = torch.zeros(cosine.size())
+
         one_hot.scatter_(1, label.view(-1, 1).long(), 1)
         if self.ls_eps > 0:
             one_hot = (1 - self.ls_eps) * one_hot + self.ls_eps / self.out_features
@@ -166,7 +176,11 @@ class AddMarginProduct(nn.Module):
         cosine = F.linear(F.normalize(input), F.normalize(self.weight))
         phi = cosine - self.m
         # --------------------------- convert label to one-hot ---------------------------
-        one_hot = torch.zeros(cosine.size(), device='cuda')
+        if torch.cuda.is_available():
+            one_hot = torch.zeros(cosine.size(), device='cuda')
+        else:
+            one_hot = torch.zeros(cosine.size())
+
         # one_hot = one_hot.cuda() if cosine.is_cuda else one_hot
         one_hot.scatter_(1, label.view(-1, 1).long(), 1)
         # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
