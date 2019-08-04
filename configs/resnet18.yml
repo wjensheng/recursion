@@ -4,19 +4,22 @@ setup:
   stage: 1 # 'stage 0: no validation set;' 
            # 'stage 1: last batch as validation;'
            # 'stage 2: proper training' 
-  version: 'small_USO2'
+  version: 'small_USO2' # 'train.csv'
 
 data:
   name: 'RCICDefaultDataset'
   train: 'U2OS_train_small.csv'
 
 model:
-  name: 'resnet18'
   arch: 'resnet18'
+  name: 'resnet18'
+  pool: 'GeM' # 'SPoC', 'MAC', 'RMAC', 'GeM', 'Rpool', 'Flatten', 'CompactBilinearPooling'
+  loss_module: 'arcface' # 'arcface', 'cosface', 'softmax'
+  s: 30.0
 
 train:
   batch_size: 48
-  num_epochs: 1
+  num_epochs: 1 # 50
 
 loss:
   name: 'cross_entropy'
@@ -24,7 +27,9 @@ loss:
 optimizer:
   name: 'adam'
   params:
-    lr: 0.0003
+    lr: 3e-4
 
 scheduler:
-  name: 'exponential'
+  name: 'cosine' # exponential
+  params:
+    eta_min: 3e-5

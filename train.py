@@ -53,7 +53,7 @@ def train_momentum(model, train=True):
                             layer.track_running_stats = train                
 
 
-def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, num_grad_acc):
+def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, num_grad_acc, lr_scheduler):
     logger.info('training')
 
     batch_time = AverageMeter()
@@ -91,6 +91,8 @@ def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, n
             optimizer.step()
             optimizer.zero_grad()
             
+        lr_scheduler.step()
+
         batch_time.update(time.time() - end)
         end = time.time()
 
@@ -177,8 +179,11 @@ def run(config):
     best_score = 0.0
     best_epoch = 0
 
-    for epoch in range(last_epoch + 1, config.train.num_epochs + 1):        
-        train_loss = train_one_epoch(config, logger, train_loader, model, criterion, optimizer, config.train.num_grad_acc)
+    for epoch in range(last_epoch + 1, config.train.num_epochs + 1):
+        
+        if config.setup.use_cuda: torch.cuda.empty_cache()
+
+        train_loss = train_one_epoch(config, logger, train_loader, model, criterion, optimizer, config.train.num_grad_acc, lr_scheduler)
     
         train_logstr = (f'Epoch: {epoch}\t'
                         f'Train loss: {train_loss:.3f}\t')
@@ -188,8 +193,13 @@ def run(config):
         valid_logstr = (f'Val loss: {valid_loss:.3f}\t'
                         f'Val accuracy: {valid_accuracy:.3f}')
     
-        lr_scheduler.step()
-        # current_lr = lr_scheduler.get_lr()
+        # SGDR
+        if config.optimizer.name == 'cosine':
+            lr_scheduler = get_scheduler(config, optimizer)
+        # One cyclic lr
+        elif config.optimizer.name == 'cyclic_lr':
+            current_lr = lr_scheduler.get_lr()
+            logger.info(current_lr[-1])                
 
         logger.info(train_logstr + valid_logstr)
     
