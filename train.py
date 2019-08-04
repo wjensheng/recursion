@@ -198,18 +198,12 @@ def run(config):
             best_score = valid_accuracy
             best_epoch = epoch
 
-            data_to_save = {
-                'epoch': best_epoch,
-                'arch': config.model.arch,
-                'state_dict': model.state_dict(),
-                'best_score': best_score,
-                'optimizer': optimizer.state_dict(),
-                'options': config
-            }
+            filename = f'{config.setup.version}_e{epoch:02d}_{best_score:.04f}.pth'
+            model_dir = config.saved.model_dir
 
-            filename = config.setup.version 
-            best_model_path = f'{filename}_e{epoch:02d}_{best_score:.04f}.pth'
-            save_checkpoint(logger, data_to_save, best_model_path, config.saved.model_dir)
+            save_checkpoint(logger, model_dir, filename, model, epoch, best_score, optimizer, save_arch=True, params=config)
+
+            logger.info(f'A snapshot was saved to {filename}')
 
     logger.info(f'best score: {best_score:.3f}')
 
@@ -238,8 +232,7 @@ def main():
 
     seed_everything()  
 
-    # run(config)
-    
+    run(config)
     print('complete!')
 
 

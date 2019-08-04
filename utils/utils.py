@@ -19,9 +19,76 @@ def seed_everything():
     np.random.seed(0)
 
 
-def save_checkpoint(logger, state: Dict[str, Any], filename: str, model_dir: str) -> None:
-    torch.save(state, os.path.join(model_dir, filename))
-    logger.info(f'A snapshot was saved to {filename}')
+def remove_redundant_keys(state_dict: OrderedDict):
+    # remove DataParallel wrapping
+    if 'module' in list(state_dict.keys())[0]:
+        new_state_dict = OrderedDict()
+        for k, v in state_dict.items():
+            if k.startswith('module.'):
+                # str.replace() can't be used because of unintended key removal (e.g. se-module)
+                new_state_dict[k[7:]] = v
+    else:
+        new_state_dict = state_dict
+
+    return new_state_dict
+
+
+def save_checkpoint(model_dir, filename, model, epoch, best_score, optimizer=None, save_arch=False, params=None):
+    attributes = {
+        'epoch': epoch,
+        'state_dict': remove_redundant_keys(model.state_dict()),
+        'best_score': best_score
+    }
+
+    if optimizer is not None:
+        attributes['optimizer'] = optimizer.state_dict()
+
+    if save_arch:
+        attributes['arch'] = model
+
+    if params is not None:
+        attributes['params'] = params
+
+    try:
+        torch.save(attributes, os.path.join(model_dir, filename))
+        
+    except TypeError:
+        if 'arch' in attributes:
+            print('Model architecture will be ignored because the architecture includes non-pickable objects.')
+            del attributes['arch']
+            torch.save(attributes, os.path.join(model_dir, filename))    
+
+
+def load_checkpoint(path, model=None, optimizer=None, params=False, epoch=False):
+    resume = torch.load(path)
+    rets = dict()
+
+    if model is not None:
+        if isinstance(model, nn.DataParallel):
+            model.module.load_state_dict(remove_redundant_keys(resume['state_dict']))
+        else:
+            model.load_state_dict(remove_redundant_keys(resume['state_dict']))
+
+        rets['model'] = model
+
+    if optimizer is not None:
+        optimizer.load_state_dict(resume['optimizer'])
+        rets['optimizer'] = optimizer
+    if params:
+        rets['params'] = resume['params']
+    if epoch:
+        rets['epoch'] = resume['epoch']
+
+    return rets
+
+
+def load_model(path, is_inference=True):
+    resume = torch.load(path)
+    model = resume['arch']
+    model.load_state_dict(resume['state_dict'])
+    if is_inference:
+        model.eval()
+    return model
 
 
 def check_cuda(logger):
