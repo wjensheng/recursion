@@ -39,7 +39,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # cfg.transform.params = edict()
 
     # num works
-    cfg.num_workers = 4
+    cfg.num_workers = 4 # * torch.cuda.device_count()
 
     # model
     cfg.model = edict()
@@ -62,7 +62,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     
     # train
     cfg.train = edict()
-    cfg.train.batch_size = 16 # * torch.cuda.device_count()
+    cfg.train.batch_size = 64 # * torch.cuda.device_count()
     cfg.train.num_grad_acc = None # 2?
     cfg.train.num_epochs = 50
     cfg.train.log_freq = 100

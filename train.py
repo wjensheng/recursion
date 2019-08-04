@@ -14,6 +14,7 @@ from typing import *
 
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 from datasets import get_dataloader, get_dataframes
@@ -41,6 +42,17 @@ def create_model(config):
 
     return model
 
+def train_momentum(model, train=True):
+        for name, child in model.named_children():
+            if isinstance(child, nn.BatchNorm2d):
+                child.track_running_stats = train
+            elif isinstance(child, nn.Sequential):
+                for block_name, block_child in child.named_children():
+                    for layer_name, layer in block_child.named_children():
+                        if isinstance(layer, nn.BatchNorm2d):
+                            layer.track_running_stats = train                
+
+
 def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, num_grad_acc):
     logger.info('training')
 
@@ -49,7 +61,7 @@ def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, n
     avg_score = AverageMeter()
 
     model.train()
-    # train_momentum(model)
+    train_momentum(model.backbone)
 
     num_steps = len(train_loader)
 
@@ -98,7 +110,7 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
     losses = AverageMeter()
     
     model.eval()
-    # eval_momentum(model)
+    train_momentum(model.backbone, False)
 
     valid_fc_dict = defaultdict(list)
 
@@ -226,8 +238,8 @@ def main():
 
     seed_everything()  
 
-    run(config)
-
+    # run(config)
+    
     print('complete!')
 
 
