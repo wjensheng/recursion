@@ -15,7 +15,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
 
     # setups
     cfg.setup = edict()
-    cfg.setup.use_cuda = False
+    cfg.setup.use_cuda = True
     cfg.setup.cell_type = 3
     cfg.setup.stage = 1
     cfg.setup.version = 'first_attempt'
@@ -28,7 +28,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # data
     cfg.data = edict()
     cfg.data.data_dir = 'data/'
-    cfg.data.train = 'U2OS_train.csv' # 'U2OS_train.csv'
+    cfg.data.train = 'train.csv' # 'U2OS_train.csv'
     cfg.data.test = 'test.csv'
 
     # # transforms
@@ -44,18 +44,17 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # model
     cfg.model = edict()
     cfg.model.arch = 'resnet18'
-    cfg.model.pool = 'GeM'
+    cfg.model.pool = 'GeM' # 'SPoC', 'MAC', 'RMAC', 'GeM', 'Rpool', 'Flatten', 'CompactBilinearPooling'
     cfg.model.local_whitening = False
     cfg.model.use_fc = False
     cfg.model.fc_dim = 512
     cfg.model.dropout = 0
-    cfg.model.loss_module = 'arcface'
+    cfg.model.loss_module = 'arcface' # 'arcface', 'cosface', 'softmax'
     cfg.model.s = 30.0
     cfg.model.margin = 0.5
     cfg.model.regional = False
     cfg.model.whitening = False
-    cfg.model.image_size = 512 # TODO: do not resize
-    cfg.model.input_size = 512
+    cfg.model.image_size = 512 # resize
     cfg.model.num_classes = 1108
     cfg.model.pretrained = True
     cfg.model.lr = 3e-4
@@ -66,7 +65,6 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.train.num_grad_acc = None # 2?
     cfg.train.num_epochs = 50
     cfg.train.log_freq = 100
-    cfg.train.lr_scheduler = None
     # cfg.train.num_ttas = 1
     
     # valid
