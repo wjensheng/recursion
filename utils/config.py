@@ -28,7 +28,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # data
     cfg.data = edict()
     cfg.data.data_dir = 'data/'
-    cfg.data.train = 'train.csv' # 'U2OS_train.csv'
+    cfg.data.train = 'train.csv'
     cfg.data.test = 'test.csv'
 
     # # transforms
@@ -44,7 +44,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # model
     cfg.model = edict()
     cfg.model.arch = 'resnet18'
-    cfg.model.pool = 'GeM' # 'SPoC', 'MAC', 'RMAC', 'GeM', 'Rpool', 'Flatten', 'CompactBilinearPooling'
+    cfg.model.pool = 'GeM' 
     cfg.model.local_whitening = False
     cfg.model.use_fc = False
     cfg.model.fc_dim = 512
@@ -103,6 +103,7 @@ def _merge_config(src: edict, dst: edict) -> edict:
             _merge_config(src[k], dst[k])
         else:
             dst[k] = v
+
 
 def load_config(config_path: str, args: Any) -> edict:
     with open(config_path) as f:

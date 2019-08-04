@@ -84,7 +84,7 @@ def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, n
 
         loss.backward()
         
-        if num_grad_acc is None:
+        if num_grad_acc == None:
             optimizer.step()
             optimizer.zero_grad()
         elif (idx+1) % num_grad_acc == 0:
@@ -171,7 +171,7 @@ def run(config):
     model = create_model(config)
 
     # optimizer, lr_scheduler, criterion
-    optimizer = optimizer = get_optimizer(config, model.parameters())
+    optimizer = get_optimizer(config, model.parameters())
     criterion = get_loss(config)
     lr_scheduler = get_scheduler(config, optimizer)
 

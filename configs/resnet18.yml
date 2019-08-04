@@ -14,22 +14,29 @@ model:
   arch: 'resnet18'
   name: 'resnet18'
   pool: 'GeM' # 'SPoC', 'MAC', 'RMAC', 'GeM', 'Rpool', 'Flatten', 'CompactBilinearPooling'
-  loss_module: 'arcface' # 'arcface', 'cosface', 'softmax'
+  loss_module: 'arcface' # 'arcface', 'cosface', 'softmax'  
   s: 30.0
 
 train:
   batch_size: 48
   num_epochs: 1 # 50
+  # num_grad_acc: None
+  
+val:
+  batch_size: 64 # * num gpus
 
+test:
+  batch_size: 64 # * num gpus
+  
 loss:
   name: 'cross_entropy'
 
 optimizer:
   name: 'adam'
   params:
-    lr: 3e-4
+    lr: 0.0003
 
 scheduler:
   name: 'cosine' # exponential
   params:
-    eta_min: 3e-5
+    eta_min: 0.00003
