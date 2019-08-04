@@ -63,6 +63,7 @@ def get_dataframes(config):
 def get_dataset(config):
 
     train_tsfm = T.Compose([
+        T.Resize((112, 112)),
         T.RandomRotation(degrees=(-90, 90)),
         T.RandomVerticalFlip(),
         T.RandomHorizontalFlip(),
@@ -70,6 +71,7 @@ def get_dataset(config):
     ])
 
     test_tsfm = T.Compose([
+        T.Resize((112, 112)),
         T.ToTensor(),
     ])
     

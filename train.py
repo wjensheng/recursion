@@ -6,6 +6,7 @@ import os
 import math
 import argparse
 import pprint
+from collections import defaultdict
 from tqdm import tqdm
 
 import time
@@ -142,11 +143,8 @@ def run(config):
     # check gpu status
     check_cuda(logger)
 
-    # get the directory to store models
-    model_dir = config.experiment_dir
-
     # valid_df for combined_accuracy
-    _, _, valid_df = get_dataframes(config)
+    _, valid_df, _ = get_dataframes(config)
 
     # get dataloders
     train_loader, val_loader, test_loader = get_dataloader(config)
@@ -176,34 +174,32 @@ def run(config):
         valid_loss, valid_accuracy = validate_one_epoch(config, logger, val_loader, model, criterion, valid_df)
     
         valid_logstr = (f'Val loss: {valid_loss:.3f}\t'
-                        f'Val accuracy: {valid_accuracy:.3f}\t')
+                        f'Val accuracy: {valid_accuracy:.3f}')
     
         lr_scheduler.step()
         # current_lr = lr_scheduler.get_lr()
 
-        logger.info(train_logstr, valid_logstr)
+        logger.info(train_logstr + valid_logstr)
     
         # save best score, model
-        if valid_accuracy > best_score:
+        if valid_accuracy >= best_score:
             best_score = valid_accuracy
             best_epoch = epoch
 
             data_to_save = {
-                'epoch': epoch,
+                'epoch': best_epoch,
                 'arch': config.model.arch,
                 'state_dict': model.state_dict(),
                 'best_score': best_score,
-                'score': score,
                 'optimizer': optimizer.state_dict(),
                 'options': config
             }
 
             filename = config.setup.version 
-            best_model_path = f'{filename}_e{epoch:02d}_{score:.04f}.pth'
-            save_checkpoint(logger, data_to_save, best_model_path, model_dir)
+            best_model_path = f'{filename}_e{epoch:02d}_{best_score:.04f}.pth'
+            save_checkpoint(logger, data_to_save, best_model_path, config.saved.model_dir)
 
     logger.info(f'best score: {best_score:.3f}')
-
 
         
 def parse_args():
@@ -217,6 +213,7 @@ def parse_args():
 
 def main():
     args = parse_args()
+
     config = utils.config.load_config(args.config, args)
 
     pprint.PrettyPrinter(indent=2).pprint(config)
@@ -224,7 +221,11 @@ def main():
     if not os.path.exists(config.experiment_dir):
         os.makedirs(config.experiment_dir)    
 
-    seed_everything()    
+    if not os.path.exists(config.saved.model_dir):
+        os.makedirs(config.saved.model_dir)
+
+    seed_everything()  
+
     run(config)
 
     print('complete!')

@@ -116,4 +116,17 @@ if __name__ == "__main__":
     # sample_smaller_train_pics(df_subset)
     # transfer_back('train_subset.csv')
 
-    save_cell_df('train.csv', 3)
+    # save_cell_df('train.csv', 3)
+
+    df = pd.read_csv(os.path.join(DATA_DIR, 'U2OS_train.csv'))
+
+    tmp_head = df.groupby('sirna').head(1)
+    tmp_tail = df.groupby('sirna').tail(1)
+
+    tmp = pd.concat([tmp_head, tmp_tail], axis=0)
+
+    # print(tmp['experiment'].unique())
+
+    # print(len(tmp))
+
+    tmp.to_csv(os.path.join(DATA_DIR, 'U2OS_train_small.csv'), index=False)
