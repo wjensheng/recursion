@@ -4,9 +4,6 @@ import torch.nn.functional as F
 import pretrainedmodels
 from easydict import EasyDict as edict
 
-# import models.pooling as pooling
-# from models.metric_learning import ArcMarginProduct, AddMarginProduct, AdaCos
-
 class ToyNet(nn.Module):
 
     def __init__(self, n_classes, model_name='resnet50', use_fc=False, fc_dim=512, dropout=0.0, loss_module='softmax'):
@@ -80,7 +77,7 @@ if __name__ == "__main__":
     cfg.model = edict()
     cfg.model.arch = 'resnet18'
     cfg.model.dropout = 0
-    cfg.model.loss_module = 'softmax' # 'arcface', 'cosface', 'softmax'
+    cfg.model.loss_module = 'softmax' 
     cfg.model.use_fc = False
     cfg.model.fc_dim = 512
     cfg.model.image_size = 224 # resize
