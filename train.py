@@ -52,6 +52,10 @@ def train_momentum(model, train=True):
                         if isinstance(layer, nn.BatchNorm2d):
                             layer.track_running_stats = train                
 
+def fine_tuning(model): # model.module.backbone
+    for param in model.parameters():
+        param.requires_grad = False
+
 
 def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, num_grad_acc, lr_scheduler):
     logger.info('training')
@@ -170,8 +174,17 @@ def run(config):
     # model
     model = create_model(config)
 
-    # optimizer, lr_scheduler, criterion
-    optimizer = get_optimizer(config, model.parameters())
+    print(model)
+
+    # optimizer
+    if config.setup.fine_tuning:
+        fine_tuning(model.module.backbone) 
+        optimizer = get_optimizer(config, model.module.fc.parameters())
+        
+    else:
+        optimizer = get_optimizer(config, model.parameters())
+
+    # lr_scheduler, criterion    
     criterion = get_loss(config)
     lr_scheduler = get_scheduler(config, optimizer)
 
