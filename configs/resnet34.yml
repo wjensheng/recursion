@@ -4,7 +4,7 @@ setup:
            # 'stage 1: last batch as validation;'
            # 'stage 2: proper training' 
   version: 'USO2_ft_drop025_e100' # 'train.csv'
-  fine_tune: True
+  fine_tune: False
 
 data:
   name: 'RCICDefaultDataset'
