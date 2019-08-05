@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pretrainedmodels
-import easydict as edict
+from easydict import EasyDict as edict
 
-import models.pooling as pooling
-from models.metric_learning import ArcMarginProduct, AddMarginProduct, AdaCos
+# import models.pooling as pooling
+# from models.metric_learning import ArcMarginProduct, AddMarginProduct, AdaCos
 
 class RcicNet(nn.Module):
 
@@ -50,7 +50,8 @@ class RcicNet(nn.Module):
         # HACK: work around for this issue https://github.com/Cadene/pretrained-models.pytorch/issues/120
         self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
 
-        self.pooling = getattr(pooling, pool)(**args_pooling)
+        # self.pooling = getattr(pooling, pool)(**args_pooling)
+        self.pooling = nn.AdaptiveAvgPool2d(1)
 
         self.use_fc = use_fc
         if use_fc:
@@ -61,15 +62,15 @@ class RcicNet(nn.Module):
             final_in_features = fc_dim
 
         self.loss_module = loss_module
-        if loss_module == 'arcface':
-            self.final = ArcMarginProduct(final_in_features, n_classes,
-                                          s=s, m=margin, easy_margin=False, ls_eps=ls_eps)
-        elif loss_module == 'cosface':
-            self.final = AddMarginProduct(final_in_features, n_classes, s=s, m=margin)
-        elif loss_module == 'adacos':
-            self.final = AdaCos(final_in_features, n_classes, m=margin, theta_zero=theta_zero)
-        else:
-            self.final = nn.Linear(final_in_features, n_classes)
+        # if loss_module == 'arcface':
+        #     self.final = ArcMarginProduct(final_in_features, n_classes,
+        #                                   s=s, m=margin, easy_margin=False, ls_eps=ls_eps)
+        # elif loss_module == 'cosface':
+        #     self.final = AddMarginProduct(final_in_features, n_classes, s=s, m=margin)
+        # elif loss_module == 'adacos':
+        #     self.final = AdaCos(final_in_features, n_classes, m=margin, theta_zero=theta_zero)
+        # else:
+        self.final = nn.Linear(final_in_features, n_classes)
 
     def _init_params(self):
         nn.init.xavier_normal_(self.fc.weight)
@@ -123,7 +124,7 @@ if __name__ == "__main__":
     cfg.model.use_fc = False
     cfg.model.fc_dim = 512
     cfg.model.dropout = 0
-    cfg.model.loss_module = 'arcface' # 'arcface', 'cosface', 'softmax'
+    cfg.model.loss_module = 'softmax' # 'arcface', 'cosface', 'softmax'
     cfg.model.s = 30.0
     cfg.model.margin = 0.5
     cfg.model.regional = False
@@ -132,4 +133,15 @@ if __name__ == "__main__":
     cfg.model.num_classes = 1108
     cfg.model.pretrained = True
     cfg.model.lr = 3e-4
-    print(get_model(cfg))
+
+    model = get_model(cfg)
+
+    if torch.cuda.is_available() and torch.cuda.device_count() > 1: 
+        model = torch.nn.DataParallel(model)
+
+    if torch.cuda.is_available(): 
+        model = model.cuda()
+
+    input_ = torch.randn((8, 6, 224, 224))
+    label_ = torch.randn((8, 6))
+    print(model(input_, label_))
