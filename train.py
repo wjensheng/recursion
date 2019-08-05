@@ -230,6 +230,13 @@ def run(config):
 
     logger.info(f'best score: {best_score:.3f}')
 
+def test_model(config):
+    m = create_model(config)
+    print(m)
+    input_ = torch.randn((16, 6, 224, 224))
+    label_ = torch.randn((16, 6))
+    print(m(input_, label_))
+    
         
 def parse_args():
     parser = argparse.ArgumentParser(description='RXRX')
@@ -256,6 +263,7 @@ def main():
     seed_everything()  
 
     run(config)
+
     print('complete!')
 
 

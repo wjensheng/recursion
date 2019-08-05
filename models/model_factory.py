@@ -54,9 +54,10 @@ class RcicNet(nn.Module):
 
         self.use_fc = use_fc
         if use_fc:
+            self.bn = nn.BatchNorm1d(fc_dim)
             self.dropout = nn.Dropout(p=dropout)
             self.fc = nn.Linear(final_in_features, fc_dim)
-            self.bn = nn.BatchNorm1d(fc_dim)
+            self.relu = nn.ReLU(inplace=True)                        
             self._init_params()
             final_in_features = fc_dim
 
@@ -91,9 +92,12 @@ class RcicNet(nn.Module):
         x = self.pooling(x).view(batch_size, -1)
 
         if self.use_fc:
+            x = self.bn(x)
             x = self.dropout(x)
             x = self.fc(x)
+            x = self.relu(x)
             x = self.bn(x)
+            x = self.dropout(x)
 
         return x
 
