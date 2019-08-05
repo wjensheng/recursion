@@ -22,7 +22,7 @@ from models import get_model
 from losses import get_loss
 from optimizers import get_optimizer
 from schedulers import get_scheduler
-from transforms import get_transform
+from tsfm import get_transform
 
 from utils import * # create_logger, AverageMeter, seed_everything, check_cuda, save_checkpoint
 import utils.config
@@ -61,13 +61,13 @@ def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, n
     avg_score = AverageMeter()
 
     model.train()
-    train_momentum(model.backbone)
+    train_momentum(model.module.backbone)
 
     num_steps = len(train_loader)
 
     end = time.time()
 
-    for idx, data in enumerate(tqdm(train_loader)):
+    for idx, data in enumerate(train_loader):
         input_, id_codes, target = data
 
         # if using gpu
@@ -112,14 +112,14 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
     losses = AverageMeter()
     
     model.eval()
-    train_momentum(model.backbone, False)
+    train_momentum(model.module.backbone, False)
 
     valid_fc_dict = defaultdict(list)
 
     num_steps = len(val_loader)
 
     with torch.no_grad():
-        for idx, data in enumerate(tqdm(val_loader)):
+        for idx, data in enumerate(val_loader):
             input_, id_codes, target = data            
 
             # if using gpu
@@ -179,7 +179,7 @@ def run(config):
     best_score = 0.0
     best_epoch = 0
 
-    for epoch in range(last_epoch + 1, config.train.num_epochs + 1):
+    for epoch in tqdm(range(last_epoch + 1, config.train.num_epochs + 1)):
         
         if config.setup.use_cuda: torch.cuda.empty_cache()
 
@@ -204,7 +204,7 @@ def run(config):
         logger.info(train_logstr + valid_logstr)
     
         # save best score, model
-        if valid_accuracy >= best_score:
+        if valid_accuracy > best_score:
             best_score = valid_accuracy
             best_epoch = epoch
 

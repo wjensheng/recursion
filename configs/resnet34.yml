@@ -1,5 +1,5 @@
 setup:
-  use_cuda: False
+  use_cuda: True
   cell_type: 3
   stage: 1 # 'stage 0: no validation set;' 
            # 'stage 1: last batch as validation;'
@@ -8,10 +8,10 @@ setup:
 
 data:
   name: 'RCICDefaultDataset'
-  train: 'U2OS_train_small.csv'
+  train: 'U2OS_train.csv'
 
 model:
-  image_size: 112
+  image_size: 224
   arch: 'resnet34'
   name: 'resnet34'
   pool: 'GeM' # 'SPoC', 'MAC', 'RMAC', 'GeM', 'Rpool', 'Flatten', 'CompactBilinearPooling'
@@ -19,15 +19,15 @@ model:
   s: 30.0
 
 train:
-  batch_size: 48
-  num_epochs: 1 # 50
+  batch_size: 96
+  num_epochs: 30 # 50
   # num_grad_acc: None
   
 val:
-  batch_size: 64 # * num gpus
+  batch_size: 128 # * num gpus
 
 test:
-  batch_size: 64 # * num gpus
+  batch_size: 128 # * num gpus
   
 loss:
   name: 'cross_entropy'
