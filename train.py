@@ -178,8 +178,9 @@ def run(config):
 
     # optimizer
     if config.setup.fine_tune:
+        assert config.model.loss_module == 'softmax', "Must use softmax for fine-tuning"
         fine_tuning(model.module.backbone) 
-        optimizer = get_optimizer(config, model.module.fc.parameters())        
+        optimizer = get_optimizer(config, model.module.final.parameters())        
     else:
         optimizer = get_optimizer(config, model.parameters())
 
@@ -188,7 +189,7 @@ def run(config):
     lr_scheduler = get_scheduler(config, optimizer)
 
     last_epoch = 0
-    best_score = 0.0
+    best_score = 0.010
     best_epoch = 0
 
     for epoch in tqdm(range(last_epoch + 1, config.train.num_epochs + 1)):

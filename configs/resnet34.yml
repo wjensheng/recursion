@@ -3,7 +3,7 @@ setup:
   stage: 1 # 'stage 0: no validation set;' 
            # 'stage 1: last batch as validation;'
            # 'stage 2: proper training' 
-  version: 'USO2_fine_tune' # 'train.csv'
+  version: 'USO2_ft_drop025_e100' # 'train.csv'
   fine_tune: True
 
 data:
@@ -15,12 +15,14 @@ model:
   arch: 'resnet34'
   name: 'resnet34'
   pool: 'GeM' # 'SPoC', 'MAC', 'RMAC', 'GeM', 'Rpool', 'Flatten', 'CompactBilinearPooling'
-  loss_module: 'arcface' # 'arcface', 'cosface', 'softmax'  
+  loss_module: 'softmax' # 'arcface', 'cosface', 'softmax'  
+  use_fc: True
+  dropout: 0.25
   s: 30.0
 
 train:
-  batch_size: 96
-  num_epochs: 30 # 50
+  batch_size: 128
+  num_epochs: 100 # 50
   # num_grad_acc: None
   
 val:
@@ -41,3 +43,4 @@ scheduler:
   name: 'cosine' # exponential
   params:
     eta_min: 0.00003
+    T_max: 34
