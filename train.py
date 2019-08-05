@@ -33,11 +33,11 @@ import utils.metrics # TODO: for combined accuracy
 def create_model(config):
     model = get_model(config)
 
-    if config.setup.use_cuda and torch.cuda.device_count() > 1: 
+    if torch.cuda.is_available() and torch.cuda.device_count() > 1: 
         model = torch.nn.DataParallel(model)
 
     # use gpu
-    if config.setup.use_cuda: 
+    if torch.cuda.is_available(): 
         model = model.cuda()
 
     return model
@@ -75,7 +75,7 @@ def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, n
         input_, id_codes, target = data
 
         # if using gpu
-        if config.setup.use_cuda:
+        if torch.cuda.is_available():
             input_, target = input_.cuda(), target.cuda()
         
         output = model(input_, target)
@@ -127,7 +127,7 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
             input_, id_codes, target = data            
 
             # if using gpu
-            if config.setup.use_cuda:
+            if torch.cuda.is_available():
                 input_, target = input_.cuda(), target.cuda()
                         
             output = model(input_, target)
@@ -194,7 +194,7 @@ def run(config):
 
     for epoch in tqdm(range(last_epoch + 1, config.train.num_epochs + 1)):
         
-        if config.setup.use_cuda: torch.cuda.empty_cache()
+        if torch.cuda.is_available(): torch.cuda.empty_cache()
 
         train_loss = train_one_epoch(config, logger, train_loader, model, criterion, optimizer, config.train.num_grad_acc, lr_scheduler)
     

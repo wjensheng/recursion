@@ -15,7 +15,6 @@ def _get_default_config(filename: str, args: Any) -> edict:
 
     # setups
     cfg.setup = edict()
-    cfg.setup.use_cuda = True
     cfg.setup.cell_type = 3
     cfg.setup.stage = 1
     cfg.setup.version = 'first_attempt'
