@@ -5,7 +5,15 @@ import pretrainedmodels
 import easydict as edict
 
 import models.pooling as pooling
-from models.metric_learning import ArcMarginProduct, AddMarginProduct, AdaCos
+from models.metric_learning import ArcMarginProduct, AddMarginProduct, AdaCos, SphereProduct
+
+class AdaptiveConcatPool2d(nn.Module):
+    def __init__(self, sz=None):
+        super().__init__()
+        sz = sz or (1,1)
+        self.ap = nn.AdaptiveAvgPool2d(sz)
+        self.mp = nn.AdaptiveMaxPool2d(sz)
+    def forward(self, x): return torch.cat([self.mp(x), self.ap(x)], 1)
 
 class RcicNet(nn.Module):
 
@@ -16,7 +24,7 @@ class RcicNet(nn.Module):
                  model_name='resnet50',
                  pool='GeM',
                  args_pooling: dict={},
-                 use_fc=False,
+                 use_fc=True,
                  fc_dim=512,
                  dropout=0.0,
                  loss_module='softmax',
@@ -50,16 +58,30 @@ class RcicNet(nn.Module):
         # HACK: work around for this issue https://github.com/Cadene/pretrained-models.pytorch/issues/120
         self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
 
-        self.pooling = getattr(pooling, pool)(**args_pooling)
+        # self.pooling = getattr(pooling, pool)(**args_pooling)
+        
+        self.pooling = AdaptiveConcatPool2d()
 
         self.use_fc = use_fc
         if use_fc:
-            self.bn = nn.BatchNorm1d(fc_dim)
-            self.dropout = nn.Dropout(p=dropout)
-            self.fc = nn.Linear(final_in_features, fc_dim)
-            self.relu = nn.ReLU(inplace=True)                        
+            self.bn1 = nn.BatchNorm1d(1024)
+            self.fc1 = nn.Linear(1024, 512)
+            self.bn2 = nn.BatchNorm1d(512)
+            self.relu = nn.ReLU(inplace=True)
+            self.fc2 = nn.Linear(512, 512)
+            self.bn3 = nn.BatchNorm1d(512)
             self._init_params()
+
+            # self.bn = nn.BatchNorm1d(fc_dim)
+            # self.dropout = nn.Dropout(p=dropout)
+            # self.fc = nn.Linear(final_in_features, fc_dim)
+            # self.relu = nn.ReLU(inplace=True)                        
+            # self._init_params()
+
             final_in_features = fc_dim
+
+        else:
+            self.fc1 = nn.Linear(1024, 512)
 
         self.loss_module = loss_module
         if loss_module == 'arcface':
@@ -69,18 +91,26 @@ class RcicNet(nn.Module):
             self.final = AddMarginProduct(final_in_features, n_classes, s=s, m=margin)
         elif loss_module == 'adacos':
             self.final = AdaCos(final_in_features, n_classes, m=margin, theta_zero=theta_zero)
+        elif loss_module == 'sphere':
+            self.final = SphereProduct(final_in_features, n_classes)
         else:
             self.final = nn.Linear(final_in_features, n_classes)
 
     def _init_params(self):
-        nn.init.xavier_normal_(self.fc.weight)
-        nn.init.constant_(self.fc.bias, 0)
-        nn.init.constant_(self.bn.weight, 1)
-        nn.init.constant_(self.bn.bias, 0)
+        nn.init.xavier_normal_(self.fc1.weight)
+        nn.init.xavier_normal_(self.fc2.weight)
+        nn.init.constant_(self.fc1.bias, 0)
+        nn.init.constant_(self.fc2.bias, 0)
+        nn.init.constant_(self.bn1.weight, 1)
+        nn.init.constant_(self.bn1.bias, 0)
+        nn.init.constant_(self.bn2.weight, 1)
+        nn.init.constant_(self.bn2.bias, 0)
+        nn.init.constant_(self.bn3.weight, 1)
+        nn.init.constant_(self.bn3.bias, 0)
 
     def forward(self, x, label):
         feature = self.extract_feat(x)
-        if self.loss_module in ('arcface', 'cosface', 'adacos'):
+        if self.loss_module in ('arcface', 'cosface', 'adacos', 'sphere'):
             logits = self.final(feature, label)
         else:
             logits = self.final(feature)
@@ -89,15 +119,32 @@ class RcicNet(nn.Module):
     def extract_feat(self, x):
         batch_size = x.shape[0]
         x = self.backbone(x)
-        x = self.pooling(x).view(batch_size, -1)
+
+        # x = self.pooling(x).view(batch_size, -1)
+        x = self.pooling(x)
+
+        x = x.view(x.size(0), -1)
 
         if self.use_fc:
-            x = self.bn(x)
-            x = self.dropout(x)
-            x = self.fc(x)
-            x = self.relu(x)
-            x = self.bn(x)
-            x = self.dropout(x)
+            x = self.bn1(x)
+            x = F.dropout(x, p=0.25)
+            x = self.fc1(x)
+            x = self.relu(x)        
+            x = self.bn2(x)
+            x = F.dropout(x, p=0.5)
+            x = x.view(x.size(0), -1)
+            x = self.fc2(x)
+            x = self.bn3(x)   
+
+        else:
+            x = self.fc1(x)
+        
+        #     x = self.bn(x)
+        #     x = self.dropout(x)
+        #     x = self.fc(x)
+        #     x = self.relu(x)
+        #     x = self.bn(x)
+        #     x = self.dropout(x)
 
         return x
 

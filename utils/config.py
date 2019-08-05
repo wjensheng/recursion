@@ -15,7 +15,6 @@ def _get_default_config(filename: str, args: Any) -> edict:
 
     # setups
     cfg.setup = edict()
-    cfg.setup.fine_tune = False
     cfg.setup.cell_type = 3
     cfg.setup.stage = 1
     cfg.setup.version = 'first_attempt'
@@ -49,7 +48,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.model.use_fc = False
     cfg.model.fc_dim = 512
     cfg.model.dropout = 0
-    cfg.model.loss_module = 'arcface' # 'arcface', 'cosface', 'softmax'
+    cfg.model.loss_module = 'arcface' # 'arcface', 'cosface', 'softmax', 'sphere'
     cfg.model.s = 30.0
     cfg.model.margin = 0.5
     cfg.model.regional = False

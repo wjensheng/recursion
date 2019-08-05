@@ -52,10 +52,6 @@ def train_momentum(model, train=True):
                         if isinstance(layer, nn.BatchNorm2d):
                             layer.track_running_stats = train                
 
-def fine_tuning(model): # model.module.backbone
-    for param in model.parameters():
-        param.requires_grad = False
-
 
 def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, num_grad_acc, lr_scheduler):
     logger.info('training')
@@ -177,15 +173,12 @@ def run(config):
     print(model)
 
     # optimizer
-    if config.setup.fine_tune:
-        assert config.model.loss_module == 'softmax', "Must use softmax for fine-tuning"
-        fine_tuning(model.module.backbone) 
-        optimizer = get_optimizer(config, model.module.final.parameters())        
-    else:
-        optimizer = get_optimizer(config, model.parameters())
+    optimizer = get_optimizer(config, model.parameters())
 
-    # lr_scheduler, criterion    
+    # lr_scheduler
     criterion = get_loss(config)
+
+    # criterion    
     lr_scheduler = get_scheduler(config, optimizer)
 
     last_epoch = 0
@@ -262,7 +255,8 @@ def main():
 
     seed_everything()  
 
-    run(config)
+    # run(config)
+    test_model(config)    
 
     print('complete!')
 

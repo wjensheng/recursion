@@ -4,7 +4,6 @@ setup:
            # 'stage 1: last batch as validation;'
            # 'stage 2: proper training' 
   version: 'USO2_ft_drop025_e100' # 'train.csv'
-  fine_tune: False
 
 data:
   name: 'RCICDefaultDataset'
@@ -15,7 +14,7 @@ model:
   arch: 'resnet34'
   name: 'resnet34'
   pool: 'GeM' # 'SPoC', 'MAC', 'RMAC', 'GeM', 'Rpool', 'Flatten', 'CompactBilinearPooling'
-  loss_module: 'softmax' # 'arcface', 'cosface', 'softmax'  
+  loss_module: 'softmax' # 'arcface', 'cosface', 'softmax' , 'sphere' 
   use_fc: True
   dropout: 0.25
   s: 30.0
