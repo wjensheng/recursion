@@ -28,8 +28,10 @@ class ContrastiveLoss(nn.Module):
         self.margin = margin
         self.eps = eps
 
+
     def forward(self, x, label):
         return LF.contrastive_loss(x, label, margin=self.margin, eps=self.eps)
+
 
     def __repr__(self):
         return self.__class__.__name__ + '(' + 'margin=' + '{:.4f}'.format(self.margin) + ')'

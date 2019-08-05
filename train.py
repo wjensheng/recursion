@@ -23,6 +23,7 @@ from losses import get_loss
 from optimizers import get_optimizer
 from schedulers import get_scheduler
 from tsfm import get_transform
+from models.loss import ContrastiveLoss
 
 from utils import * # create_logger, AverageMeter, seed_everything, check_cuda, save_checkpoint
 import utils.config
@@ -176,11 +177,11 @@ def run(config):
     optimizer = get_optimizer(config, model.parameters())
 
     # lr_scheduler
-    criterion = get_loss(config)
-
-    # criterion    
     lr_scheduler = get_scheduler(config, optimizer)
 
+    # criterion    
+    criterion = get_loss(config)
+    
     last_epoch = 0
     best_score = 0.010
     best_epoch = 0
@@ -229,6 +230,14 @@ def test_model(config):
     input_ = torch.randn((16, 6, 224, 224))
     label_ = torch.randn((16, 6))
     print(m(input_, label_))
+
+def test_loss(config):
+    criterion = get_loss(config)
+    # contrastive_loss = ContrastiveLoss(margin=0.7)
+    input_ = torch.randn(64, 35, requires_grad=True)
+    label_ = torch.Tensor([-1, 2, 0, 0, 0, 0, 0] * 5)
+    output = criterion(input_, label_)
+    print(output)
     
         
 def parse_args():
@@ -255,8 +264,9 @@ def main():
 
     seed_everything()  
 
-    # run(config)
-    test_model(config)    
+    run(config)
+    # test_model(config)    
+    # test_loss(config)
 
     print('complete!')
 
