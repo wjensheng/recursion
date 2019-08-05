@@ -177,10 +177,9 @@ def run(config):
     print(model)
 
     # optimizer
-    if config.setup.fine_tuning:
+    if config.setup.fine_tune:
         fine_tuning(model.module.backbone) 
-        optimizer = get_optimizer(config, model.module.fc.parameters())
-        
+        optimizer = get_optimizer(config, model.module.fc.parameters())        
     else:
         optimizer = get_optimizer(config, model.parameters())
 

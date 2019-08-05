@@ -3,7 +3,8 @@ setup:
   stage: 1 # 'stage 0: no validation set;' 
            # 'stage 1: last batch as validation;'
            # 'stage 2: proper training' 
-  version: 'small_USO2' # 'train.csv'
+  version: 'USO2_fine_tune' # 'train.csv'
+  fine_tune: True
 
 data:
   name: 'RCICDefaultDataset'
