@@ -211,7 +211,7 @@ def run(config):
             filename = f'{config.setup.version}_e{epoch:02d}_{best_score:.04f}.pth'
             model_dir = config.saved.model_dir
 
-            save_checkpoint(logger, model_dir, filename, model, epoch, best_score, optimizer, save_arch=True, params=config)
+            save_checkpoint(model_dir, filename, model, epoch, best_score, optimizer, save_arch=True, params=config)
 
             logger.info(f'A snapshot was saved to {filename}')
 

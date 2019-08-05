@@ -11,6 +11,7 @@ data:
   train: 'U2OS_train_small.csv'
 
 model:
+  image_size: 112
   arch: 'resnet34'
   name: 'resnet34'
   pool: 'GeM' # 'SPoC', 'MAC', 'RMAC', 'GeM', 'Rpool', 'Flatten', 'CompactBilinearPooling'
