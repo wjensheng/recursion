@@ -23,6 +23,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # saved model
     cfg.saved = edict()
     cfg.saved.model_dir = 'experiments/models'
+    cfg.saved.model = ''
     
     # data
     cfg.data = edict()

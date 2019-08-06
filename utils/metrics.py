@@ -10,20 +10,25 @@ def accuracy(actual, predicted):
 
 def weighted_preds(fc_dict):
     id_preds = {}
+    classes_preds = {}
     
     for k, id_code in enumerate(fc_dict):
         weighted_preds =  fc_dict[id_code][0].detach().cpu()  + \
                           fc_dict[id_code][1].detach().cpu() 
         id_preds[id_code] = torch.argmax(weighted_preds).item()
+        classes_preds[id_code] = weighted_preds
     
     subm = pd.DataFrame(list(id_preds.items()),
                         columns=['id_code', 'predicted_sirna'])
     
-    return subm # len(subm) = 19897
+    all_classes_preds = pd.DataFrame(list(classes_preds.items()),
+                                     columns=['id_code', 'predicted_sirna'])
+    
+    return subm, all_classes_preds
 
 
 def combined_accuracy(valid_fc_dict, valid_df):
-    valid_preds = weighted_preds(valid_fc_dict)
+    valid_preds, _ = weighted_preds(valid_fc_dict)
 
     valid_sirna = valid_df[['id_code', 'sirna']].copy()
     
@@ -36,8 +41,8 @@ def combined_accuracy(valid_fc_dict, valid_df):
     combined_acc = accuracy_score(valid_compare_table['predicted_sirna'].values,
                                   valid_compare_table['sirna'].values)
     
-    return combined_acc        
-
+    return combined_acc
+    
 
 if __name__ == "__main__":
     print(accuracy([1, 2, 3], [2, 2, 2]))
