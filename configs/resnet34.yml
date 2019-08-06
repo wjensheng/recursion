@@ -3,7 +3,7 @@ setup:
   stage: 1 # 'stage 0: no validation set;' 
            # 'stage 1: last batch as validation;'
            # 'stage 2: proper training' 
-  version: 'USO2_ft_drop025_e100' # 'train.csv'
+  version: 'bf_arcface' # 'train.csv'
 
 data:
   name: 'RCICDefaultDataset'
@@ -14,14 +14,14 @@ model:
   arch: 'resnet34'
   name: 'resnet34'
   pool: 'GeM' # 'SPoC', 'MAC', 'RMAC', 'GeM', 'Rpool', 'Flatten', 'CompactBilinearPooling'
-  loss_module: 'softmax' # 'arcface', 'cosface', 'softmax' , 'sphere' 
+  loss_module: 'arcface' # 'arcface', 'cosface', 'softmax', 'sphere' 
   use_fc: True
   dropout: 0.25
   s: 30.0
 
 train:
   batch_size: 128
-  num_epochs: 100 # 50
+  num_epochs: 50
   # num_grad_acc: None
   
 val:
