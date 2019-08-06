@@ -46,7 +46,8 @@ def get_dataframes(config):
     # stage 1: smaller validation set    
     elif config.setup.stage == 1:
         train_df, valid_df = manual_split(train_df)
-        return train_df, valid_df, None
+        test_df = filter_experiments(test_df, CELL_TYPE[config.setup.cell_type])
+        return train_df, valid_df, test_df
 
     # stage 2: larger validation set
     elif config.setup.stage == 2:

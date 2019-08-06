@@ -16,6 +16,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision import models
+from torch.optim import Optimizer
 
 from datasets import get_dataloader, get_dataframes
 from models import get_model
@@ -130,7 +132,7 @@ def pretrained_model(config, num_classes):
 class ArcMarginProduct(nn.Module):
     def __init__(self, in_features, out_features):
         super(ArcMarginProduct, self).__init__()
-        self.weight = Parameter(torch.FloatTensor(out_features, in_features))
+        self.weight = nn.Parameter(torch.FloatTensor(out_features, in_features))
         self.reset_parameters()
 
     def reset_parameters(self):

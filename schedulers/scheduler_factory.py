@@ -116,17 +116,12 @@ class CyclicLR(object):
         return lrs
 
 
-def cyclic_lr(optimizer, last_epoch, base_lr=0.001, max_lr=0.01,
-              step_size_up=2000, step_size_down=None, mode='triangular',
-              gamma=1.0, scale_fn=None, scale_mode='cycle', cycle_momentum=True,
-              base_momentum=0.8, max_momentum=0.9, **_):
-    return CyclicLR(optimizer, base_lr=base_lr, max_lr=max_lr,
-                    step_size_up=step_size_up, step_size_down=
-                    step_size_down, mode=mode, gamma=gamma,
-                    scale_mode=scale_mode, cycle_momentum=
-                    cycle_momentum, base_momentum=base_momentum,
-                    max_momentum=max_momentum, last_epoch=last_epoch)
-
+def cyclic_lr(optimizer, base_lr=1e-3, max_lr=6e-3,
+              step_size=2000, mode='triangular', gamma=1.,
+              scale_fn=None, scale_mode='cycle', last_batch_iteration=-1):
+    return CyclicLR(optimizer, base_lr=1e-3, max_lr=6e-3,
+                    step_size=2000, mode='triangular', gamma=1.,
+                    scale_fn=None, scale_mode='cycle', last_batch_iteration=-1)
 
         
 
