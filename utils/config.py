@@ -30,6 +30,12 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.data.train = 'train.csv'
     cfg.data.test = 'test.csv'
 
+    # submissions
+    cfg.submission = edict()
+    cfg.submission.submission_file = 'compile_submission.csv'
+    cfg.submission.submission_dir = 'submissions/'
+    cfg.submission.submission_pat = 'log_rn34-arcfaceloss-*'
+
     # # transforms
     # cfg.transform = edict()
     # cfg.transform.train = 'default_train'
