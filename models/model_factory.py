@@ -68,8 +68,8 @@ class RcicNet(nn.Module):
             self.fc1 = nn.Linear(1024, 512)
             self.bn2 = nn.BatchNorm1d(512)
             self.relu = nn.ReLU(inplace=True)
-            self.fc2 = nn.Linear(512, 512)
-            self.bn3 = nn.BatchNorm1d(512)
+            self.fc2 = nn.Linear(512, 5120)
+            self.bn3 = nn.BatchNorm1d(5120)
             self._init_params()
 
             # self.bn = nn.BatchNorm1d(fc_dim)
@@ -97,8 +97,8 @@ class RcicNet(nn.Module):
             self.final = nn.Linear(final_in_features, n_classes)
 
     def _init_params(self):
-        nn.init.xavier_normal_(self.fc1.weight)
-        nn.init.xavier_normal_(self.fc2.weight)
+        nn.init.kaiming_normal_(self.fc1.weight)
+        nn.init.kaiming_normal_(self.fc2.weight)
         nn.init.constant_(self.fc1.bias, 0)
         nn.init.constant_(self.fc2.bias, 0)
         nn.init.constant_(self.bn1.weight, 1)
