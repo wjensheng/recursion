@@ -64,6 +64,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.model.num_classes = 1108
     cfg.model.pretrained = True
     cfg.model.lr = 3e-4
+    cfg.model.load_trained = True
     
     # train
     cfg.train = edict()
@@ -96,11 +97,13 @@ def _get_default_config(filename: str, args: Any) -> edict:
 
     # loss
     cfg.loss = edict()
-    cfg.loss.name = 'none'
-    cfg.loss.in_features = 512
-    cfg.loss.out_features = 1108
+    cfg.loss.name = 'arcface' # 'arcface', 'cosface', 'softmax', 'sphere'
+    cfg.loss.params = edict()
+    cfg.loss.params.in_features = 512
+    cfg.loss.params.out_features = 1108    
 
     return cfg
+
 
 def _merge_config(src: edict, dst: edict) -> edict:
     if not isinstance(src, edict):

@@ -15,10 +15,6 @@ class AdaCos(nn.Module):
         super(AdaCos, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.theta_zero = theta_zero
-        self.s = math.log(out_features - 1) / math.cos(theta_zero)
-        self.m = m
-        self.ls_eps = ls_eps  # label smoothing
         self.W = Parameter(torch.FloatTensor(out_features, in_features))
         nn.init.xavier_uniform_(self.W)
 
@@ -29,23 +25,29 @@ class AdaCos(nn.Module):
         W = F.normalize(self.W)
         # dot product
         logits = F.linear(x, W)
-        # add margin
-        theta = torch.acos(torch.clamp(logits, -1.0 + 1e-7, 1.0 - 1e-7))
-        target_logits = torch.cos(theta + self.m)
-        one_hot = torch.zeros_like(logits)
-        one_hot.scatter_(1, label.view(-1, 1).long(), 1)
-        if self.ls_eps > 0:
-            one_hot = (1 - self.ls_eps) * one_hot + self.ls_eps / self.out_features
-        output = logits * (1 - one_hot) + target_logits * one_hot
-        # feature re-scale
-        with torch.no_grad():
-            B_avg = torch.where(one_hot < 1, torch.exp(self.s * logits), torch.zeros_like(logits))
-            B_avg = torch.sum(B_avg) / input.size(0)
-            theta_med = torch.median(theta)
-            self.s = torch.log(B_avg) / torch.cos(torch.min(self.theta_zero * torch.ones_like(theta_med), theta_med))
-        output *= self.s
+        return logits
+        # # add margin
+        # theta = torch.acos(torch.clamp(logits, -1.0 + 1e-7, 1.0 - 1e-7))
+        # target_logits = torch.cos(theta + self.m)
+        # one_hot = torch.zeros_like(logits)
+        # one_hot.scatter_(1, label.view(-1, 1).long(), 1)
+        # if self.ls_eps > 0:
+        #     one_hot = (1 - self.ls_eps) * one_hot + self.ls_eps / self.out_features
+        # output = logits * (1 - one_hot) + target_logits * one_hot
+        # # feature re-scale
+        # with torch.no_grad():
+        #     B_avg = torch.where(one_hot < 1, torch.exp(self.s * logits), torch.zeros_like(logits))
+        #     B_avg = torch.sum(B_avg) / input.size(0)
+        #     theta_med = torch.median(theta)
+        #     self.s = torch.log(B_avg) / torch.cos(torch.min(self.theta_zero * torch.ones_like(theta_med), theta_med))
+        # output *= self.s
 
-        return output
+        # return output
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(' \
+               + 'in_features=' + str(self.in_features) \
+               + ', out_features=' + str(self.out_features) + ')'
 
 
 class P2SGrad(torch.autograd.Function):
@@ -152,6 +154,13 @@ class ArcMarginProduct(nn.Module):
 
         # return output
 
+    def __repr__(self):
+        return self.__class__.__name__ + '(' \
+               + 'in_features=' + str(self.in_features) \
+               + ', out_features=' + str(self.out_features) \
+               + ', s=' + str(self.s) \
+               + ', m=' + str(self.m) + ')'
+
 
 class AddMarginProduct(nn.Module):
     r"""Implement of large margin cosine distance: :
@@ -175,21 +184,22 @@ class AddMarginProduct(nn.Module):
     def forward(self, input, label):
         # --------------------------- cos(theta) & phi(theta) ---------------------------
         cosine = F.linear(F.normalize(input), F.normalize(self.weight))
-        phi = cosine - self.m
-        # --------------------------- convert label to one-hot ---------------------------
-        if torch.cuda.is_available():
-            one_hot = torch.zeros(cosine.size(), device='cuda')
-        else:
-            one_hot = torch.zeros(cosine.size())
+        return cosine
+        # phi = cosine - self.m
+        # # --------------------------- convert label to one-hot ---------------------------
+        # if torch.cuda.is_available():
+        #     one_hot = torch.zeros(cosine.size(), device='cuda')
+        # else:
+        #     one_hot = torch.zeros(cosine.size())
 
-        # one_hot = one_hot.cuda() if cosine.is_cuda else one_hot
-        one_hot.scatter_(1, label.view(-1, 1).long(), 1)
-        # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
-        output = (one_hot * phi) + ((1.0 - one_hot) * cosine)  # you can use torch.where if your torch.__version__ is 0.4
-        output *= self.s
-        # print(output)
+        # # one_hot = one_hot.cuda() if cosine.is_cuda else one_hot
+        # one_hot.scatter_(1, label.view(-1, 1).long(), 1)
+        # # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
+        # output = (one_hot * phi) + ((1.0 - one_hot) * cosine)  # you can use torch.where if your torch.__version__ is 0.4
+        # output *= self.s
+        # # print(output)
 
-        return output
+        # return output
 
     def __repr__(self):
         return self.__class__.__name__ + '(' \

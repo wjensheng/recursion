@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision import models
 import pretrainedmodels
 import easydict as edict
 
@@ -8,11 +9,10 @@ import models.pooling as pooling
 from models.metric_learning import ArcMarginProduct, AddMarginProduct, AdaCos, SphereProduct
 
 class AdaptiveConcatPool2d(nn.Module):
-    def __init__(self, sz=None):
+    def __init__(self):
         super().__init__()
-        sz = sz or (1,1)
-        self.ap = nn.AdaptiveAvgPool2d(sz)
-        self.mp = nn.AdaptiveMaxPool2d(sz)
+        self.ap = nn.AdaptiveAvgPool2d(1)
+        self.mp = nn.AdaptiveMaxPool2d(1)
     def forward(self, x): return torch.cat([self.mp(x), self.ap(x)], 1)
 
 class RcicNet(nn.Module):
@@ -31,7 +31,8 @@ class RcicNet(nn.Module):
                  s=30.0,
                  margin=0.50,
                  ls_eps=0.0,
-                 theta_zero=0.785):
+                 theta_zero=0.785,
+                 load_trained=True):
         """
         :param n_classes:
         :param model_name: name of model from pretrainedmodels
@@ -41,10 +42,16 @@ class RcicNet(nn.Module):
         """
         super(RcicNet, self).__init__()        
 
-        self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
+        if not load_trained:
+            self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
+            final_in_features = self.backbone.last_linear.in_features
+            
+        else:
+            self.backbone = models.resnet34(pretrained=False, num_classes=n_classes)    
+            final_in_features = self.backbone.fc.in_features
 
         # transfer weight from pretrained network
-        trained_kernel = self.backbone.conv1.weight
+        trained_kernel = self.backbone.conv1.weight            
 
         new_conv = nn.Conv2d(6, 64, kernel_size=7, stride=2, padding=3, bias=False)
 
@@ -53,14 +60,9 @@ class RcicNet(nn.Module):
 
         self.backbone.conv1 = new_conv
 
-        final_in_features = self.backbone.last_linear.in_features
-
-        # HACK: work around for this issue https://github.com/Cadene/pretrained-models.pytorch/issues/120
         self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
-
-        # self.pooling = getattr(pooling, pool)(**args_pooling)
-        
-        self.pooling = AdaptiveConcatPool2d()
+                
+        self.pooling = AdaptiveConcatPool2d() # self.pooling = getattr(pooling, pool)(**args_pooling)
 
         self.use_fc = use_fc
         if use_fc:
@@ -68,8 +70,8 @@ class RcicNet(nn.Module):
             self.fc1 = nn.Linear(1024, 512)
             self.bn2 = nn.BatchNorm1d(512)
             self.relu = nn.ReLU(inplace=True)
-            self.fc2 = nn.Linear(512, 5120)
-            self.bn3 = nn.BatchNorm1d(5120)
+            self.fc2 = nn.Linear(512, 512)
+            self.bn3 = nn.BatchNorm1d(512)
             self._init_params()
 
             # self.bn = nn.BatchNorm1d(fc_dim)
@@ -91,7 +93,7 @@ class RcicNet(nn.Module):
             self.final = AddMarginProduct(final_in_features, n_classes, s=s, m=margin)
         elif loss_module == 'adacos':
             self.final = AdaCos(final_in_features, n_classes, m=margin, theta_zero=theta_zero)
-        elif loss_module == 'sphere':
+        elif loss_module == 'sphere': # TODO: fix wrapper
             self.final = SphereProduct(final_in_features, n_classes)
         else:
             self.final = nn.Linear(final_in_features, n_classes)
@@ -125,19 +127,19 @@ class RcicNet(nn.Module):
 
         x = x.view(x.size(0), -1)
 
-        if self.use_fc:
-            x = self.bn1(x)
-            x = F.dropout(x, p=0.25)
-            x = self.fc1(x)
-            x = self.relu(x)        
-            x = self.bn2(x)
-            x = F.dropout(x, p=0.5)
-            x = x.view(x.size(0), -1)
-            x = self.fc2(x)
-            x = self.bn3(x)   
+        # if self.use_fc:
+        x = self.bn1(x)
+        x = F.dropout(x, p=0.25)
+        x = self.fc1(x)
+        x = self.relu(x)        
+        x = self.bn2(x)
+        x = F.dropout(x, p=0.5)
+        x = x.view(x.size(0), -1)
+        x = self.fc2(x)
+        x = self.bn3(x)   
 
-        else:
-            x = self.fc1(x)
+        # else:
+        #     x = self.fc1(x)
         
         #     x = self.bn(x)
         #     x = self.dropout(x)
@@ -158,11 +160,12 @@ def get_model(config):
     dropout = config.model.dropout
     loss_module = config.model.loss_module
     s = config.model.s
-    margin = config.model.margin    
+    margin = config.model.margin
+    load_trained = config.model.load_trained    
 
     net = RcicNet(n_classes, model_name, pool, args_pooling,
                   use_fc, fc_dim, dropout, loss_module, 
-                  s, margin)
+                  s, margin, load_trained)
     return net
 
 if __name__ == "__main__":
@@ -183,4 +186,5 @@ if __name__ == "__main__":
     cfg.model.num_classes = 1108
     cfg.model.pretrained = True
     cfg.model.lr = 3e-4
+    cfg.model.load_trained = True
     print(get_model(cfg))
