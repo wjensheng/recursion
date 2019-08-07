@@ -316,8 +316,8 @@ def main():
 
     seed_everything()  
 
-    # run(config)
-    test_model(config)    
+    run(config)
+    # test_model(config)    
 
     print('complete!')
 
