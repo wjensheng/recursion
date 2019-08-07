@@ -4,3 +4,4 @@ from __future__ import print_function
 
 # from .model_factory import init_network, extract_vectors
 from .model_factory import get_model
+from .bestfitting import pretrained_model, ArcMarginProduct, BestFittingModel, ArcFaceLoss

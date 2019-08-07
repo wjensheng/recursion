@@ -37,7 +37,7 @@ loss:
 optimizer:
   name: 'adam'
   params:
-    lr: 0.003
+    lr: 0.003 # 3e-4
 
 scheduler:
   name: 'cosine' # exponential

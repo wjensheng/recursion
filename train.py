@@ -231,13 +231,6 @@ def test_model(config):
     label_ = torch.randn((16, 6))
     print(m(input_, label_))
 
-def test_loss(config):
-    criterion = get_loss(config)
-    # contrastive_loss = ContrastiveLoss(margin=0.7)
-    input_ = torch.randn(64, 35, requires_grad=True)
-    label_ = torch.Tensor([-1, 2, 0, 0, 0, 0, 0] * 5)
-    output = criterion(input_, label_)
-    print(output)
     
         
 def parse_args():
@@ -262,11 +255,13 @@ def main():
     if not os.path.exists(config.saved.model_dir):
         os.makedirs(config.saved.model_dir)
 
+    if not os.path.exists(config.submission.submission_dir):
+        os.makedirs(config.submission.submission_dir)
+
     seed_everything()  
 
     run(config)
     # test_model(config)    
-    # test_loss(config)
 
     print('complete!')
 
