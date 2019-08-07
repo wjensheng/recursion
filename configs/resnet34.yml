@@ -1,16 +1,16 @@
 setup:
   cell_type: 3
-  stage: 1 # 'stage 0: small validation set;' 
+  stage: 0 # 'stage 0: small validation set;' 
            # 'stage 1: last batch as validation;'
            # 'stage 2: proper training' 
-  version: 'bf_arcface' # 'train.csv'
+  version: 'train_full_s0' # s fot stage
 
 data:
   name: 'RCICDefaultDataset'
   train: 'train.csv'
 
 model:
-  image_size: 224
+  image_size: 512
   arch: 'resnet34'
   name: 'resnet34'
   pool: 'GeM' # 'SPoC', 'MAC', 'RMAC', 'GeM', 'Rpool', 'Flatten', 'CompactBilinearPooling'
@@ -22,7 +22,7 @@ model:
 
 train:
   batch_size: 128
-  num_epochs: 50
+  num_epochs: 10
   # num_grad_acc: None
   
 val:
@@ -37,7 +37,6 @@ loss:
   #   in_features: 512 
   #   out_features: 1108    
 
-
 optimizer:
   name: 'adam'
   params:
@@ -47,4 +46,4 @@ scheduler:
   name: 'cosine' # exponential
   params:
     eta_min: 0.00003
-    T_max: 50 # 34
+    T_max: 501 # 34
