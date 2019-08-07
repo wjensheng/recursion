@@ -5,17 +5,17 @@ import torch
 import torch.nn as nn
 from torchvision import models
 
-def pretrained_model(config, num_classes):
-    m = models.resnet34(pretrained=False, num_classes=num_classes)    
+# def pretrained_model(config, num_classes):
+#     m = models.resnet34(pretrained=False, num_classes=num_classes)    
     
-    new_conv = nn.Conv2d(6, 64, kernel_size=7, stride=2, padding=3, bias=False)
+#     new_conv = nn.Conv2d(6, 64, kernel_size=7, stride=2, padding=3, bias=False)
 
-    m.conv1 = new_conv
+#     m.conv1 = new_conv
     
-    m.load_state_dict(torch.load(os.path.join(config.saved.model_dir, 
-                                              config.saved.model)))
+#     m.load_state_dict(torch.load(os.path.join(config.saved.model_dir, 
+#                                               config.saved.model)))
     
-    return nn.Sequential(*list(m.children())[:-2])
+#     return nn.Sequential(*list(m.children())[:-2])
 
 
 # class ArcMarginProduct(nn.Module):

@@ -58,6 +58,18 @@ def save_checkpoint(model_dir, filename, model, epoch, best_score, optimizer=Non
             del attributes['arch']
             torch.save(attributes, os.path.join(model_dir, filename))    
 
+def save_csv(config, submission, all_classes_preds):
+    fn = f'{config.setup.version}_submission_{config.setup.cell_type}.csv'
+
+    submission.to_csv(os.path.join(config.submission.submission_dir, fn), index=False)
+
+    all_classes_preds['predicted_sirna'] = all_classes_preds['predicted_sirna'].apply(lambda o: o.numpy())
+
+    fn = 'classes_' + fn
+
+    all_classes_preds.to_csv(os.path.join(config.submission.submission_dir, fn), index=False)
+
+    print('files saved to', config.submission.submission_dir)
 
 def load_checkpoint(path, model=None, optimizer=None, params=False, epoch=False):
     resume = torch.load(path)

@@ -147,6 +147,34 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
     return losses.avg, combined_valid_accuracy
     
 
+def test_inference(data_loader: Any, model: Any):
+
+    test_fc_dict = defaultdict(list)
+
+    model.eval()
+
+    all_targets = []
+    
+    with torch.no_grad():
+        preds = np.empty(0)
+        for i, data in enumerate(tqdm(data_loader)):
+            
+            input_, id_codes = data            
+            
+            input_ = input_.to(device)
+
+            output = model(input_)
+                        
+            _, predicts = torch.max(output.detach(), dim=1)
+            
+            for i in range(len(output)):
+                test_fc_dict[id_codes[i]] += output[i],
+            
+    subm, all_classes_preds  = utils.metrics.weighted_preds(test_fc_dict)        
+    
+    return subm, all_classes_preds
+
+
 def run(config):
 
     # create logger
@@ -173,6 +201,11 @@ def run(config):
 
     print(model)
 
+    if config.model.load_trained:
+        model.module.backbone.load_state_dict(torch.load(os.path.join(config.saved.model_dir, 
+                                                            config.saved.model)))
+    
+
     # optimizer
     optimizer = get_optimizer(config, model.parameters())
 
@@ -181,6 +214,8 @@ def run(config):
 
     # criterion    
     criterion = get_loss(config)
+
+    print(criterion)
     
     last_epoch = 0
     best_score = 0.010
@@ -224,12 +259,33 @@ def run(config):
 
     logger.info(f'best score: {best_score:.3f}')
 
+    print('Generating predictions...')
+
+    submission, all_classes_preds = test_inference(test_loader, best_model)
+
+    print('Number of unique sirnas', submission['predicted_sirna'].nunique())
+
+    save_csv(config, submission, all_classes_preds)
+
+## END ##
+
 def test_model(config):
     m = create_model(config)
+    criterion = get_loss(config)
+
     print(m)
+    print(criterion)
+
     input_ = torch.randn((16, 6, 224, 224))
-    label_ = torch.randn((16, 6))
-    print(m(input_, label_))
+    label_ = torch.tensor([1, 2, 3, 4] * 4)
+
+    output = m(input_, label_)    
+
+    # print(output.size())
+
+    loss = criterion(output, label_)
+
+    print(loss)
 
     
         

@@ -23,7 +23,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # saved model
     cfg.saved = edict()
     cfg.saved.model_dir = 'experiments/models'
-    cfg.saved.model = ''
+    cfg.saved.model = 'rn34_best_model_17.pth'
     
     # data
     cfg.data = edict()
@@ -99,9 +99,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.loss = edict()
     cfg.loss.name = 'arcface' # 'arcface', 'cosface', 'softmax', 'sphere'
     cfg.loss.params = edict()
-    cfg.loss.params.in_features = 512
-    cfg.loss.params.out_features = 1108    
-
+    
     return cfg
 
 

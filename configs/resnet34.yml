@@ -14,7 +14,7 @@ model:
   arch: 'resnet34'
   name: 'resnet34'
   pool: 'GeM' # 'SPoC', 'MAC', 'RMAC', 'GeM', 'Rpool', 'Flatten', 'CompactBilinearPooling'
-  loss_module: 'cosface' # 'arcface', 'cosface', 'adacos', 'softmax'
+  loss_module: 'arcface' # 'arcface', 'cosface', 'adacos', 'softmax'
   use_fc: True
   fc_dim: 512
   dropout: 0.25
@@ -32,7 +32,11 @@ test:
   batch_size: 128 # * num gpus
   
 loss:
-  name: 'cosface' # 'arcface', 'cosface', 'adacos', 'softmax', 'sphere' 
+  name: 'arcface' # 'arcface', 'cosface', 'adacos', 'softmax', 'sphere' 
+  # params: # only for  adacos and amsoftmax
+  #   in_features: 512 
+  #   out_features: 1108    
+
 
 optimizer:
   name: 'adam'
