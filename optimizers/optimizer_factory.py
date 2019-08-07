@@ -34,11 +34,11 @@ def test():
     c.optimizer.name = 'adam'
     c.optimizer.params = edict()
 
-    model = get_pretrainedmodels(num_outputs=10)
+    # model = get_pretrainedmodels(num_outputs=10)
 
-    optim = get_optimizer(c, model.parameters())
+    # optim = get_optimizer(c, model.parameters())
 
-    print(optim)
+    # print(optim)
 
 if __name__ == "__main__":
     test()

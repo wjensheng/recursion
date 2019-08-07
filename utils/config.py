@@ -97,6 +97,8 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # loss
     cfg.loss = edict()
     cfg.loss.name = 'none'
+    cfg.loss.in_features = 512
+    cfg.loss.out_features = 1108
 
     return cfg
 

@@ -7,191 +7,71 @@ import torch.nn.functional as F
 
 from easydict import EasyDict as edict
 
-import layers.functional as LF
+class ArcFaceLoss(nn.modules.Module):
+    """"https://www.kaggle.com/c/human-protein-atlas-image-classification/discussion/78109"""
 
-def mac(x):
-    return F.max_pool2d(x, (x.size(-2), x.size(-1)))
-    # return F.adaptive_max_pool2d(x, (1,1)) # alternative
+    def __init__(self,s=65.0,m=0.5):
+        super(ArcFaceLoss, self).__init__()
+        self.classify_loss = nn.CrossEntropyLoss()
+        self.s = s
+        self.easy_margin = False
+        self.cos_m = math.cos(m)
+        self.sin_m = math.sin(m)
+        self.th = math.cos(math.pi - m)
+        self.mm = math.sin(math.pi - m) * m
 
-
-def spoc(x):
-    return F.avg_pool2d(x, (x.size(-2), x.size(-1)))
-    # return F.adaptive_avg_pool2d(x, (1,1)) # alternative
-
-
-def gem(x, p=3, eps=1e-6):
-    return F.avg_pool2d(x.clamp(min=eps).pow(p), (x.size(-2), x.size(-1))).pow(1. / p)
-    # return F.lp_pool2d(F.threshold(x, eps, eps), p, (x.size(-2), x.size(-1))) # alternative
-
-
-def rmac(x, L=3, eps=1e-6):
-    ovr = 0.4  # desired overlap of neighboring regions
-    steps = torch.Tensor([2, 3, 4, 5, 6, 7])  # possible regions for the long dimension
-
-    W = x.size(3)
-    H = x.size(2)
-
-    w = min(W, H)
-    w2 = math.floor(w / 2.0 - 1)
-
-    b = (max(H, W) - w) / (steps - 1)
-    (tmp, idx) = torch.min(torch.abs(((w ** 2 - w * b) / w ** 2) - ovr), 0)  # steps(idx) regions for long dimension
-
-    # region overplus per dimension
-    Wd = 0;
-    Hd = 0;
-    if H < W:
-        Wd = idx.item() + 1
-    elif H > W:
-        Hd = idx.item() + 1
-
-    v = F.max_pool2d(x, (x.size(-2), x.size(-1)))
-    v = v / (torch.norm(v, p=2, dim=1, keepdim=True) + eps).expand_as(v)
-
-    for l in range(1, L + 1):
-        wl = math.floor(2 * w / (l + 1))
-        wl2 = math.floor(wl / 2 - 1)
-
-        if l + Wd == 1:
-            b = 0
+    def forward(self, logits, labels, epoch=0):
+        cosine = logits
+        sine = torch.sqrt(1.0 - torch.pow(cosine, 2))
+        phi = cosine * self.cos_m - sine * self.sin_m
+        if self.easy_margin:
+            phi = torch.where(cosine > 0, phi, cosine)
         else:
-            b = (W - wl) / (l + Wd - 1)
-        cenW = torch.floor(wl2 + torch.Tensor(range(l - 1 + Wd + 1)) * b) - wl2  # center coordinates
-        if l + Hd == 1:
-            b = 0
+            phi = torch.where(cosine > self.th, phi, cosine - self.mm)
+
+        if torch.cuda.is_available():
+            one_hot = torch.zeros(cosine.size(), device='cuda')
         else:
-            b = (H - wl) / (l + Hd - 1)
-        cenH = torch.floor(wl2 + torch.Tensor(range(l - 1 + Hd + 1)) * b) - wl2  # center coordinates
+            one_hot = torch.zeros(cosine.size())
 
-        for i_ in cenH.tolist():
-            for j_ in cenW.tolist():
-                if wl == 0:
-                    continue
-                R = x[:, :, (int(i_) + torch.Tensor(range(wl)).long()).tolist(), :]
-                R = R[:, :, :, (int(j_) + torch.Tensor(range(wl)).long()).tolist()]
-                vt = F.max_pool2d(R, (R.size(-2), R.size(-1)))
-                vt = vt / (torch.norm(vt, p=2, dim=1, keepdim=True) + eps).expand_as(vt)
-                v += vt
-
-    return v
+        one_hot.scatter_(1, labels.view(-1, 1).long(), 1)
+        # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
+        output = (one_hot * phi) + ((1.0 - one_hot) * cosine)
+        output *= self.s
+        loss1 = self.classify_loss(output, labels)
+        loss2 = self.classify_loss(cosine, labels)
+        gamma=1
+        loss=(loss1+gamma*loss2)/(1+gamma)
+        return loss
 
 
-def roipool(x, rpool, L=3, eps=1e-6):
-    ovr = 0.4  # desired overlap of neighboring regions
-    steps = torch.Tensor([2, 3, 4, 5, 6, 7])  # possible regions for the long dimension
+class AdMSoftmaxLoss(nn.Module):
+    """https://github.com/cvqluu/Additive-Margin-Softmax-Loss-Pytorch"""
 
-    W = x.size(3)
-    H = x.size(2)
+    def __init__(self, in_features, out_features, s=30.0, m=0.4):
+        super(AdMSoftmaxLoss, self).__init__()
+        self.s = s
+        self.m = m
+        self.in_features = in_features
+        self.out_features = out_features
+        self.fc = nn.Linear(in_features, out_features, bias=False)
 
-    w = min(W, H)
-    w2 = math.floor(w / 2.0 - 1)
+    def forward(self, x, labels):
+        assert len(x) == len(labels)
+        assert torch.min(labels) >= 0
+        assert torch.max(labels) < self.out_features
+        
+        for W in self.fc.parameters():
+            W = F.normalize(W, dim=1)
 
-    b = (max(H, W) - w) / (steps - 1)
-    _, idx = torch.min(torch.abs(((w ** 2 - w * b) / w ** 2) - ovr), 0)  # steps(idx) regions for long dimension
+        x = F.normalize(x, dim=1)
 
-    # region overplus per dimension
-    Wd = 0;
-    Hd = 0;
-    if H < W:
-        Wd = idx.item() + 1
-    elif H > W:
-        Hd = idx.item() + 1
-
-    vecs = []
-    vecs.append(rpool(x).unsqueeze(1))
-
-    for l in range(1, L + 1):
-        wl = math.floor(2 * w / (l + 1))
-        wl2 = math.floor(wl / 2 - 1)
-
-        if l + Wd == 1:
-            b = 0
-        else:
-            b = (W - wl) / (l + Wd - 1)
-        cenW = torch.floor(wl2 + torch.Tensor(range(l - 1 + Wd + 1)) * b).int() - wl2  # center coordinates
-        if l + Hd == 1:
-            b = 0
-        else:
-            b = (H - wl) / (l + Hd - 1)
-        cenH = torch.floor(wl2 + torch.Tensor(range(l - 1 + Hd + 1)) * b).int() - wl2  # center coordinates
-
-        for i_ in cenH.tolist():
-            for j_ in cenW.tolist():
-                if wl == 0:
-                    continue
-                vecs.append(rpool(x.narrow(2, i_, wl).narrow(3, j_, wl)).unsqueeze(1))
-
-    return torch.cat(vecs, dim=1)
-
-
-# --------------------------------------
-# normalization
-# --------------------------------------
-
-def l2n(x, eps=1e-6):
-    return x / (torch.norm(x, p=2, dim=1, keepdim=True) + eps).expand_as(x)
-
-
-def powerlaw(x, eps=1e-6):
-    x = x + eps
-    return x.abs().sqrt().mul(x.sign())
-
-
-# --------------------------------------
-# loss
-# --------------------------------------
-
-def contrastive_loss(x, label, margin=0.7, eps=1e-6):
-    # x is D x N
-    dim = x.size(0)  # D
-    nq = torch.sum(label.data == -1)  # number of tuples
-    S = x.size(1) // nq  # number of images per tuple including query: 1+1+n
-
-    x1 = x[:, ::S].permute(1, 0).repeat(1, S - 1).view((S - 1) * nq, dim).permute(1, 0)
-    idx = [i for i in range(len(label)) if label.data[i] != -1]
-    x2 = x[:, idx]
-    lbl = label[label != -1]
-
-    dif = x1 - x2
-    D = torch.pow(dif + eps, 2).sum(dim=0).sqrt()
-
-    y = 0.5 * lbl * torch.pow(D, 2) + 0.5 * (1 - lbl) * torch.pow(torch.clamp(margin - D, min=0), 2)
-    y = torch.sum(y)
-    return y
-
-
-# --------------------------------------
-# Loss/Error layers
-# --------------------------------------
-
-class ContrastiveLoss(nn.Module):
-    r"""CONTRASTIVELOSS layer that computes contrastive loss for a batch of images:
-        Q query tuples, each packed in the form of (q,p,n1,..nN)
-
-    Args:
-        x: tuples arranges in columns as [q,p,n1,nN, ... ]
-        label: -1 for query, 1 for corresponding positive, 0 for corresponding negative
-        margin: contrastive loss margin. Default: 0.7
-
-    >>> contrastive_loss = ContrastiveLoss(margin=0.7)
-    >>> input = torch.randn(128, 35, requires_grad=True)
-    >>> label = torch.Tensor([-1, 1, 0, 0, 0, 0, 0] * 5)
-    >>> output = contrastive_loss(input, label)
-    >>> output.backward()
-    """
-
-    def __init__(self, margin=0.7, eps=1e-6):
-        super(ContrastiveLoss, self).__init__()
-        self.margin = margin
-        self.eps = eps
-
-
-    def forward(self, x, label):
-        return LF.contrastive_loss(x, label, margin=self.margin, eps=self.eps)
-
-
-    def __repr__(self):
-        return self.__class__.__name__ + '(' + 'margin=' + '{:.4f}'.format(self.margin) + ')'
+        wf = self.fc(x)
+        numerator = self.s * (torch.diagonal(wf.transpose(0, 1)[labels]) - self.m)
+        excl = torch.cat([torch.cat((wf[i, :y], wf[i, y+1:])).unsqueeze(0) for i, y in enumerate(labels)], dim=0)
+        denominator = torch.exp(numerator) + torch.sum(torch.exp(self.s * excl), dim=1)
+        L = numerator - torch.log(denominator)
+        return -torch.mean(L)
 
 
 class FocalLoss(nn.Module):
@@ -208,6 +88,7 @@ class FocalLoss(nn.Module):
         p = torch.exp(-logp)
         loss = (1 - p) ** self.gamma * logp
         return loss.mean()
+
 
 def cross_entropy() -> Any:
     return torch.nn.CrossEntropyLoss()
@@ -227,17 +108,16 @@ def smooth_l1_loss() -> Any:
 def focal():
     return FocalLoss()
 
-def contrastive(margin=0.7):
-    return ContrastiveLoss(margin=margin)    
+def arcface():
+    return ArcFaceLoss()    
 
-def get_loss(config: edict) -> Any:
+def amsoft(in_features, out_features):
+    return AdMSoftmaxLoss(in_features, out_features, s=30.0, m=0.4)
+
+def get_loss(config):
     f = globals().get(config.loss.name)
-    return f()
+    return f(**config.loss.params)
 
 
 if __name__ == "__main__":
-    c = edict()
-    c.loss = edict()
-    c.loss.name = 'contrastive'
-
-    print(get_loss(c))
+    pass
