@@ -31,8 +31,7 @@ class RcicNet(nn.Module):
                  s=30.0,
                  margin=0.50,
                  ls_eps=0.0,
-                 theta_zero=0.785,
-                 load_trained=True):
+                 theta_zero=0.785):
         """
         :param n_classes:
         :param model_name: name of model from pretrainedmodels
@@ -41,15 +40,10 @@ class RcicNet(nn.Module):
         :param loss_module: One of ('arcface', 'cosface', 'softmax')
         """
         super(RcicNet, self).__init__()        
-
-        if not load_trained:
-            self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
-            final_in_features = self.backbone.last_linear.in_features
-            
-        else:
-            self.backbone = models.resnet34(pretrained=False, num_classes=n_classes)    
-            final_in_features = self.backbone.fc.in_features
-
+                
+        self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
+        final_in_features = self.backbone.last_linear.in_features        
+        
         # transfer weight from pretrained network
         trained_kernel = self.backbone.conv1.weight            
 
@@ -161,11 +155,10 @@ def get_model(config):
     loss_module = config.model.loss_module
     s = config.model.s
     margin = config.model.margin
-    load_trained = config.model.load_trained    
 
     net = RcicNet(n_classes, model_name, pool, args_pooling,
                   use_fc, fc_dim, dropout, loss_module, 
-                  s, margin, load_trained)
+                  s, margin)
     return net
 
 if __name__ == "__main__":

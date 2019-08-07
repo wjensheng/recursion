@@ -14,7 +14,7 @@ def split_experiments(df):
 
 def filter_experiments(df, cell_type):
     df = split_experiments(df)
-    return df[df['cell_type'] == CELL_TYPE[cell_type]]
+    return df[df['cell_type'] == cell_type]
 
 
 def train_val_exp_split(train, test):

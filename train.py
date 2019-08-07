@@ -44,6 +44,10 @@ def create_model(config):
     return model
 
 def train_momentum(model, train=True):
+    if torch.cuda.device_count() > 1:
+        model = model.module.backbone
+    else:
+        model = model.backbone
         for name, child in model.named_children():
             if isinstance(child, nn.BatchNorm2d):
                 child.track_running_stats = train
@@ -62,7 +66,7 @@ def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, n
     avg_score = AverageMeter()
 
     model.train()
-    train_momentum(model.module.backbone)
+    train_momentum(model)
 
     num_steps = len(train_loader)
 
@@ -113,7 +117,7 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
     losses = AverageMeter()
     
     model.eval()
-    train_momentum(model.module.backbone, False)
+    train_momentum(model, False)
 
     valid_fc_dict = defaultdict(list)
 
@@ -201,11 +205,6 @@ def run(config):
 
     print(model)
 
-    if config.model.load_trained:
-        model.module.backbone.load_state_dict(torch.load(os.path.join(config.saved.model_dir, 
-                                                            config.saved.model)))
-    
-
     # optimizer
     optimizer = get_optimizer(config, model.parameters())
 
@@ -218,7 +217,7 @@ def run(config):
     print(criterion)
     
     last_epoch = 0
-    best_score = 0.010
+    best_score = 0.0
     best_epoch = 0
 
     for epoch in tqdm(range(last_epoch + 1, config.train.num_epochs + 1)):
@@ -259,13 +258,14 @@ def run(config):
 
     logger.info(f'best score: {best_score:.3f}')
 
-    print('Generating predictions...')
+    if config.setup.stage != 0:
+        print('Generating predictions...')
 
-    submission, all_classes_preds = test_inference(test_loader, best_model)
+        submission, all_classes_preds = test_inference(test_loader, best_model)
 
-    print('Number of unique sirnas', submission['predicted_sirna'].nunique())
+        print('Number of unique sirnas', submission['predicted_sirna'].nunique())
 
-    save_csv(config, submission, all_classes_preds)
+        save_csv(config, submission, all_classes_preds)
 
 ## END ##
 

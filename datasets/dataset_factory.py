@@ -18,6 +18,8 @@ from easydict import EasyDict as edict
 # -convert tsfm to args
 # -fix duplication
 
+CELL_TYPE = ['HEPG2', 'HUVEC', 'RPE', 'U2OS']
+
 def get_two_sites(config, df, tsfm, mode):
     ds_s1 = RCICDefaultDataset(df, 
                                config.data.data_dir,
@@ -39,15 +41,16 @@ def get_dataframes(config):
     train_df = pd.read_csv(os.path.join(config.data.data_dir, config.data.train))
     test_df = pd.read_csv(os.path.join(config.data.data_dir, config.data.test))
 
-    # stage 0: train on all dataset
+    # stage 0: train on all dataset, valid on last batches
     if config.setup.stage == 0:        
-        return train_df, None, None
+        train_df, valid_df = manual_split(train_df)
+        test_df = None
 
-    # stage 1: smaller validation set    
+    # stage 1: validation set based on cell types
     elif config.setup.stage == 1:
+        train_df = filter_experiments(train_df, CELL_TYPE[config.setup.cell_type])        
         train_df, valid_df = manual_split(train_df)
         test_df = filter_experiments(test_df, CELL_TYPE[config.setup.cell_type])
-        return train_df, valid_df, test_df
 
     # stage 2: larger validation set
     elif config.setup.stage == 2:
@@ -55,11 +58,11 @@ def get_dataframes(config):
                                                        test=test_df,
                                                        split=config.setup.cell_type,
                                                        test_size=config.setup.test_size)
-        return train_df, valid_df, test_df
 
     else:
         raise ValueError('Unknown stage!')    
 
+    return train_df, valid_df, test_df
 
 def get_dataset(config):
 
@@ -80,16 +83,22 @@ def get_dataset(config):
     
     # stage 0: train on all dataset
     if config.setup.stage == 0:  
-        train_df, _, _ = get_dataframes(config)
+        train_df, valid_df, _ = get_dataframes(config)
+        print('train experiments:', train_df['experiment'].unique())
+        print('valid experiments:', valid_df['experiment'].unique())        
         train_ds = get_two_sites(config, train_df, train_tsfm, 'train')
-        valid_ds = test_ds = None
+        valid_ds = get_two_sites(config, valid_df, test_tsfm, 'train')
+        test_ds = None
 
     # stage 1: smaller validation set    
     elif config.setup.stage == 1:
-        train_df, valid_df, _ = get_dataframes(config)
+        train_df, valid_df, test_df = get_dataframes(config)
+        print('train experiments:', train_df['experiment'].unique())
+        print('valid experiments:', valid_df['experiment'].unique())
+        print('test experiments:', test_df['experiment'].unique())        
         train_ds = get_two_sites(config, train_df, train_tsfm, 'train')
         valid_ds = get_two_sites(config, valid_df, test_tsfm, 'train')
-        test_ds = None            
+        test_ds = get_two_sites(config, test_df, test_tsfm, 'train')
 
     # stage 2: larger validation set
     elif config.setup.stage == 2:

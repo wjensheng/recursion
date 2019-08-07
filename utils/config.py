@@ -11,7 +11,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg = edict()
 
     # experiments
-    cfg.experiment_dir = 'experiments/'    
+    cfg.experiment_dir = 'experiments'    
 
     # setups
     cfg.setup = edict()
@@ -27,7 +27,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     
     # data
     cfg.data = edict()
-    cfg.data.data_dir = 'data/'
+    cfg.data.data_dir = 'data'
     cfg.data.train = 'train.csv'
     cfg.data.test = 'test.csv'
 
@@ -64,7 +64,6 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.model.num_classes = 1108
     cfg.model.pretrained = True
     cfg.model.lr = 3e-4
-    cfg.model.load_trained = True
     
     # train
     cfg.train = edict()
