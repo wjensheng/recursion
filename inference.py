@@ -2,6 +2,7 @@ import torch
 from tqdm import tqdm as tqdm
 from typing import *
 
+from utils import *
 
 def test_inference(data_loader: Any, model: Any):
 
@@ -26,8 +27,7 @@ def test_inference(data_loader: Any, model: Any):
             
     submission, all_classes_preds  = utils.metrics.weighted_preds(test_fc_dict)
     
-    return submission, all_classes_preds
-
+    return submission, all_classes_pred
 
 
 def run(config):
@@ -35,6 +35,7 @@ def run(config):
     _, _, test_loader = get_dataloader(config)
 
     # load model
+    print('Loading model from', config.test.model)    
     model = load_model(config.test.model)
 
     # inference
@@ -48,7 +49,11 @@ def run(config):
 
 
 if __name__ == "__main__":
-    
+
+    args = parse_args()
+
+    config = utils.config.load_config(args.config, args)
+
     print('Generating predictions...')
 
     run(config)

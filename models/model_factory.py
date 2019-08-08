@@ -104,10 +104,10 @@ class RcicNet(nn.Module):
         nn.init.constant_(self.bn3.weight, 1)
         nn.init.constant_(self.bn3.bias, 0)
 
-    def forward(self, x, label):
+    def forward(self, x):
         feature = self.extract_feat(x)
         if self.loss_module in ('arcface', 'cosface', 'adacos', 'sphere'):
-            logits = self.final(feature, label)
+            logits = self.final(feature)
         else:
             logits = self.final(feature)
         return logits

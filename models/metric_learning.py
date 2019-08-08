@@ -18,7 +18,7 @@ class AdaCos(nn.Module):
         self.W = Parameter(torch.FloatTensor(out_features, in_features))
         nn.init.xavier_uniform_(self.W)
 
-    def forward(self, input, label):
+    def forward(self, input):
         # normalize features
         x = F.normalize(input)
         # normalize weights
@@ -127,10 +127,11 @@ class ArcMarginProduct(nn.Module):
         # self.th = math.cos(math.pi - m)
         # self.mm = math.sin(math.pi - m) * m
 
-    def forward(self, input, label):
+    def forward(self, input):
         # --------------------------- cos(theta) & phi(theta) ---------------------------
         cosine = F.linear(F.normalize(input), F.normalize(self.weight))
         return cosine
+
         # sine = torch.sqrt(1.0 - torch.pow(cosine, 2))
         # phi = cosine * self.cos_m - sine * self.sin_m
         # if self.easy_margin:
@@ -181,7 +182,7 @@ class AddMarginProduct(nn.Module):
         self.weight = Parameter(torch.FloatTensor(out_features, in_features))
         nn.init.xavier_uniform_(self.weight)
 
-    def forward(self, input, label):
+    def forward(self, input):
         # --------------------------- cos(theta) & phi(theta) ---------------------------
         cosine = F.linear(F.normalize(input), F.normalize(self.weight))
         return cosine

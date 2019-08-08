@@ -23,12 +23,11 @@ from losses import get_loss
 from optimizers import get_optimizer
 from schedulers import get_scheduler
 from tsfm import get_transform
-from models.loss import ContrastiveLoss
 
-from utils import * # create_logger, AverageMeter, seed_everything, check_cuda, save_checkpoint
+from utils import * 
 import utils.config
 import utils.checkpoint
-import utils.metrics # TODO: for combined accuracy 
+import utils.metrics
 
 
 def create_model(config):
@@ -42,6 +41,7 @@ def create_model(config):
         model = model.cuda()
 
     return model
+
 
 def train_momentum(model, train=True):
     if torch.cuda.device_count() > 1:
@@ -79,7 +79,7 @@ def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, n
         if torch.cuda.is_available():
             input_, target = input_.cuda(), target.cuda()
         
-        output = model(input_, target)
+        output = model(input_)
 
         loss = criterion(output, target)
                 
@@ -125,13 +125,13 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
 
     with torch.no_grad():
         for idx, data in enumerate(val_loader):
-            input_, id_codes, target = data            
+            input_, id_codes, target = data
 
             # if using gpu
             if torch.cuda.is_available():
                 input_, target = input_.cuda(), target.cuda()
                         
-            output = model(input_, target)
+            output = model(input_)
             loss = criterion(output, target)
                         
             losses.update(loss.data.item(), input_.size(0))
@@ -159,15 +159,18 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
         
         if torch.cuda.is_available(): torch.cuda.empty_cache()
 
-        train_loss = train_one_epoch(config, logger, train_loader, model, criterion, optimizer, config.train.num_grad_acc, lr_scheduler)
+        train_loss = train_one_epoch(config, logger, train_loader, 
+                                     model, criterion, optimizer, 
+                                     config.train.num_grad_acc, lr_scheduler)
     
         train_logstr = (f'Epoch: {epoch}\t'
                         f'Train loss: {train_loss:.3f}\t')
     
-        valid_loss, valid_accuracy = validate_one_epoch(config, logger, val_loader, model, criterion, valid_df)
+        val_loss, val_accuracy = validate_one_epoch(config, logger, val_loader, 
+                                                    model, criterion, valid_df)
     
-        valid_logstr = (f'Val loss: {valid_loss:.3f}\t'
-                        f'Val accuracy: {valid_accuracy:.3f}')
+        valid_logstr = (f'Val loss: {val_loss:.3f}\t'
+                        f'Val accuracy: {val_accuracy:.3f}')
     
         # SGDR
         if config.optimizer.name == 'cosine':
@@ -188,7 +191,8 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
             filename = f'{config.setup.version}_e{epoch:02d}_{best_score:.04f}.pth'
             model_dir = config.saved.model_dir
 
-            save_checkpoint(model_dir, filename, model, epoch, best_score, optimizer, save_arch=True, params=config)
+            save_checkpoint(model_dir, filename, model, epoch, best_score, 
+                            optimizer, save_arch=True, params=config)
 
             logger.info(f'A snapshot was saved to {filename}')
 
@@ -248,9 +252,9 @@ def test_model(config):
     input_ = torch.randn((16, 6, 224, 224))
     label_ = torch.tensor([1, 2, 3, 4] * 4)
 
-    output = m(input_, label_)    
+    output = m(input_)    
 
-    # print(output.size())
+    print(output.size())
 
     loss = criterion(output, label_)
 
@@ -284,8 +288,8 @@ def main():
 
     seed_everything()  
 
-    run(config)
-    # test_model(config)    
+    # run(config)
+    test_model(config)    
 
     print('complete!')
 

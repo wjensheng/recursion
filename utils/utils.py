@@ -58,6 +58,7 @@ def save_checkpoint(model_dir, filename, model, epoch, best_score, optimizer=Non
             del attributes['arch']
             torch.save(attributes, os.path.join(model_dir, filename))    
 
+
 def save_preds(config, submission, all_classes_preds):
     # filename
     fn = f'{config.setup.version}_t{config.setup.cell_type}'
@@ -115,7 +116,7 @@ def load_model(path, is_inference=True):
 
     if is_inference:
         model.eval()
-        
+
     return model
 
 
