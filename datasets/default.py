@@ -20,7 +20,8 @@ from PIL import Image
 # 2. how to account for controls
 
 class RCICDefaultDataset(Dataset):
-    def __init__(self, df, img_dir, tsfm=None, mode='train', site=1, channels=[1,2,3,4,5,6]):        
+    
+    def __init__(self, df, img_dir, tsfm=None, mode='train', site=1, channels=[1,2,3,4,5,6]):
         self.records = df.to_records(index=False)
         self.channels = channels
         self.site = site

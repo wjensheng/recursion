@@ -3,7 +3,10 @@ import glob
 import pandas as pd
 import numpy as np
 
+from easydict import EasyDict as edict
+
 def compile(path, pattern):
+    df = pd.DataFrame()
     for file in glob.glob(os.path.join(path, pattern)):
         print(file)
         tmp = pd.read_csv(file)
@@ -13,11 +16,13 @@ def compile(path, pattern):
 
     return df
 
-def compile_splits(config):
-    # for splits, take only df of the same cell_types
-    df = compile(config.submission.submission_dir, config.submission.split_pat)
-    return df
-    
+
+def compile_splits(path, pattern):
+    for file in glob.glob(os.path.join(path, pattern)):
+        print(file)
+        tmp = pd.read_csv(file)
+        df = pd.concat([df, tmp], axis=0)
+
 
 def compile_classes(config):
     classes_sub = 'classes_' + config.submission.submission_pat 
@@ -95,3 +100,16 @@ def leak_submission(config):
 
     sub.to_csv(os.path.join(config.submission.submission_dir, 'submission_with_leak.csv'), index=False)
 
+if __name__ == "__main__":
+    config = edict()
+    config.submission = edict()
+    config.submission.submission_dir = 'submissions'
+    config.submission.submission_pat = 'friday_*'
+
+    df = compile_submission(config)
+
+    df = df.sort_values(by='id_code')
+
+    print(df)
+
+    df.to_csv(os.path.join(config.submission.submission_dir, 'submission_f.csv'), index=False)
