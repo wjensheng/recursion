@@ -101,12 +101,12 @@ def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, n
         batch_time.update(time.time() - end)
         end = time.time()
 
-        # if idx % config.train.log_freq == 0:
-        #     logger.info(f'[{idx}/{num_steps}]\t'
-        #                 f'time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-        #                 f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
-        #               # f'accuracy {avg_score.val:.4f} ({avg_score.avg:.4f})'
-        #                 + lr_str)
+        if idx % config.train.log_freq == 0:
+            logger.info(f'[{idx}/{num_steps}]\t'
+                        f'time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                        f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
+                      # f'accuracy {avg_score.val:.4f} ({avg_score.avg:.4f})'
+                        + lr_str)
 
     return losses.avg
 
@@ -139,11 +139,11 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
             for i in range(len(id_codes)):
                 valid_fc_dict[id_codes[i]] += output[i],
                 
-        # if idx % config.valid.log_freq == 0:
-        #     logger.info(f'[{idx}/{num_steps}]\t'
-        #                 f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
-        #               # f'accuracy {avg_score.val:.4f} ({avg_score.avg:.4f})'
-        #                 + lr_str)
+        if idx % config.valid.log_freq == 0:
+            logger.info(f'[{idx}/{num_steps}]\t'
+                        f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
+                      # f'accuracy {avg_score.val:.4f} ({avg_score.avg:.4f})'
+                        + lr_str)
     
     combined_valid_accuracy = utils.metrics.combined_accuracy(valid_fc_dict, valid_df)
 
