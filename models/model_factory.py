@@ -15,6 +15,7 @@ class AdaptiveConcatPool2d(nn.Module):
         self.mp = nn.AdaptiveMaxPool2d(1)
     def forward(self, x): return torch.cat([self.mp(x), self.ap(x)], 1)
 
+
 class RcicNet(nn.Module):
 
     DIVIDABLE_BY = 32
