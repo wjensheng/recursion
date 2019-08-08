@@ -82,6 +82,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # test
     cfg.test = edict()
     cfg.test.batch_size = 64 # * torch.cuda.device_count()
+    cfg.test.model = ''
     # cfg.test.num_ttas = 1
 
     # optimizer

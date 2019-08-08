@@ -26,12 +26,8 @@ def compile_splits(path, pattern):
 
 
 def compile_classes(config):
-    # t = torch.empty((19897, 1108))
     t = np.asarray([])
 
-    # for file in glob.glob(os.path.join(config.submission.submission_dir, 
-    #                                    config.submission.submission_pat)):
-    
     for i in range(4):
         filename = f'class_t{i}.pt'
         file = os.path.join(config.submission.submission_dir, filename)
@@ -42,8 +38,7 @@ def compile_classes(config):
     return np.stack(t).squeeze()
 
 
-
-def compile_submission(config):
+def compile_submission(config, save=False):
     # take df of 4 cell types
     df = compile(config.submission.submission_dir, config.submission.submission_pat)
 
@@ -53,21 +48,11 @@ def compile_submission(config):
 
     df = df.reset_index(drop=True)
 
-    df.to_csv(os.path.join(config.submission.submission_dir, 'submission_no_leak.csv'), index=False)
+    if save:
+        df.to_csv(os.path.join(config.submission.submission_dir, 
+                               'submission_no_leak.csv'), index=False)
     
     return df
-
-# def select_plate_group(test_csv, all_test_exp, plate_groups, exp_to_group, pp_mult, idx):
-#     sub_test = test_csv.loc[test_csv.experiment == all_test_exp[idx],:]
-
-#     print(sub_test.shape)
-#     print(pp_mult.shape)
-
-#     assert len(pp_mult) == len(sub_test)
-#     mask = np.repeat(plate_groups[np.newaxis, :, exp_to_group[idx]], len(pp_mult), axis=0) != \
-#            np.repeat(sub_test.plate.values[:, np.newaxis], 1108, axis=1)
-#     pp_mult[mask] = 0
-#     return pp_mult    
 
 
 def leak_submission(config):
@@ -140,11 +125,4 @@ if __name__ == "__main__":
     config.submission.submission_dir = 'submissions'
     config.submission.submission_pat = 'submission_t*'
 
-    # print(compile_submission(config))
-    # print(compile_classes(config))
-    # leak_submission(config)
-
     compile_submission(config)
-
-    
-    # compile_leak(config, exp_to_group, all_test_exp, test_csv, plate_groups, sub)

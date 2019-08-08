@@ -58,18 +58,25 @@ def save_checkpoint(model_dir, filename, model, epoch, best_score, optimizer=Non
             del attributes['arch']
             torch.save(attributes, os.path.join(model_dir, filename))    
 
-def save_csv(config, submission, all_classes_preds):
-    fn = f'{config.setup.version}_submission_{config.setup.cell_type}.csv'
+def save_preds(config, submission, all_classes_preds):
+    # filename
+    fn = f'{config.setup.version}_t{config.setup.cell_type}'
 
-    submission.to_csv(os.path.join(config.submission.submission_dir, fn), index=False)
+    # csv file, pth file
+    csv_fn = fn + '.csv'
+    pth_fn = 'softmax_' + fn
 
-    all_classes_preds['predicted_sirna'] = all_classes_preds['predicted_sirna'].apply(lambda o: o.numpy())
+    # save file
+    submission.to_csv(os.path.join(config.submission.submission_dir, csv_fn), index=False)
 
-    fn = 'classes_' + fn
+    # get softmax predictions
+    softmax_preds = all_classes_preds['predicted_sirna'].values
 
-    all_classes_preds.to_csv(os.path.join(config.submission.submission_dir, fn), index=False)
+    # save file
+    torch.save(softmax_preds, os.path.join(config.submission.submission_dir, pth_fn))
 
-    print('files saved to', config.submission.submission_dir)
+    print('Both files saved to', config.submission.submission_dir)
+
 
 def load_checkpoint(path, model=None, optimizer=None, params=False, epoch=False):
     resume = torch.load(path)
@@ -98,8 +105,17 @@ def load_model(path, is_inference=True):
     resume = torch.load(path)
     model = resume['arch']
     model.load_state_dict(resume['state_dict'])
+
+    if torch.cuda.is_available() and torch.cuda.device_count() > 1: 
+        model = torch.nn.DataParallel(model)
+
+    # use gpu
+    if torch.cuda.is_available(): 
+        model = model.cuda()
+
     if is_inference:
         model.eval()
+        
     return model
 
 

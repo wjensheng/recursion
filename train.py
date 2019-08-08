@@ -134,8 +134,7 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
             output = model(input_, target)
             loss = criterion(output, target)
                         
-            losses.update(loss.data.item(), input_.size(0))            
-            _, predicts = torch.max(output.detach(), dim=1)
+            losses.update(loss.data.item(), input_.size(0))
             
             for i in range(len(id_codes)):
                 valid_fc_dict[id_codes[i]] += output[i],
