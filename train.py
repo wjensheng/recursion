@@ -151,72 +151,8 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
     return losses.avg, combined_valid_accuracy
     
 
-def test_inference(data_loader: Any, model: Any):
+def train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, logger, last_epoch):
 
-    test_fc_dict = defaultdict(list)
-
-    model.eval()
-
-    all_targets = []
-    
-    with torch.no_grad():
-        preds = np.empty(0)
-        for i, data in enumerate(tqdm(data_loader)):
-            
-            input_, id_codes = data            
-            
-            input_ = input_.to(device)
-
-            output = model(input_)
-                        
-            _, predicts = torch.max(output.detach(), dim=1)
-            
-            for i in range(len(output)):
-                test_fc_dict[id_codes[i]] += output[i],
-            
-    subm, all_classes_preds  = utils.metrics.weighted_preds(test_fc_dict)        
-    
-    return subm, all_classes_preds
-
-
-def run(config):
-
-    # create logger
-    log_filename = f'log_training_{config.setup.version}.txt'
-    logger = create_logger(os.path.join(config.experiment_dir, log_filename))
-
-    logger.info('=' * 50)
-
-    # check gpu status
-    check_cuda(logger)
-
-    # valid_df for combined_accuracy
-    _, valid_df, _ = get_dataframes(config)
-
-    # get dataloders
-    train_loader, val_loader, test_loader = get_dataloader(config)
-
-    # valid_dl len: {len(val_loader)}
-    logger.info(f'train_dl len: {len(train_loader)}')
-    logger.info(f'valid_dl len: {len(val_loader)}')
-    
-    # model
-    model = create_model(config)
-
-    print(model)
-
-    # optimizer
-    optimizer = get_optimizer(config, model.parameters())
-
-    # lr_scheduler
-    lr_scheduler = get_scheduler(config, optimizer)
-
-    # criterion    
-    criterion = get_loss(config)
-
-    print(criterion)
-    
-    last_epoch = 0
     best_score = 0.0
     best_epoch = 0
 
@@ -237,6 +173,7 @@ def run(config):
         # SGDR
         if config.optimizer.name == 'cosine':
             lr_scheduler = get_scheduler(config, optimizer)
+
         # One cyclic lr
         elif config.optimizer.name == 'cyclic_lr':
             current_lr = lr_scheduler.get_lr()
@@ -258,14 +195,47 @@ def run(config):
 
     logger.info(f'best score: {best_score:.3f}')
 
-    if config.setup.stage != 0:
-        print('Generating predictions...')
 
-        submission, all_classes_preds = test_inference(test_loader, best_model)
+def run(config):
 
-        print('Number of unique sirnas', submission['predicted_sirna'].nunique())
+    # create logger
+    log_filename = f'log_training_{config.setup.version}.txt'
+    logger = create_logger(os.path.join(config.experiment_dir, log_filename))
 
-        save_csv(config, submission, all_classes_preds)
+    logger.info('=' * 50)
+
+    # check gpu status
+    check_cuda(logger)
+
+    # valid_df for combined_accuracy
+    _, valid_df, _ = get_dataframes(config)
+
+    # get dataloders
+    train_loader, val_loader, test_loader = get_dataloader(config)
+
+    logger.info(f'train_dl len: {len(train_loader)}')
+    logger.info(f'valid_dl len: {len(val_loader)}')
+    
+    # model
+    model = create_model(config)
+
+    print(model)
+
+    # optimizer
+    optimizer = get_optimizer(config, model.parameters())
+
+    # lr_scheduler
+    lr_scheduler = get_scheduler(config, optimizer)
+
+    # criterion    
+    criterion = get_loss(config)
+
+    print(criterion)
+    
+    last_epoch = 0
+    
+    train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, logger, last_epoch)
+    
 
 ## END ##
 
@@ -286,7 +256,6 @@ def test_model(config):
     loss = criterion(output, label_)
 
     print(loss)
-
     
         
 def parse_args():
