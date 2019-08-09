@@ -58,7 +58,7 @@ def train_momentum(model, train=True):
                             layer.track_running_stats = train                
 
 
-def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, num_grad_acc, lr_scheduler, mb):
+def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, lr_scheduler, mb):
     logger.info('training')
 
     batch_time = AverageMeter()
@@ -160,17 +160,12 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
         
         if torch.cuda.is_available(): torch.cuda.empty_cache()
 
-        train_loss = train_one_epoch(config, logger, train_loader, 
-                                     model, criterion, optimizer, 
-                                     config.train.num_grad_acc, lr_scheduler,
-                                     mb)
+        train_loss = train_one_epoch(config, logger, train_loader, model, criterion, optimizer, lr_scheduler, mb)
     
         train_logstr = (f'Epoch: {epoch}\t'
                         f'Train loss: {train_loss:.3f}\t')
     
-        val_loss, val_accuracy = validate_one_epoch(config, logger, val_loader, 
-                                                    model, criterion, valid_df,
-                                                    mb)
+        val_loss, val_accuracy = validate_one_epoch(config, logger, val_loader, model, criterion, valid_df, mb)
     
         valid_logstr = (f'Val loss: {val_loss:.3f}\t'
                         f'Val accuracy: {val_accuracy:.3f}')
@@ -180,7 +175,7 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
             lr_scheduler = get_scheduler(config, optimizer)
 
         # One cyclic lr
-        elif config.scheduler.name == 'cyclic_lr':
+        elif config.scheduler.name == 'cyclic':
             current_lr = lr_scheduler.get_lr()
             logger.info(current_lr[-1])                
 
@@ -270,7 +265,7 @@ def only_train(config, model, valid_df, train_loader, val_loader, criterion, opt
             lr_scheduler = get_scheduler(config, optimizer)
 
         # One cyclic lr
-        elif config.scheduler.name == 'cyclic_lr':
+        elif config.scheduler.name == 'cyclic':
             current_lr = lr_scheduler.get_lr()
             logger.info(current_lr[-1])                
 

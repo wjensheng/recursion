@@ -49,7 +49,7 @@ class ArcFaceLoss(nn.modules.Module):
     def __repr__(self):
         return self.__class__.__name__ + '(' \
                + 's=' + str(self.s) \
-               + ', m=' + str(self.m) + \
+               + ', m=' + str(self.m) \
                + ', easy_margin=' + str(self.easy_margin) + ')'
 
 

@@ -1,13 +1,13 @@
 setup:
   cell_type: 3
-  stage: 0  # 'stage 0: small validation set;' 
+  stage: 1  # 'stage 0: small validation set;' 
             # 'stage 1: last batch as validation;'
             # 'stage 2: proper training' 
   version: '224_cyclic' # s fot stage
 
 data:
   name: 'RCICDefaultDataset'
-  train: 'train.csv'
+  train: 'U2OS_train_small.csv'
 
 model:
   image_size: 224
@@ -20,8 +20,8 @@ model:
   dropout: 0.25
 
 train:
-  batch_size: 304
-  num_epochs: 30
+  batch_size: 320
+  num_epochs: 50
   log_freq: 50
   # num_grad_acc: None
   
@@ -42,13 +42,13 @@ loss:
 optimizer:
   name: 'adam'
   params:
-    lr: 0.0003 # 3e-4
+    lr: 0.001 # 3e-4
 
 scheduler:
-  name: 'cyclic_lr' # exponential, cosine
+  name: 'cyclic' # exponential, cosine
   params:
     # eta_min: 0.00003
     # T_max: 256 # 34
     base_lr: 0.00003 
     max_lr: 0.001 
-    step_size: 30
+    step_size: 50

@@ -102,6 +102,7 @@ def leak_submission(config):
         pp_mult[mask] = 0
         return pp_mult
 
+    record = np.empty((len(sub), 1108))
     for idx in range(len(all_test_exp)):
         #print('Experiment', idx)
         indices = (test_csv.experiment == all_test_exp[idx])
@@ -109,13 +110,18 @@ def leak_submission(config):
         preds = predicted[indices,:].copy()
         
         preds = select_plate_group(preds, idx)
+
+        record[indices,:] = preds
+
         sub.loc[indices,'sirna'] = preds.argmax(1)
+
+    np.save(os.path.join(config.submission.submission_dir, 'masked_preds'), sub)
 
     agree = (sub.sirna == compile_submission(config).sirna).mean() * 100
 
     print(f'Leak and original agree {agree}% of the time!')
 
-    sub.to_csv(os.path.join(config.submission.submission_dir, 'submission_with_leak_0809.csv'), index=False)
+    # sub.to_csv(os.path.join(config.submission.submission_dir, 'submission_with_leak_0809.csv'), index=False)
 
 
     

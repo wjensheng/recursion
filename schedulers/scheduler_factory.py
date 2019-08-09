@@ -82,6 +82,8 @@ class CyclicLR(object):
 
         self.step(last_batch_iteration + 1)
         self.last_batch_iteration = last_batch_iteration
+        self.base_lr = base_lr
+        self.max_lr = max_lr
 
     def step(self, batch_iteration=None):
         if batch_iteration is None:
@@ -122,7 +124,7 @@ class CyclicLR(object):
                + ', step_size=' + str(self.step_size) + ')'
 
 
-def cyclic_lr(optimizer, last_epoch, base_lr=3e-5, max_lr=1e-3,
+def cyclic(optimizer, last_epoch, base_lr=3e-5, max_lr=1e-3,
               step_size=2000, mode='triangular', gamma=1.,
               scale_fn=None, scale_mode='cycle', last_batch_iteration=-1):
     return CyclicLR(optimizer, base_lr=base_lr, max_lr=max_lr,

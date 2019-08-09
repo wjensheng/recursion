@@ -1,6 +1,7 @@
 import os
 import torch
 import tqdm
+import pandas as pd
 import argparse
 from easydict import EasyDict as edict
 import numpy as np
@@ -42,29 +43,22 @@ def _find_best_coefficients(predicts, coefficients, alpha=0.001, iterations=100)
 
     return best_coefficients
 
-def compile_classes(config):
-    t = np.asarray([])
 
-    for i in range(4):
-        filename = f'class_t{i}.pt'
-        file = os.path.join(config.submission.submission_dir, filename)
-        print(file)                                    
-        tmp = torch.load(file)
-        t = np.concatenate([t, tmp], axis=0)
-        
-    return torch.tensor(np.stack(t).squeeze())
+def load_masked_preds(config):
+    masked_preds = np.load(os.path.join(config.submission.submission_dir, 'masked_preds.npy'))
+    return masked_preds
 
 
 def main(config):   
-    y = compile_classes(config)
+    y = load_masked_preds(config)
 
-    alpha = config.start_alpha
+    alpha = config.balance.start_alpha
 
     coefs = torch.ones(y.shape[1]).to(DEVICE).float()
     last_score = _compute_score_with_coefficients(y, coefs)
     print("Start score", last_score)
 
-    while alpha >= config.min_alpha:
+    while alpha >= config.balance.min_alpha:
         coefs = _find_best_coefficients(y, coefs, iterations=1000, alpha=alpha)
         new_score = _compute_score_with_coefficients(y, coefs)
 
@@ -76,8 +70,15 @@ def main(config):
 
     predicts = _get_predicts(y, coefs)
 
-    with open(config.output_path, "wb") as fout:
+    with open(config.submission.submission_dir, "wb") as fout:
         torch.save(predicts.cpu(), fout)
+
+    df = pd.read_csv(os.path.join(config.data.data_dir, config.data.test))
+
+    df = df[['id_code']].copy()
+    df['sirna'] = predicts.cpu().argmax(1).item()
+    
+    df.to_csv(os.path.join(config.submission.submission_dir, 'leak_balance.csv'), index=False)
 
 
 if __name__ == "__main__":
@@ -88,9 +89,8 @@ if __name__ == "__main__":
     config.data.test = 'test.csv'
     config.submission = edict()
     config.submission.submission_dir = 'submissions'
-    config.submission.submission_pat = 'submission_t*'
-    config.start_alpha = 0.01
-    config.min_alpha = 0.0001
-    config.output_path = 'submissions/balanced_preds'
+    config.balance = edict()
+    config.balance.start_alpha = 0.01
+    config.balance.min_alpha = 0.0001
 
     main(config)
