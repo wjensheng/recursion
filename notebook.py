@@ -53,10 +53,10 @@ MODEL_NAME = 'resnet34'
 CELL_TYPE = ['HEPG2', 'HUVEC', 'RPE', 'U2OS']
 
 DATA_DIR = 'data'
-PRETRAINED_MODEL_DIR = 'experiments/model'
+PRETRAINED_MODEL_DIR = 'experiments/models'
 VERSION = 'kernel2gcp'
 device = 'cuda'
-batch_size = 128
+batch_size = 144
 
 TIME_LIMIT = 9 * 60 * 60
 global_start_time = time.time()
