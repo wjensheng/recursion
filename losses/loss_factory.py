@@ -10,15 +10,17 @@ from easydict import EasyDict as edict
 class ArcFaceLoss(nn.modules.Module):
     """"https://www.kaggle.com/c/human-protein-atlas-image-classification/discussion/78109"""
 
-    def __init__(self,s=65.0,m=0.5):
+    def __init__(self, s=65.0, m=0.5, easy_margin=False):
         super(ArcFaceLoss, self).__init__()
         self.classify_loss = nn.CrossEntropyLoss()
         self.s = s
-        self.easy_margin = False
+        self.m = m
+        self.easy_margin = easy_margin
         self.cos_m = math.cos(m)
         self.sin_m = math.sin(m)
         self.th = math.cos(math.pi - m)
         self.mm = math.sin(math.pi - m) * m
+        # self.ls_eps = ls_eps  # label smoothing
 
     def forward(self, logits, labels, epoch=0):
         cosine = logits
@@ -47,7 +49,8 @@ class ArcFaceLoss(nn.modules.Module):
     def __repr__(self):
         return self.__class__.__name__ + '(' \
                + 's=' + str(self.s) \
-               + ', m=' + str(self.m) + ')'
+               + ', m=' + str(self.m) + \
+               + ', easy_margin=' + str(self.easy_margin) + ')'
 
 
 class CosFaceLoss(nn.modules.Module):
@@ -82,6 +85,12 @@ class CosFaceLoss(nn.modules.Module):
 
         return output
 
+    def __repr__(self):
+        return self.__class__.__name__ + '(' \
+               + 's=' + str(self.s) \
+               + ', m=' + str(self.m) + ')'
+
+
 
 class AdaCosLoss(nn.modules.Module):
     
@@ -115,6 +124,14 @@ class AdaCosLoss(nn.modules.Module):
         loss = self.classify_loss(output, labels)
 
         return loss
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(' \
+               + 'm=' + str(self.m) \
+               + ', in_features=' + str(self.in_features) \
+               + ', out_features=' + str(self.out_features) \
+               + ', ls_eps' + str(self.ls_eps) + ')'
+
 
 
 class AdMSoftmaxLoss(nn.Module):

@@ -111,13 +111,10 @@ class ArcMarginProduct(nn.Module):
             m: margin
             cos(theta + m)
         """
-    def __init__(self, in_features, out_features, s=65.0, m=0.50, easy_margin=False, ls_eps=0.0):
+    def __init__(self, in_features, out_features):
         super(ArcMarginProduct, self).__init__()
         self.in_features = in_features
-        self.out_features = out_features
-        self.s = s
-        self.m = m
-        self.ls_eps = ls_eps  # label smoothing
+        self.out_features = out_features        
         self.weight = Parameter(torch.FloatTensor(out_features, in_features))
         nn.init.xavier_uniform_(self.weight)
 
@@ -158,9 +155,7 @@ class ArcMarginProduct(nn.Module):
     def __repr__(self):
         return self.__class__.__name__ + '(' \
                + 'in_features=' + str(self.in_features) \
-               + ', out_features=' + str(self.out_features) \
-               + ', s=' + str(self.s) \
-               + ', m=' + str(self.m) + ')'
+               + ', out_features=' + str(self.out_features) + ')'
 
 
 class AddMarginProduct(nn.Module):
@@ -173,12 +168,10 @@ class AddMarginProduct(nn.Module):
         cos(theta) - m
     """
 
-    def __init__(self, in_features, out_features, s=30.0, m=0.40):
+    def __init__(self, in_features, out_features):
         super(AddMarginProduct, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.s = s
-        self.m = m
         self.weight = Parameter(torch.FloatTensor(out_features, in_features))
         nn.init.xavier_uniform_(self.weight)
 
