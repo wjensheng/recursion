@@ -139,7 +139,7 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
             for i in range(len(id_codes)):
                 valid_fc_dict[id_codes[i]] += output[i],
                 
-        if idx % config.valid.log_freq == 0:
+        if idx % config.val.log_freq == 0:
             logger.info(f'[{idx}/{num_steps}]\t'
                         f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
                       # f'accuracy {avg_score.val:.4f} ({avg_score.avg:.4f})'
@@ -184,8 +184,8 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
         logger.info(train_logstr + valid_logstr)
     
         # save best score, model
-        if valid_accuracy > best_score:
-            best_score = valid_accuracy
+        if val_accuracy > best_score:
+            best_score = val_accuracy
             best_epoch = epoch
 
             filename = f'{config.setup.version}_e{epoch:02d}_{best_score:.04f}.pth'
