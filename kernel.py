@@ -14,7 +14,7 @@ import torch.nn.functional as F
 from torch.optim import Optimizer
 from torch.nn import Parameter
 from torch.utils.data import Dataset, DataLoader, ConcatDataset
-from torch.optim.lr_scheduler import ExponentialLR, CyclicLR, CosineAnnealingLR
+from torch.optim.lr_scheduler import ExponentialLR, CosineAnnealingLR
 from torch.autograd import Variable
 
 from torchvision import models, transforms as T
@@ -44,8 +44,8 @@ MODEL_NAME = 'resnet34'
 CELL_TYPE = ['HEPG2', 'HUVEC', 'RPE', 'U2OS']
 
 DATA_DIR = 'data'
-PRETRAINED_MODEL_DIR = 'experiments/model'
-VERSION = 'kernel2gcp'
+PRETRAINED_MODEL_DIR = 'experiments/models'
+VERSION = 'kernel2gcp2'
 device = 'cuda'
 batch_size = 128
 
@@ -499,12 +499,12 @@ criterion = ArcFaceLoss() # nn.CrossEntropyLoss() # AMSoftmaxLoss(512, NUM_CLASS
 
 # optimizer
 optimizer = torch.optim.Adam(model.parameters(), 
-                             lr=3e-4)
+                             lr=1e-3)
 
 # lr_scheduler
 # lr_scheduler = ExponentialLR(optimizer, gamma=0.95)
 
-lr_scheduler = CosineAnnealingLR(optimizer, T_max=len(train_dl), eta_min=3e-5)
+lr_scheduler = CosineAnnealingLR(optimizer, T_max=len(train_dl), eta_min=3e-4)
 
 
 # ## Averaging predictions
@@ -653,7 +653,7 @@ def valid_inference(data_loader: Any, model: Any, mb: Any):
     return losses.avg, valid_accuracy, combined_valid_accuracy
 
 
-NUM_EPOCHS = 20
+NUM_EPOCHS = 30
 best_model_accuracy, best_model_epoch, best_model = 0, 0, None
 
 mb = master_bar(range(1, NUM_EPOCHS+1))
