@@ -95,11 +95,15 @@ def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, n
         elif (idx+1) % num_grad_acc == 0:
             optimizer.step()
             optimizer.zero_grad()
-            
-        lr_scheduler.step()
+
+            if config.scheduler.name == 'cosine':
+                lr_scheduler.step()                
 
         batch_time.update(time.time() - end)
         end = time.time()
+
+        if config.scheduler.name != 'cosine':
+            lr_scheduler.step()
 
         lr_str = ''
         if idx % config.train.log_freq == 0:
@@ -175,11 +179,11 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
                         f'Val accuracy: {val_accuracy:.3f}')
     
         # SGDR
-        if config.optimizer.name == 'cosine':
+        if config.scheduler.name == 'cosine':
             lr_scheduler = get_scheduler(config, optimizer)
 
         # One cyclic lr
-        elif config.optimizer.name == 'cyclic_lr':
+        elif config.scheduler.name == 'cyclic_lr':
             current_lr = lr_scheduler.get_lr()
             logger.info(current_lr[-1])                
 
@@ -229,8 +233,12 @@ def run(config):
     # optimizer
     optimizer = get_optimizer(config, model.parameters())
 
+    print(optimizer)
+
     # lr_scheduler
     lr_scheduler = get_scheduler(config, optimizer)
+
+    print(lr_scheduler)
 
     # criterion    
     criterion = get_loss(config)
@@ -268,11 +276,11 @@ def only_train(config, model, valid_df, train_loader, val_loader, criterion, opt
         #                 f'Val accuracy: {val_accuracy:.3f}')
     
         # SGDR
-        if config.optimizer.name == 'cosine':
+        if config.scheduler.name == 'cosine':
             lr_scheduler = get_scheduler(config, optimizer)
 
         # One cyclic lr
-        elif config.optimizer.name == 'cyclic_lr':
+        elif config.scheduler.name == 'cyclic_lr':
             current_lr = lr_scheduler.get_lr()
             logger.info(current_lr[-1])                
 
