@@ -18,7 +18,6 @@ def filter_experiments(df, cell_type):
 
 
 def train_val_exp_split(train, test):
-
     train['is_train'] = 1
     df = train.append(test).reset_index(drop=True)
     df['is_train'].fillna(0, inplace=True)
@@ -61,21 +60,7 @@ def manual_split(df):
     last_batch = ['HEPG2-07', 'HUVEC-16', 'RPE-07', 'U2OS-03']
     valid_df = df[df['experiment'].isin(last_batch)]
     train_df = df[~df['experiment'].isin(last_batch)]
-    return train_df, valid_df
-
-
-def train_valid_test(train, test, split=-1, test_size=0.1):
-    if split == -1:
-        train_df, valid_df = train_test_split(train, test_size=test_size, 
-                                              stratify=train.sirna, 
-                                              random_state=42)
-        test_df = test.copy()                                              
-    else:                                        
-        train_df = filter_experiments(train, split)
-        test_df = filter_experiments(test, split)
-        train_df, valid_df = train_val_exp_split(train, test)
-
-    return train_df, valid_df, test_df
+    return train_df, valid_df    
 
 
 if __name__ == "__main__":

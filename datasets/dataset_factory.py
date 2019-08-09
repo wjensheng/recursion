@@ -37,10 +37,14 @@ def get_two_sites(config, df, tsfm, mode):
 
     return ds
 
-def get_dataframes(config):    
-    train_df = pd.read_csv(os.path.join(config.data.data_dir, config.data.train))
-    test_df = pd.read_csv(os.path.join(config.data.data_dir, config.data.test))
 
+def get_dataframes(config):    
+    train_df = pd.read_csv(os.path.join(config.data.data_dir, 
+                                        config.data.train))
+    test_df = pd.read_csv(os.path.join(config.data.data_dir, 
+                                       config.data.test))
+
+    # stage -1: no validation
     if config.setup.stage == -1:
         valid_df = test_df = None
 
@@ -57,66 +61,56 @@ def get_dataframes(config):
 
     # stage 2: larger validation set
     elif config.setup.stage == 2:
-        train_df, valid_df, test_df = train_valid_test(train=train_df, 
-                                                       test=test_df,
-                                                       split=config.setup.cell_type,
-                                                       test_size=config.setup.test_size)
+        train_df, valid_df = train_val_exp_split(train=train_df, test=test_df)
 
     else:
         raise ValueError('Unknown stage!')    
 
     return train_df, valid_df, test_df
 
+
 def get_dataset(config):
 
     SIZE = config.model.image_size
 
-    train_tsfm = T.Compose([
-        T.Resize((SIZE, SIZE)),
+    train_df, valid_df, test_df = get_dataframes(config)
+
+    train_tsfm = T.Compose([        
         T.RandomRotation(degrees=(-90, 90)),
         T.RandomVerticalFlip(),
         T.RandomHorizontalFlip(),
+        T.Resize((SIZE, SIZE)),
         T.ToTensor(),
     ])
 
     test_tsfm = T.Compose([
         T.Resize((SIZE, SIZE)),
-        T.ToTensor(),
+        T.ToTensor(),        
     ])
 
     # stage -1: train on all dataset
     if config.setup.stage == -1:
-        train_df, _, _ = get_dataframes(config)
         print('train experiments:', train_df['experiment'].unique())
         train_ds = get_two_sites(config, train_df, train_tsfm, 'train')
         valid_ds = test_ds = train_ds[0] # placeholder
     
     # stage 0: valid on last experiments
     elif config.setup.stage == 0:  
-        train_df, valid_df, _ = get_dataframes(config)
         print('train experiments:', train_df['experiment'].unique())
         print('valid experiments:', valid_df['experiment'].unique())        
         train_ds = get_two_sites(config, train_df, train_tsfm, 'train')
         valid_ds = get_two_sites(config, valid_df, test_tsfm, 'train')
         test_ds = train_ds[0]
 
-    # stage 1: smaller validation set    
-    elif config.setup.stage == 1:
-        train_df, valid_df, test_df = get_dataframes(config)
+    # stage 1 or 2: last batch validation set
+    else: # config.setup.stage == 1 or 2:
         print('train experiments:', train_df['experiment'].unique())
         print('valid experiments:', valid_df['experiment'].unique())
         print('test experiments:', test_df['experiment'].unique())        
         train_ds = get_two_sites(config, train_df, train_tsfm, 'train')
         valid_ds = get_two_sites(config, valid_df, test_tsfm, 'train')
         test_ds = get_two_sites(config, test_df, test_tsfm, 'train')
-
-    # stage 2: larger validation set
-    elif config.setup.stage == 2:
-        train_df, valid_df, test_df = get_dataframes(config)
-        train_ds = get_two_sites(config, train_df, train_tsfm, 'train')
-        valid_ds = get_two_sites(config, valid_df, test_tsfm, 'train')
-        test_ds = get_two_sites(config, test_df, test_tsfm, 'test')
-                                
+                            
     return train_ds, valid_ds, test_ds
 
 
@@ -142,6 +136,7 @@ def get_dataloader(config):
                          pin_memory=False)                                                    
     
     return train_dl, valid_dl, test_dl
+
 
 if __name__ == "__main__":
     config = edict()
