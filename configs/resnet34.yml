@@ -48,6 +48,8 @@ optimizer:
 scheduler:
   name: 'cyclic_lr' # exponential
   params:
-    base_lr: 0.00003 # eta_min: 0.00003
-    max_lr: 0.001 # T_max: 256 # 34
-    step_size: 10
+    eta_min: 0.00003
+    T_max: 256 # 34
+    # base_lr: 0.00003 
+    # max_lr: 0.001 
+    # step_size: 10
