@@ -39,6 +39,8 @@ warnings.filterwarnings('ignore')
 
 TYPE = 0
 
+SIZE = 224
+
 MODEL_NAME = 'resnet34'
 
 CELL_TYPE = ['HEPG2', 'HUVEC', 'RPE', 'U2OS']
@@ -47,7 +49,7 @@ DATA_DIR = 'data'
 PRETRAINED_MODEL_DIR = 'experiments/models'
 VERSION = 'kernel2gcp2'
 device = 'cuda'
-batch_size = 128
+batch_size = 256
 
 TIME_LIMIT = 9 * 60 * 60
 global_start_time = time.time()
@@ -245,10 +247,12 @@ train_tsfm = T.Compose([
     T.RandomRotation(degrees=(-90, 90)),
     T.RandomVerticalFlip(),
     T.RandomHorizontalFlip(),
+    T.Resize((SIZE, SIZE)),
     T.ToTensor(),
 ])
 
 test_tsfm = T.Compose([
+    T.Resize((SIZE, SIZE)),
     T.ToTensor(),
 ])
 
@@ -499,7 +503,7 @@ criterion = ArcFaceLoss() # nn.CrossEntropyLoss() # AMSoftmaxLoss(512, NUM_CLASS
 
 # optimizer
 optimizer = torch.optim.Adam(model.parameters(), 
-                             lr=1e-3)
+                             lr=3e-3)
 
 # lr_scheduler
 # lr_scheduler = ExponentialLR(optimizer, gamma=0.95)
@@ -565,11 +569,6 @@ def train(train_loader: Any, model: Any, criterion: Any,
         input_ = input_.to(device)
         target = target.to(device)
 
-        once = False
-        if (idx == 0 and not once):
-            print(input_.size())
-            once = True
-        
         output = model(input_)      
         loss = criterion(output, target)
         
@@ -687,7 +686,7 @@ for epoch in mb:
     # valid_losses.append(valid_loss)    
 #     lr_records.append(current_lr)
     
-#     lr_logstr = f'lr: {current_lr}'
+#     lr_logstr = f'lr: {current_lr[-1]}'
 
     print(train_logstr, valid_logstr)    
     
@@ -755,7 +754,6 @@ print(submission.head())
 
 
 print(submission['predicted_sirna'].nunique())
-
 
 
 submission.to_csv(f'{VERSION}_submission.csv', index=False)

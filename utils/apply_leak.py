@@ -87,6 +87,10 @@ def leak_submission(config):
 
     exp_to_group = group_plate_probs.argmax(1)
 
+    print(exp_to_group)
+
+    exp_to_group = [3, 1, 0, 0, 0, 0, 2, 2, 3, 0, 0, 3, 1, 0, 0, 0, 2, 3]
+
     predicted = compile_classes(config)
 
     def select_plate_group(pp_mult, idx):
@@ -111,7 +115,7 @@ def leak_submission(config):
 
     print(f'Leak and original agree {agree}% of the time!')
 
-    sub.to_csv(os.path.join(config.submission.submission_dir, 'submission_with_leak.csv'), index=False)
+    sub.to_csv(os.path.join(config.submission.submission_dir, 'submission_with_leak_0809.csv'), index=False)
 
 
     
@@ -125,4 +129,5 @@ if __name__ == "__main__":
     config.submission.submission_dir = 'submissions'
     config.submission.submission_pat = 'submission_t*'
 
-    compile_submission(config)
+    # compile_submission(config)
+    leak_submission(config)
