@@ -46,11 +46,17 @@ def _find_best_coefficients(predicts, coefficients, alpha=0.001, iterations=100)
 
 def load_masked_preds(config):
     masked_preds = np.load(os.path.join(config.submission.submission_dir, 'masked_preds.npy'))
-    return masked_preds
+    t = torch.from_numpy(masked_preds)
+    return t.float().to(DEVICE)
 
 
 def main(config):   
     y = load_masked_preds(config)
+
+    print(y.double())
+    print(y.shape)
+
+    print(torch.cuda.is_available())
 
     initial = y.argmax(1)
 
@@ -72,15 +78,18 @@ def main(config):
 
     predicts = _get_predicts(y, coefs)
 
-    with open(config.submission.submission_dir, "wb") as fout:
+    with open('submissions/leak_balance_t', "wb") as fout:
         torch.save(predicts.cpu(), fout)
 
     df = pd.read_csv(os.path.join(config.data.data_dir, config.data.test))
 
     df = df[['id_code']].copy()
-    df['sirna'] = predicts.cpu().argmax(1).item()
 
-    agree = (df['sirna'].values == initial).mean() * 100
+    print(predicts)
+
+    df['sirna'] = predicts.argmax(1).cpu().detach().numpy()
+
+    agree = (df['sirna'].values == initial.cpu().numpy()).mean() * 100
 
     print(f'Leak and submission agree {agree}%!')
     
