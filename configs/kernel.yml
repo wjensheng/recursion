@@ -21,7 +21,7 @@ model:
   s: 65.0
 
 train:
-  batch_size: 128
+  batch_size: 128 
   num_epochs: 50
   log_freq: 50
   # num_grad_acc: None

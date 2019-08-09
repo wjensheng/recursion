@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
 import os
 import gc
 
@@ -14,7 +20,7 @@ import torch.nn.functional as F
 from torch.optim import Optimizer
 from torch.nn import Parameter
 from torch.utils.data import Dataset, DataLoader, ConcatDataset
-from torch.optim.lr_scheduler import ExponentialLR, CyclicLR, CosineAnnealingLR
+from torch.optim.lr_scheduler import ExponentialLR, CyclicLR
 from torch.autograd import Variable
 
 from torchvision import models, transforms as T
@@ -37,6 +43,9 @@ warnings.filterwarnings('ignore')
 
 # ## Configs
 
+# In[ ]:
+
+
 TYPE = 0
 
 MODEL_NAME = 'resnet34'
@@ -54,6 +63,9 @@ global_start_time = time.time()
 
 
 # AverageMeter to track results.
+
+# In[ ]:
+
 
 class AverageMeter:
     ''' Computes and stores the average and current value '''
@@ -78,6 +90,9 @@ def has_time_run_out() -> bool:
 
 # ## Create directory for saving
 
+# In[ ]:
+
+
 if not os.path.isdir('results'):
     os.mkdir('results')
         
@@ -96,12 +111,16 @@ if not os.path.exists(logname):
 
 # ## Load data
 
+# In[ ]:
+
 
 train_df = pd.read_csv(os.path.join(DATA_DIR, 'train.csv'))
 test_df = pd.read_csv(os.path.join(DATA_DIR, 'test.csv'))
 
 
 # ## Split data
+
+# In[ ]:
 
 
 def split_experiments(df):
@@ -165,11 +184,16 @@ def train_valid_split(train, test=None, experiment_split=False, test_size=0.1):
     return train_df, valid_df
 
 
+# In[ ]:
+
 
 train_df = filter_experiments(train_df, CELL_TYPE[TYPE])
 test_df = filter_experiments(test_df, CELL_TYPE[TYPE])
 
 train_df, valid_df = train_valid_split(train_df, test_df, True)
+
+
+# In[ ]:
 
 
 cell_dfs = (train_df, valid_df, test_df)
@@ -181,8 +205,15 @@ for split, cell_df in zip(cell_splits, cell_dfs):
     print(f'{split} len: {exp_len} \t unique experiments: {exp_list}')
 
 
+# In[ ]:
+
+
+# valid_df['sirna'].value_counts()
+
 
 # ## Dataset
+
+# In[ ]:
 
 
 class ImagesDS(Dataset):
@@ -222,6 +253,9 @@ class ImagesDS(Dataset):
         return self.len
 
 
+# In[ ]:
+
+
 def get_two_sites(df, tsfm, mode):
     ds_s1 = ImagesDS(df, 
                      DATA_DIR,
@@ -240,6 +274,8 @@ def get_two_sites(df, tsfm, mode):
     return ds
 
 
+# In[ ]:
+
 
 train_tsfm = T.Compose([
     T.RandomRotation(degrees=(-90, 90)),
@@ -257,7 +293,16 @@ valid_ds = get_two_sites(valid_df, test_tsfm, 'train')
 test_ds = get_two_sites(test_df, test_tsfm, 'test')
 
 
+# In[ ]:
+
+
 len(train_ds), len(valid_ds), len(test_ds),
+
+
+# ## Dataloader
+
+# In[ ]:
+
 
 train_dl = DataLoader(train_ds, batch_size=batch_size, 
                       shuffle=True, num_workers=4, drop_last=True)
@@ -268,6 +313,8 @@ test_dl = DataLoader(test_ds, batch_size=batch_size,
 
 
 # ## Model
+
+# In[ ]:
 
 
 NUM_CLASSES = 1108
@@ -286,6 +333,9 @@ def pretrained_model(file_name, num_classes):
 # model = pretrained_model('rn34_best_model_17.pth')
 
 
+# In[ ]:
+
+
 class ArcMarginProduct(nn.Module):
     def __init__(self, in_features, out_features):
         super(ArcMarginProduct, self).__init__()
@@ -300,6 +350,8 @@ class ArcMarginProduct(nn.Module):
         cosine = F.linear(F.normalize(features), F.normalize(self.weight.cuda()))
         return cosine
 
+
+# In[ ]:
 
 
 class BestFittingModel(nn.Module):
@@ -340,6 +392,9 @@ class BestFittingModel(nn.Module):
             return cosine
 
 
+# In[ ]:
+
+
 def eval_momentum(model):
     for name, child in model.named_children():
         if name.find('bn') != -1:
@@ -362,6 +417,8 @@ def train_momentum(model):
                         layer.track_running_stats = True
 
 
+# In[ ]:
+
 
 model = BestFittingModel(NUM_CLASSES)
 
@@ -369,12 +426,21 @@ if torch.cuda.is_available() and torch.cuda.device_count() > 1:
     model = torch.nn.DataParallel(model)
 model.to(device)
 
-print(model)
+if torch.cuda.is_available():
+    num_gpus = torch.cuda.device_count()
+    print(f'{num_gpus} gpu(s) available!')
+
+
+# metric_fc = ArcFaceLoss()
+# metric_fc.to(device)
 
 gc.collect()
 
 
 # ## Loss function, optimizers, LR scheduler
+
+# In[ ]:
+
 
 class ArcFaceLoss(nn.modules.Module):
     def __init__(self,s=65.0,m=0.5):
@@ -407,6 +473,8 @@ class ArcFaceLoss(nn.modules.Module):
         loss=(loss1+gamma*loss2)/(1+gamma)
         return loss
 
+
+# In[ ]:
 
 
 class CyclicLR(object):
@@ -493,6 +561,8 @@ class CyclicLR(object):
         return lrs
 
 
+# In[ ]:
+
 
 # loss function
 criterion = ArcFaceLoss() # nn.CrossEntropyLoss() # AMSoftmaxLoss(512, NUM_CLASSES).to(device)
@@ -502,33 +572,66 @@ optimizer = torch.optim.Adam(model.parameters(),
                              lr=3e-4)
 
 # lr_scheduler
-# lr_scheduler = ExponentialLR(optimizer, gamma=0.95)
+lr_scheduler = ExponentialLR(optimizer, gamma=0.95)
 
-lr_scheduler = CosineAnnealingLR(optimizer, T_max=len(train_dl), eta_min=3e-5)
+
+# ## Mixup
+
+# In[ ]:
+
+
+def mixup_data(x, y, alpha=1.0):
+    '''Returns mixed inputs, pairs of targets, and lambda'''
+    if alpha > 0:
+        lam = np.random.beta(alpha, alpha)
+    else:
+        lam = 1
+
+    batch_size = x.size()[0]
+
+    index = torch.randperm(batch_size).cuda()
+    
+    mixed_x = lam * x + (1 - lam) * x[index, :]
+    y_a, y_b = y, y[index]
+    return mixed_x, y_a, y_b, lam
+
+
+def mixup_criterion(criterion, pred, y_a, y_b, lam):
+    return lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
+
+
+def do_mixup(model, input_, target):
+    inputs, targets_a, targets_b, lam = mixup_data(inputs, targets)
+
+    inputs, targets_a, targets_b = map(Variable, (inputs,
+                                                  targets_a, targets_b))
+    output = model(inputs)
+
+    loss = mixup_criterion(criterion, output, targets_a, targets_b, lam)
+    
+    return loss, output
 
 
 # ## Averaging predictions
 
+# In[ ]:
+
+
 def weighted_preds(fc_dict):
     id_preds = {}
-    classes_preds = {}
     
     for k, id_code in enumerate(fc_dict):
         weighted_preds =  fc_dict[id_code][0].detach().cpu()  +                           fc_dict[id_code][1].detach().cpu() 
         id_preds[id_code] = torch.argmax(weighted_preds).item()
-        classes_preds[id_code] = weighted_preds
     
     subm = pd.DataFrame(list(id_preds.items()),
                         columns=['id_code', 'predicted_sirna'])
     
-    all_classes_preds = pd.DataFrame(list(classes_preds.items()),
-                                     columns=['id_code', 'predicted_sirna'])
-    
-    return subm, all_classes_preds
+    return subm # len(subm) = 19897
 
 
 def combined_accuracy(valid_fc_dict, valid_df):
-    valid_preds, _ = weighted_preds(valid_fc_dict)
+    valid_preds = weighted_preds(valid_fc_dict)
 
     valid_sirna = valid_df[['id_code', 'sirna']].copy()
     
@@ -545,6 +648,9 @@ def combined_accuracy(valid_fc_dict, valid_df):
 
 
 # ## Train one epoch
+
+# In[ ]:
+
 
 def train(train_loader: Any, model: Any, criterion: Any, 
           optimizer: Any, mb: Any, lr_scheduler: Any,
@@ -564,11 +670,6 @@ def train(train_loader: Any, model: Any, criterion: Any,
         
         input_ = input_.to(device)
         target = target.to(device)
-
-        once = False
-        if (idx == 0 and not once):
-            print(input_.size())
-            once = True
         
         output = model(input_)      
         loss = criterion(output, target)
@@ -594,8 +695,6 @@ def train(train_loader: Any, model: Any, criterion: Any,
 #         optimizer.zero_grad()        
 #         optimizer.step()
 
-        lr_scheduler.step()
-
         batch_time.update(time.time() - end)
         end = time.time()
 
@@ -603,6 +702,9 @@ def train(train_loader: Any, model: Any, criterion: Any,
             break        
             
     return losses.avg
+
+
+# In[ ]:
 
 
 def valid_inference(data_loader: Any, model: Any, mb: Any):
@@ -653,7 +755,10 @@ def valid_inference(data_loader: Any, model: Any, mb: Any):
     return losses.avg, valid_accuracy, combined_valid_accuracy
 
 
-NUM_EPOCHS = 20
+# In[ ]:
+
+
+NUM_EPOCHS = 50
 best_model_accuracy, best_model_epoch, best_model = 0, 0, None
 
 mb = master_bar(range(1, NUM_EPOCHS+1))
@@ -677,14 +782,12 @@ for epoch in mb:
     valid_logstr = (f'Val loss: {valid_loss:.3f}\t'
                     f'Val accuracy: {valid_accuracy:.3f}\t'
                     f'Combined val accuracy: {combined_valid_accuracy:.3f}\t')
-
-    lr_scheduler = CosineAnnealingLR(optimizer, T_max=len(train_dl), eta_min=3e-5)
     
-    # lr_scheduler.step()
+    lr_scheduler.step()
 #     current_lr = lr_scheduler.get_lr()
     
-    # train_losses.append(train_loss)
-    # valid_losses.append(valid_loss)    
+    train_losses.append(train_loss)
+    valid_losses.append(valid_loss)    
 #     lr_records.append(current_lr)
     
 #     lr_logstr = f'lr: {current_lr}'
@@ -706,6 +809,9 @@ for epoch in mb:
         break
 
 
+# In[ ]:
+
+
 # plt.figure(figsize=(6,4))
 # plt.plot(lr_records, train_losses, 'b--', label='train loss')
 # plt.plot(lr_records, valid_losses, 'g--', label='valid loss')
@@ -713,52 +819,67 @@ for epoch in mb:
 # plt.show()
 
 
+# In[ ]:
+
+
 print('best model accuracy:', best_model_accuracy)
 
 
 # ## Predict
+
+# In[ ]:
+
 
 test_fc_dict = defaultdict(list)
 
 def test_inference(data_loader: Any, model: Any):
 
     model.eval()
+    eval_momentum(model)
 
     all_targets = []
     
     with torch.no_grad():
+        preds = np.empty(0)
         for i, data in enumerate(tqdm(data_loader)):
             
-            noncontrols, id_codes, = data
+            input_, id_codes = data
             
-            # output = model(noncontrols.cuda(), controls.cuda())
-            output = model(noncontrols.cuda())
-                        
-            _, predicts = torch.max(output.detach(), dim=1)
+            output = model(input_.cuda())            
             
             for i in range(len(output)):
                 test_fc_dict[id_codes[i]] += output[i],
             
-    subm, all_classes_preds  = weighted_preds(test_fc_dict)        
-    
-    return subm, all_classes_preds
+            idx = output.max(dim=-1)[1].cpu().numpy()
+            preds = np.append(preds, idx, axis=0)            
+            
+    return preds
+
+
+# In[ ]:
 
 
 model.load_state_dict(torch.load(os.path.join(SAVE_DIR, 
                                               f"{VERSION}_best_model_{best_model_epoch}.pth")))
-submission, all_classes_preds = test_inference(test_dl, model)
+test_preds = test_inference(test_dl, model)
 
 
-submission, all_classes_preds = weighted_preds(test_fc_dict)
-
-print(submission.head())
+# In[ ]:
 
 
-print(submission['predicted_sirna'].nunique())
+submission = weighted_preds(test_fc_dict)
+
+submission.head()
 
 
+# In[ ]:
 
-submission.to_csv(f'{VERSION}_submission.csv', index=False)
 
-softmax_preds = all_classes_preds['predicted_sirna'].values
-torch.save(softmax_preds, f'class_{VERSION}_submission')
+submission['predicted_sirna'].nunique()
+
+
+# In[ ]:
+
+
+submission.to_csv(f'{VERSION}_submission_{TYPE}.csv', index=False)
+
