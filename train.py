@@ -101,6 +101,7 @@ def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, n
         batch_time.update(time.time() - end)
         end = time.time()
 
+        lr_str = ''
         if idx % config.train.log_freq == 0:
             logger.info(f'[{idx}/{num_steps}]\t'
                         f'time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
@@ -139,6 +140,7 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
             for i in range(len(id_codes)):
                 valid_fc_dict[id_codes[i]] += output[i],
                 
+        lr_str = ''
         if idx % config.val.log_freq == 0:
             logger.info(f'[{idx}/{num_steps}]\t'
                         f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
@@ -288,8 +290,8 @@ def main():
 
     seed_everything()  
 
-    # run(config)
-    test_model(config)    
+    run(config)
+    # test_model(config)    
 
     print('complete!')
 

@@ -119,8 +119,8 @@ class CyclicLR(object):
 def cyclic_lr(optimizer, base_lr=1e-3, max_lr=6e-3,
               step_size=2000, mode='triangular', gamma=1.,
               scale_fn=None, scale_mode='cycle', last_batch_iteration=-1):
-    return CyclicLR(optimizer, base_lr=1e-3, max_lr=6e-3,
-                    step_size=2000, mode='triangular', gamma=1.,
+    return CyclicLR(optimizer, base_lr=base_lr, max_lr=max_lr,
+                    step_size=step_size, mode=mode, gamma=1.,
                     scale_fn=None, scale_mode='cycle', last_batch_iteration=-1)
 
         

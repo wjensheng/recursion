@@ -3,14 +3,14 @@ setup:
   stage: 0 # 'stage 0: small validation set;' 
            # 'stage 1: last batch as validation;'
            # 'stage 2: proper training' 
-  version: '4g_t0123' # s fot stage
+  version: '224_cyclic' # s fot stage
 
 data:
   name: 'RCICDefaultDataset'
   train: 'train.csv'
 
 model:
-  image_size: 384
+  image_size: 224
   arch: 'resnet34'
   name: 'resnet34'
   pool: 'GeM' # 'SPoC', 'MAC', 'RMAC', 'GeM', 'Rpool', 'Flatten', 'CompactBilinearPooling'
@@ -21,13 +21,13 @@ model:
   s: 30.0
 
 train:
-  batch_size: 240
-  num_epochs: 20
+  batch_size: 304
+  num_epochs: 10
   log_freq: 50
   # num_grad_acc: None
   
 val:
-  batch_size: 256 # * num gpus
+  batch_size: 320 # * num gpus
   log_freq: 50
 
 test:
@@ -35,6 +35,7 @@ test:
   
 loss:
   name: 'arcface' # 'arcface', 'cosface', 'adacos', 'softmax', 'sphere' 
+  log_freq: 50
   # params: # only for  adacos and amsoftmax
   #   in_features: 512 
   #   out_features: 1108    
@@ -45,7 +46,8 @@ optimizer:
     lr: 0.0003 # 3e-4
 
 scheduler:
-  name: 'cosine' # exponential
+  name: 'cyclic_lr' # exponential
   params:
-    eta_min: 0.00003
-    T_max: 256 # 34
+    base_lr: 0.00003 # eta_min: 0.00003
+    max_lr: 0.001 # T_max: 256 # 34
+    step_size: 10
