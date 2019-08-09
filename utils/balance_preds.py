@@ -52,6 +52,8 @@ def load_masked_preds(config):
 def main(config):   
     y = load_masked_preds(config)
 
+    initial = y.argmax(1)
+
     alpha = config.balance.start_alpha
 
     coefs = torch.ones(y.shape[1]).to(DEVICE).float()
@@ -77,6 +79,10 @@ def main(config):
 
     df = df[['id_code']].copy()
     df['sirna'] = predicts.cpu().argmax(1).item()
+
+    agree = (df['sirna'].values == initial).mean() * 100
+
+    print(f'Leak and submission agree {agree}%!')
     
     df.to_csv(os.path.join(config.submission.submission_dir, 'leak_balance.csv'), index=False)
 
