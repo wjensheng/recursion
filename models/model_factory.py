@@ -84,12 +84,11 @@ class RcicNet(nn.Module):
 
         self.loss_module = loss_module
         if loss_module == 'arcface':
-            self.final = ArcMarginProduct(final_in_features, n_classes,
-                                          s=s, m=margin, easy_margin=False, ls_eps=ls_eps)
+            self.final = ArcMarginProduct(final_in_features, n_classes)
         elif loss_module == 'cosface':
-            self.final = AddMarginProduct(final_in_features, n_classes, s=s, m=margin)
+            self.final = AddMarginProduct(final_in_features, n_classes)
         elif loss_module == 'adacos':
-            self.final = AdaCos(final_in_features, n_classes, m=margin, theta_zero=theta_zero)
+            self.final = AdaCos(final_in_features, n_classes, m=margin)
         elif loss_module == 'sphere': # TODO: fix wrapper
             self.final = SphereProduct(final_in_features, n_classes)
         else:
@@ -142,12 +141,10 @@ def get_model(config):
     fc_dim = config.model.fc_dim
     dropout = config.model.dropout
     loss_module = config.model.loss_module
-    s = config.model.s
-    margin = config.model.margin
 
-    net = RcicNet(n_classes, model_name, pool, args_pooling,
-                  use_fc, fc_dim, dropout, loss_module, 
-                  s, margin)
+    net = RcicNet(n_classes=n_classes, model_name=model_name, pool=pool, args_pooling=args_pooling,
+                  use_fc=use_fc, fc_dim=fc_dim, dropout=dropout, loss_module=loss_module)
+                  
     return net
 
 if __name__ == "__main__":

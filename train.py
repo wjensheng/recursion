@@ -88,30 +88,24 @@ def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, n
         losses.update(loss.data.item(), input_.size(0))
 
         loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
         
-        if num_grad_acc == None:
-            optimizer.step()
-            optimizer.zero_grad()
-        elif (idx+1) % num_grad_acc == 0:
-            optimizer.step()
-            optimizer.zero_grad()
-
-            if config.scheduler.name == 'cosine':
-                lr_scheduler.step()                
+        if config.scheduler.name == 'cosine':
+            lr_scheduler.step()                
 
         batch_time.update(time.time() - end)
         end = time.time()
-
-        if config.scheduler.name != 'cosine':
-            lr_scheduler.step()
-
+        
         lr_str = ''
         if idx % config.train.log_freq == 0:
             logger.info(f'[{idx}/{num_steps}]\t'
                         f'time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                         f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
-                      # f'accuracy {avg_score.val:.4f} ({avg_score.avg:.4f})'
                         + lr_str)
+
+    if config.scheduler.name != 'cosine':
+        lr_scheduler.step()
 
     return losses.avg
 
@@ -148,7 +142,6 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df, m
         if idx % config.val.log_freq == 0:
             logger.info(f'[{idx}/{num_steps}]\t'
                         f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
-                      # f'accuracy {avg_score.val:.4f} ({avg_score.avg:.4f})'
                         + lr_str)
     
     combined_valid_accuracy = utils.metrics.combined_accuracy(valid_fc_dict, valid_df)
