@@ -16,6 +16,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.optim.lr_scheduler import ExponentialLR, CosineAnnealingLR
 from torchvision import models
 
 from datasets import get_dataloader, get_dataframes
@@ -114,7 +115,7 @@ def create_model(config):
 
 def train_momentum(model, train=True):
     if torch.cuda.device_count() > 1:
-        model = model.module.backbone
+        model = model.module.model
     else:    
         for name, child in model.named_children():
             if name.find('bn') != -1:
@@ -258,15 +259,49 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
             best_score = val_accuracy
             best_epoch = epoch
 
-            filename = f'{config.setup.version}_e{epoch:02d}_{best_score:.04f}.pth'
-            model_dir = config.saved.model_dir
+            # filename = f'{config.setup.version}_e{epoch:02d}_{best_score:.04f}.pth'
+            # model_dir = config.saved.model_dir
 
-            save_checkpoint(model_dir, filename, model, epoch, best_score, 
-                            optimizer, save_arch=True, params=config)
+            # save_checkpoint(model_dir, filename, model, epoch, best_score, 
+            #                optimizer, save_arch=True, params=config)
 
-            logger.info(f'A snapshot was saved to {filename}')
+            # logger.info(f'A snapshot was saved to {filename}')
 
     logger.info(f'best score: {best_score:.3f}')
+
+
+
+class AFaceLoss(nn.modules.Module):
+    def __init__(self,s=65.0,m=0.5):
+        super(AFaceLoss, self).__init__()
+        self.classify_loss = nn.CrossEntropyLoss()
+        self.s = s
+        self.easy_margin = False
+        self.cos_m = math.cos(m)
+        self.sin_m = math.sin(m)
+        self.th = math.cos(math.pi - m)
+        self.mm = math.sin(math.pi - m) * m
+
+    def forward(self, logits, labels, epoch=0):
+        cosine = logits
+        sine = torch.sqrt(1.0 - torch.pow(cosine, 2))
+        phi = cosine * self.cos_m - sine * self.sin_m
+        if self.easy_margin:
+            phi = torch.where(cosine > 0, phi, cosine)
+        else:
+            phi = torch.where(cosine > self.th, phi, cosine - self.mm)
+
+        one_hot = torch.zeros(cosine.size(), device='cuda')
+        one_hot.scatter_(1, labels.view(-1, 1).long(), 1)
+        # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
+        output = (one_hot * phi) + ((1.0 - one_hot) * cosine)
+        output *= self.s
+        loss1 = self.classify_loss(output, labels)
+        loss2 = self.classify_loss(cosine, labels)
+        gamma=1
+        loss=(loss1+gamma*loss2)/(1+gamma)
+        return loss
+
 
 
 def run(config):
@@ -295,15 +330,27 @@ def run(config):
     print(model)
 
     # optimizer
-    optimizer = get_optimizer(config, model.parameters())
+    # optimizer = get_optimizer(config, model.parameters())
 
     # lr_scheduler
-    lr_scheduler = get_scheduler(config, optimizer)
+    # lr_scheduler = get_scheduler(config, optimizer)
 
     # criterion    
-    criterion = get_loss(config)
+    # criterion = get_loss(config)
+
+    criterion = AFaceLoss()
 
     print(criterion)
+
+    # optimizer
+    optimizer = torch.optim.Adam(model.parameters(), 
+                                         lr=3e-4)
+
+    # lr_scheduler
+    # lr_scheduler = ExponentialLR(optimizer, gamma=0.95)
+
+    lr_scheduler = CosineAnnealingLR(optimizer, T_max=len(train_loader), eta_min=3e-5)
+
     
     last_epoch = 0
     

@@ -18,16 +18,16 @@ model:
   use_fc: True
   fc_dim: 512
   dropout: 0.25
-  s: 30.0
+  s: 65.0
 
 train:
-  batch_size: 304
+  batch_size: 128
   num_epochs: 50
   log_freq: 50
   # num_grad_acc: None
   
 val:
-  batch_size: 320 # * num gpus
+  batch_size: 160 # * num gpus
   log_freq: 50
 
 test:
@@ -49,7 +49,7 @@ scheduler:
   name: 'cosine' # 'cyclic_lr' # exponential
   params:
     eta_min: 0.00003
-    T_max: 14 # 34
+    T_max: 34 # 34
     # base_lr: 0.00003 
     # max_lr: 0.001 
     # step_size: 10
