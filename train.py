@@ -239,8 +239,60 @@ def run(config):
     
     last_epoch = 0
     
-    train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, logger, last_epoch)
+    if config.setup.stage == -1:
+        only_train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, logger, last_epoch)
+    else:
+        train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, logger, last_epoch)
     
+
+def only_train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, logger, last_epoch):
+
+    best_score = np.nan
+    best_epoch = 0
+
+    for epoch in tqdm(range(last_epoch + 1, config.train.num_epochs + 1)):
+        
+        if torch.cuda.is_available(): torch.cuda.empty_cache()
+
+        train_loss = train_one_epoch(config, logger, train_loader, 
+                                     model, criterion, optimizer, 
+                                     config.train.num_grad_acc, lr_scheduler)
+    
+        train_logstr = (f'Epoch: {epoch}\t'
+                        f'Train loss: {train_loss:.3f}\t')
+    
+        # val_loss, val_accuracy = validate_one_epoch(config, logger, val_loader, 
+        #                                             model, criterion, valid_df)
+    
+        # valid_logstr = (f'Val loss: {val_loss:.3f}\t'
+        #                 f'Val accuracy: {val_accuracy:.3f}')
+    
+        # SGDR
+        if config.optimizer.name == 'cosine':
+            lr_scheduler = get_scheduler(config, optimizer)
+
+        # One cyclic lr
+        elif config.optimizer.name == 'cyclic_lr':
+            current_lr = lr_scheduler.get_lr()
+            logger.info(current_lr[-1])                
+
+        logger.info(train_logstr)
+    
+        # save best score, model
+        if train_loss < best_score:
+            best_score = train_loss
+            best_epoch = epoch
+
+            filename = f'{config.setup.version}_e{epoch:02d}_{best_score:.04f}.pth'
+            model_dir = config.saved.model_dir
+
+            save_checkpoint(model_dir, filename, model, epoch, best_score, 
+                            optimizer, save_arch=True, params=config)
+
+            logger.info(f'A snapshot was saved to {filename}')
+
+    logger.info(f'best score: {best_score:.3f}')
+
 
 ## END ##
 

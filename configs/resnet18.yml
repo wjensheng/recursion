@@ -1,8 +1,9 @@
 setup:
   cell_type: 3
-  stage: 0 # 'stage 0: small validation set;' 
-           # 'stage 1: last batch as validation;'
-           # 'stage 2: proper training' 
+  stage: -1 # 'stage -1: no validation'
+            # 'stage 0: small validation set;' 
+            # 'stage 1: last batch as validation;'
+            # 'stage 2: proper training' 
   version: '4g_t0123' # s fot stage
 
 data:
@@ -45,7 +46,8 @@ optimizer:
     lr: 0.0003 # 3e-4
 
 scheduler:
-  name: 'cosine' # exponential
+  name: 'cyclic_lr' # exponential
   params:
-    eta_min: 0.00003
-    T_max: 256 # 34
+    step_size: 10
+    max_lr: 0.001 # T_max: 256 # 34
+    base_lr: 0.00003 # eta_min: 0.00003

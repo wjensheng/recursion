@@ -41,8 +41,11 @@ def get_dataframes(config):
     train_df = pd.read_csv(os.path.join(config.data.data_dir, config.data.train))
     test_df = pd.read_csv(os.path.join(config.data.data_dir, config.data.test))
 
+    if config.setup.stage == -1:
+        valid_df = test_df = None
+
     # stage 0: train on all dataset, valid on last batches
-    if config.setup.stage == 0:        
+    elif config.setup.stage == 0:        
         train_df, valid_df = manual_split(train_df)
         test_df = None
 
@@ -80,15 +83,22 @@ def get_dataset(config):
         T.Resize((SIZE, SIZE)),
         T.ToTensor(),
     ])
+
+    # stage -1: train on all dataset
+    if config.setup.stage == -1:
+        train_df, _, _ = get_dataframes(config)
+        print('train experiments:', train_df['experiment'].unique())
+        train_ds = get_two_sites(config, train_df, train_tsfm, 'train')
+        valid_ds = test_ds = train_ds[0] # placeholder
     
-    # stage 0: train on all dataset
-    if config.setup.stage == 0:  
+    # stage 0: valid on last experiments
+    elif config.setup.stage == 0:  
         train_df, valid_df, _ = get_dataframes(config)
         print('train experiments:', train_df['experiment'].unique())
         print('valid experiments:', valid_df['experiment'].unique())        
         train_ds = get_two_sites(config, train_df, train_tsfm, 'train')
         valid_ds = get_two_sites(config, valid_df, test_tsfm, 'train')
-        test_ds = None
+        test_ds = train_ds[0]
 
     # stage 1: smaller validation set    
     elif config.setup.stage == 1:

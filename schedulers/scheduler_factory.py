@@ -32,7 +32,7 @@ def cosine(optimizer, last_epoch, T_max=50, eta_min=0.00001, **_):
 
 
 class CyclicLR(object):
-    def __init__(self, optimizer, base_lr=1e-3, max_lr=6e-3,
+    def __init__(self, optimizer, base_lr=3e-5, max_lr=1e-3,
                  step_size=2000, mode='triangular', gamma=1.,
                  scale_fn=None, scale_mode='cycle', last_batch_iteration=-1):
 
@@ -116,12 +116,12 @@ class CyclicLR(object):
         return lrs
 
 
-def cyclic_lr(optimizer, base_lr=1e-3, max_lr=6e-3,
+def cyclic_lr(optimizer, last_epoch, base_lr=3e-5, max_lr=1e-3,
               step_size=2000, mode='triangular', gamma=1.,
               scale_fn=None, scale_mode='cycle', last_batch_iteration=-1):
     return CyclicLR(optimizer, base_lr=base_lr, max_lr=max_lr,
-                    step_size=step_size, mode=mode, gamma=1.,
-                    scale_fn=None, scale_mode='cycle', last_batch_iteration=-1)
+                    step_size=step_size, mode=mode, gamma=gamma,
+                    scale_fn=scale_fn, scale_mode=scale_mode, last_batch_iteration=last_batch_iteration)
 
         
 
