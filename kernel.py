@@ -112,20 +112,18 @@ def create_model(config):
 
     return model
 
-
 def train_momentum(model, train=True):
     if torch.cuda.device_count() > 1:
         model = model.module.backbone
-    else:
-        model = model.backbone
+    else:    
         for name, child in model.named_children():
-            if isinstance(child, nn.BatchNorm2d):
+            if name.find('bn') != -1:
                 child.track_running_stats = train
-            elif isinstance(child, nn.Sequential):
+            elif name.find('layer') != -1:
                 for block_name, block_child in child.named_children():
                     for layer_name, layer in block_child.named_children():
-                        if isinstance(layer, nn.BatchNorm2d):
-                            layer.track_running_stats = train                
+                        if layer_name.find('bn') != -1:
+                            layer.track_running_stats = train
 
 
 def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, num_grad_acc, lr_scheduler):
