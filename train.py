@@ -8,7 +8,7 @@ import argparse
 import pprint
 from collections import defaultdict
 from tqdm import tqdm
-
+from fastprogress import master_bar, progress_bar
 import time
 from typing import *
 
@@ -58,7 +58,7 @@ def train_momentum(model, train=True):
                             layer.track_running_stats = train                
 
 
-def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, num_grad_acc, lr_scheduler):
+def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, num_grad_acc, lr_scheduler, mb):
     logger.info('training')
 
     batch_time = AverageMeter()
@@ -72,7 +72,7 @@ def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, n
 
     end = time.time()
 
-    for idx, data in enumerate(train_loader):
+    for idx, data in enumerate(progress_bar(train_loader, parent=mb)):
         input_, id_codes, target = data
 
         # if using gpu
@@ -116,7 +116,7 @@ def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, n
     return losses.avg
 
 
-def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
+def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df, mb):
     logger.info('validatation')
     
     losses = AverageMeter()
@@ -129,7 +129,7 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df):
     num_steps = len(val_loader)
 
     with torch.no_grad():
-        for idx, data in enumerate(val_loader):
+        for idx, data in enumerate(progress_bar(val_loader, parent=mb)):
             input_, id_codes, target = data
 
             # if using gpu
@@ -161,19 +161,23 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
     best_score = 0.0
     best_epoch = 0
 
-    for epoch in tqdm(range(last_epoch + 1, config.train.num_epochs + 1)):
+    mb = master_bar(range(last_epoch + 1, config.train.num_epochs + 1))
+
+    for epoch in mb:
         
         if torch.cuda.is_available(): torch.cuda.empty_cache()
 
         train_loss = train_one_epoch(config, logger, train_loader, 
                                      model, criterion, optimizer, 
-                                     config.train.num_grad_acc, lr_scheduler)
+                                     config.train.num_grad_acc, lr_scheduler,
+                                     mb)
     
         train_logstr = (f'Epoch: {epoch}\t'
                         f'Train loss: {train_loss:.3f}\t')
     
         val_loss, val_accuracy = validate_one_epoch(config, logger, val_loader, 
-                                                    model, criterion, valid_df)
+                                                    model, criterion, valid_df,
+                                                    mb)
     
         valid_logstr = (f'Val loss: {val_loss:.3f}\t'
                         f'Val accuracy: {val_accuracy:.3f}')
@@ -222,27 +226,23 @@ def run(config):
     # get dataloders
     train_loader, val_loader, test_loader = get_dataloader(config)
 
-    logger.info(f'train_dl len: {len(train_loader)}')
-    logger.info(f'valid_dl len: {len(val_loader)}')
+    print(f'train_dl len: {len(train_loader)}')
+    print(f'valid_dl len: {len(val_loader)}')
     
     # model
     model = create_model(config)
-
     print(model)
 
     # optimizer
     optimizer = get_optimizer(config, model.parameters())
-
     print(optimizer)
 
     # lr_scheduler
     lr_scheduler = get_scheduler(config, optimizer)
-
     print(lr_scheduler)
 
     # criterion    
     criterion = get_loss(config)
-
     print(criterion)
     
     last_epoch = 0
@@ -258,22 +258,19 @@ def only_train(config, model, valid_df, train_loader, val_loader, criterion, opt
     best_score = np.nan
     best_epoch = 0
 
-    for epoch in tqdm(range(last_epoch + 1, config.train.num_epochs + 1)):
+    mb = master_bar(range(last_epoch + 1, config.train.num_epochs + 1))
+
+    for epoch in mb:
         
         if torch.cuda.is_available(): torch.cuda.empty_cache()
 
         train_loss = train_one_epoch(config, logger, train_loader, 
                                      model, criterion, optimizer, 
-                                     config.train.num_grad_acc, lr_scheduler)
+                                     config.train.num_grad_acc, lr_scheduler,
+                                     mb)
     
         train_logstr = (f'Epoch: {epoch}\t'
                         f'Train loss: {train_loss:.3f}\t')
-    
-        # val_loss, val_accuracy = validate_one_epoch(config, logger, val_loader, 
-        #                                             model, criterion, valid_df)
-    
-        # valid_logstr = (f'Val loss: {val_loss:.3f}\t'
-        #                 f'Val accuracy: {val_accuracy:.3f}')
     
         # SGDR
         if config.scheduler.name == 'cosine':

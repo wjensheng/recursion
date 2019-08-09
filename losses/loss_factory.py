@@ -44,6 +44,11 @@ class ArcFaceLoss(nn.modules.Module):
         loss=(loss1+gamma*loss2)/(1+gamma)
         return loss
 
+    def __repr__(self):
+        return self.__class__.__name__ + '(' \
+               + 's=' + str(self.s) \
+               + ', m=' + str(self.m) + ')'
+
 
 class CosFaceLoss(nn.modules.Module):
 

@@ -115,6 +115,12 @@ class CyclicLR(object):
             lrs.append(lr)
         return lrs
 
+    def __repr__(self):
+        return self.__class__.__name__ + '(' \
+               + 'base_lr=' + str(self.base_lr) \
+               + ', max_lr=' + str(self.max_lr) \
+               + ', step_size=' + str(self.step_size) + ')'
+
 
 def cyclic_lr(optimizer, last_epoch, base_lr=3e-5, max_lr=1e-3,
               step_size=2000, mode='triangular', gamma=1.,
