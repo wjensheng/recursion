@@ -8,6 +8,7 @@ def accuracy(actual, predicted):
     predicted = np.array(predicted)
     return accuracy_score(actual, predicted)
 
+
 def weighted_preds(fc_dict):
     id_preds = {}
     classes_preds = {}

@@ -68,7 +68,6 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # train
     cfg.train = edict()
     cfg.train.batch_size = 64 # * torch.cuda.device_count()
-    cfg.train.num_grad_acc = None # 2?
     cfg.train.num_epochs = 50
     cfg.train.log_freq = 100
     # cfg.train.num_ttas = 1
