@@ -91,7 +91,11 @@ def leak_submission(config):
 
     exp_to_group = [3, 1, 0, 0, 0, 0, 2, 2, 3, 0, 0, 3, 1, 0, 0, 0, 2, 3]
 
-    predicted = compile_classes(config)
+    # predicted = compile_classes(config)
+
+    predicted = np.stack(torch.load('submissions/all_submission.pt')).squeeze()
+
+    print(predicted.shape)
 
     def select_plate_group(pp_mult, idx):
         sub_test = test_csv.loc[test_csv.experiment == all_test_exp[idx],:]
@@ -115,13 +119,13 @@ def leak_submission(config):
 
         sub.loc[indices,'sirna'] = preds.argmax(1)
 
-    np.save(os.path.join(config.submission.submission_dir, 'masked_preds'), sub)
+    np.save(os.path.join(config.submission.submission_dir, 'masked_preds_all'), sub)
 
     agree = (sub.sirna == compile_submission(config).sirna).mean() * 100
 
     print(f'Leak and original agree {agree}% of the time!')
 
-    # sub.to_csv(os.path.join(config.submission.submission_dir, 'submission_with_leak_0809.csv'), index=False)
+    sub.to_csv(os.path.join(config.submission.submission_dir, 'submission_with_leak_all.csv'), index=False)
 
 
     
