@@ -37,12 +37,12 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.submission.submission_dir = 'submissions/'
     cfg.submission.submission_pat = 'log_rn34-arcfaceloss-*'
 
-    # # transforms
-    # cfg.transform = edict()
-    # cfg.transform.train = 'default_train'
-    # cfg.transform.test = 'default_test'
-    # cfg.transform.num_preprocessor = 4
-    # cfg.transform.params = edict()
+    # transforms
+    cfg.transform = edict()
+    cfg.transform.name = 'tta_transform'
+    cfg.transform.test = 'tta_transform'
+    cfg.transform.num_preprocessor = 4
+    cfg.transform.params = edict()
 
     # num works
     cfg.num_workers = 4 # * torch.cuda.device_count()

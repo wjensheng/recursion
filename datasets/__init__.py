@@ -1,1 +1,1 @@
-from .dataset_factory import get_dataloader, get_dataset, get_dataframes
+from .dataset_factory import get_dataloader, get_datasets, get_dataframes

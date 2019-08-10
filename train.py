@@ -17,7 +17,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from datasets import get_dataloader, get_dataframes
+from datasets import get_dataframes, get_datasets, get_dataloader
 from models import get_model
 from losses import get_loss
 from optimizers import get_optimizer
@@ -316,6 +316,19 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+def test_ds(config):
+    # train_transform = get_transform(config, 'train')
+
+    # print(train_transform)
+
+    # train_tsfm = get_transform(config, split=None)
+    # test_tsfm = get_transform(config, split=None)
+
+    # train_ds, valid_ds, test_ds = get_datasets(config, train_tsfm, test_tsfm)
+
+    # print(train_ds[0][0])
+    pass
+
 
 def main():
     args = parse_args()
@@ -335,9 +348,9 @@ def main():
 
     seed_everything()  
 
-    run(config)
+    # run(config)
     # test_model(config)    
-
+    test_ds(config)
     print('complete!')
 
 

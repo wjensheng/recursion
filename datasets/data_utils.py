@@ -8,15 +8,6 @@ import scipy.misc as misc
 
 import torch
 from torchvision import transforms as T
-from torch.utils.data.sampler import SequentialSampler, RandomSampler
-from albumentations import (
-    Compose,
-    Normalize,
-    IAAAffine,
-    RandomBrightnessContrast,
-    MotionBlur,
-    CLAHE,
-)
 from albumentations import Compose, RandomRotate90, Flip, Transpose, Resize, Normalize
 from albumentations import RandomContrast, RandomBrightness, RandomGamma
 from albumentations import Blur, MotionBlur, InvertImg
@@ -49,11 +40,8 @@ class DefaultDataset(Dataset):
                 
         one_img = np.stack([channel for channel in img_channels],axis=2)
 
-        print(one_img)
-
         if self.transform is not None:
-            img = self.transform(image=one_img)['image']
-            # img = self.transform(one_img)
+            img = self.transform(image=one_img)
 
         img = torch.from_numpy(img).float()
 
@@ -65,9 +53,9 @@ class DefaultDataset(Dataset):
     def __len__(self):
         return self.len
 
+
 if __name__ == "__main__":
     df = pd.read_csv(os.path.join('data', 'U2OS_train_small.csv'))
-    SIZE = 512
 
     # base_aug = T.Compose([
     #     T.ToTensor(),
@@ -78,12 +66,14 @@ if __name__ == "__main__":
     #     # T.Normalize(mean=MEAN, std=STD)
     # ])
 
-    base_aug = Compose([
-        RandomRotate90(),
-        Flip(),
-        Transpose(),
-        Resize(SIZE, SIZE, always_apply=True),        
-        # Normalize(mean=MEAN, std=STD)
-    ])
-    ds = DefaultDataset(df, 'data', transform=base_aug, mode='train', site=1)
-    print(ds[0][0])
+    # base_aug = Compose([
+    #     RandomRotate90(),
+    #     Flip(),
+    #     Transpose(),
+    #     Resize(SIZE, SIZE, always_apply=True),        
+    #     # Normalize(mean=MEAN, std=STD)
+    # ])
+
+    # base_aug = tta_transform()
+    # ds = DefaultDataset(df, 'data', transform=base_aug, mode='train', site=1)
+    # print(ds[0][0].size())
