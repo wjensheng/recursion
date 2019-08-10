@@ -124,14 +124,19 @@ class CyclicLR(object):
                + ', step_size=' + str(self.step_size) + ')'
 
 
-def cyclic(optimizer, last_epoch, base_lr=3e-5, max_lr=1e-3,
-              step_size=2000, mode='triangular', gamma=1.,
-              scale_fn=None, scale_mode='cycle', last_batch_iteration=-1):
-    return CyclicLR(optimizer, base_lr=base_lr, max_lr=max_lr,
-                    step_size=step_size, mode=mode, gamma=gamma,
-                    scale_fn=scale_fn, scale_mode=scale_mode, last_batch_iteration=last_batch_iteration)
+# def cyclic(optimizer, last_epoch, base_lr=3e-5, max_lr=1e-3,
+#               step_size=2000, mode='triangular', gamma=1.,
+#               scale_fn=None, scale_mode='cycle', last_batch_iteration=-1):
+#     return CyclicLR(optimizer, base_lr=base_lr, max_lr=max_lr,
+#                     step_size=step_size, mode=mode, gamma=gamma,
+#                     scale_fn=scale_fn, scale_mode=scale_mode, last_batch_iteration=last_batch_iteration)
 
-        
+
+def cyclic(optimizer, last_epoch, base_lr=3e-3, max_lr=1e-3, step_size_up=2000, step_size_down=None, mode='triangular', gamma=1.0, scale_fn=None, scale_mode='cycle', cycle_momentum=True, base_momentum=0.8, max_momentum=0.9,):
+    return lr_scheduler.CyclicLR(optimizer=optimizer, base_lr=base_lr, max_lr=max_lr, step_size_up=step_size_up, 
+                                 step_size_down=step_size_down, mode=mode, gamma=gamma, scale_fn=scale_fn, 
+                                 scale_mode=scale_mode, cycle_momentum=cycle_momentum, base_momentum=base_momentum, 
+                                 max_momentum=max_momentum, last_epoch=last_epoch)
 
 def get_scheduler(config, optimizer, last_epoch=-1):
     func = globals().get(config.scheduler.name)

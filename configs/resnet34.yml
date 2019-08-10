@@ -37,7 +37,7 @@ loss:
   #   out_features: 1108    
 
 optimizer:
-  name: 'adam'
+  name: 'sgd'
   params:
     lr: 0.001 # 3e-4
 
@@ -48,4 +48,4 @@ scheduler:
     # T_max: 256 # 34
     base_lr: 0.0003 
     max_lr: 0.001 
-    step_size: 50
+    step_size_up: 50
