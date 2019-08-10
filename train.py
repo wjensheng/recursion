@@ -324,10 +324,10 @@ def test_ds(config):
     # train_tsfm = get_transform(config, split=None)
     # test_tsfm = get_transform(config, split=None)
 
-    # train_ds, valid_ds, test_ds = get_datasets(config, train_tsfm, test_tsfm)
+    train_ds, valid_ds, test_ds = get_datasets(config)
 
-    # print(train_ds[0][0])
-    pass
+    print(torch.max(train_ds[0][0]))
+    # pass
 
 
 def main():
@@ -348,9 +348,9 @@ def main():
 
     seed_everything()  
 
-    # run(config)
+    run(config)
     # test_model(config)    
-    test_ds(config)
+    # test_ds(config)
     print('complete!')
 
 
