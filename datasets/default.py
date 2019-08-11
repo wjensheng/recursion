@@ -1,77 +1,85 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
-import random
-
 import numpy as np
 import pandas as pd
+
+import cv2
+from PIL import Image
 import scipy.misc as misc
-from torch.utils.data.dataset import Dataset
+from imgaug import augmenters as iaa
 
 import torch
-from torchvision import models, transforms as T
+from torchvision import transforms as T
+from albumentations import Compose, RandomRotate90, Flip, Transpose, Resize, Normalize
+from albumentations import RandomContrast, RandomBrightness, RandomGamma
+from albumentations import Blur, MotionBlur, InvertImg
+from albumentations import Rotate, ShiftScaleRotate, RandomScale
+from albumentations import GridDistortion, ElasticTransform
 
-from PIL import Image
+from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
 
-# TODO:
-# 1. how to normalize
-# 2. how to account for controls
 
-class RCICDefaultDataset(Dataset):
-    
-    def __init__(self, df, img_dir, tsfm=None, mode='train', site=1, channels=[1,2,3,4,5,6]):
+class DefaultDataset(Dataset):
+    def __init__(self, 
+                 df, 
+                 img_dir, 
+                 transform=None, 
+                 mode='train', 
+                 site=1, 
+                 channels=[1,2,3,4,5,6]):
         self.records = df.to_records(index=False)
         self.channels = channels
         self.site = site
         self.mode = mode
         self.img_dir = img_dir
-        self.len = df.shape[0]
-        self.tsfm = tsfm
-        
-    def _load_img_as_tensor(self, file_name):
-        img = Image.open(file_name)                
-        if self.tsfm: img = self.tsfm(img)
-        return img
+        self.len = len(df)
+        self.transform = transform
 
-    def _get_img_path(self, index, channel):
-        experiment, plate, well = self.records[index].experiment, self.records[index].plate, self.records[index].well
-        return '/'.join([self.img_dir,self.mode,experiment,f'Plate{plate}',f'{well}_s{self.site}_w{channel}.png'])
-        
     def __getitem__(self, index):
-        paths = [self._get_img_path(index, ch) for ch in self.channels]        
-        img = torch.cat([self._load_img_as_tensor(img_path) for img_path in paths])
+        experiment = self.records[index].experiment 
+        plate = self.records[index].plate 
+        well = self.records[index].well
+    
+        img_channels = [np.array(Image.open(os.path.join(self.img_dir, self.mode, experiment, f'Plate{plate}', f'{well}_s{self.site}_w{channel}.png')),  dtype=np.float32) for channel in range(1,7)]
         
+        img = np.stack([channel for channel in img_channels],axis=2)
+
+        if self.transform is not None:
+            img = self.transform(image=img)['image']
+
+        img = torch.from_numpy(img.transpose((2, 0, 1))).float()
+
+        img = T.Normalize(mean=[127.5] * 6,
+                          std=[255] * 6)(img)
+
+        # img = T.Normalize(mean=[6.74696984, 14.74640167, 10.51260864, 10.45369445,  5.49959796, 9.81545561],
+        #                   std=[7.95876312, 12.17305868, 5.86172946, 7.83451711, 4.701167, 5.43130431])(img)
+            
         if self.mode == 'train':
             return img, self.records[index].id_code, int(self.records[index].sirna)
         else:
             return img, self.records[index].id_code
-
+            
+        
     def __len__(self):
         return self.len
 
-    def item(self, index):
-        return self.records[index].id_code
-
 
 def test():
-    DATA_DIR = 'data'
+    size = 224
+    resize = Resize(height=size, width=size, always_apply=True)
 
-    df = pd.read_csv(os.path.join(DATA_DIR, 'train.csv'))
+    tsfm = Compose([
+        RandomRotate90(),
+        resize
+    ]) 
 
-    print(len(df))
+    df = pd.read_csv(os.path.join('data', 'U2OS_train_small.csv'))
+    ds = DefaultDataset(df, 'data', transform=None, mode='train', site=1)
 
-    train_tsfm = T.Compose([
-        T.RandomRotation(degrees=(-90, 90)),
-        T.RandomVerticalFlip(0.25),
-        T.RandomHorizontalFlip(0.25),
-        T.ToTensor(),
-    ])
+    print(ds[0][0].size())
+    
 
-    train_ds = RCICDefaultDataset(df, DATA_DIR, train_tsfm)
-
-    print(torch.sum(train_ds[0][0]))
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     test()

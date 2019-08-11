@@ -162,6 +162,13 @@ class AdMSoftmaxLoss(nn.Module):
         L = numerator - torch.log(denominator)
         return -torch.mean(L)
 
+    def __repr__(self):
+        return self.__class__.__name__ + '(' \
+               + 's=' + str(self.s) \
+               + ', m=' + str(self.m) \
+               + ', in_features=' + str(self.in_features) \
+               + ', out_features=' + str(self.out_features) + ')'
+
 
 class FocalLoss(nn.Module):
     """https://github.com/ronghuaiyang/arcface-pytorch/blob/master/models/focal_loss.py"""
@@ -178,35 +185,28 @@ class FocalLoss(nn.Module):
         loss = (1 - p) ** self.gamma * logp
         return loss.mean()
 
+    def __repr__(self):
+        return self.__class__.__name__ + '(' \
+               + 'gamma=' + str(self.gamma) \
+               + ', ce=' + str(self.ce) + ')'
 
-def cross_entropy() -> Any:
+
+def cross_entropy(**_) -> Any:
     return torch.nn.CrossEntropyLoss()
 
-def binary_cross_entropy() -> Any:
-    return torch.nn.BCEWithLogitsLoss()
+def focal(**_):
+    return FocalLoss(**_)
 
-def mse_loss() -> Any:
-    return torch.nn.MSELoss()
+def arcface(**_):
+    return ArcFaceLoss(**_)    
 
-def l1_loss() -> Any:
-    return torch.nn.L1Loss()
+def cosface(**_):
+    return CosFaceLoss(**_)    
 
-def smooth_l1_loss() -> Any:
-    return torch.nn.SmoothL1Loss()
-
-def focal():
-    return FocalLoss()
-
-def arcface():
-    return ArcFaceLoss()    
-
-def cosface():
-    return CosFaceLoss()    
-
-def adacos(in_features, out_features):
+def adacos(in_features, out_features, **_):
     return AdaCosLoss(in_features, out_features, m=0.50, ls_eps=0, theta_zero=math.pi/4)
 
-def amsoft(in_features, out_features):
+def amsoft(in_features, out_features, **_):
     return AdMSoftmaxLoss(in_features, out_features, s=30.0, m=0.4)
 
 def get_loss(config):

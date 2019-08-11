@@ -2,15 +2,15 @@ setup:
   cell_type: 3
   stage: 1  # 'stage 0: small validation set;' 
             # 'stage 1: last batch as validation;'
-            # 'stage 2: proper training' 
-  version: '224_cyclic_t2' 
+  version: 'cos' 
 
 data:
   name: 'RCICDefaultDataset'
   train: 'train.csv' # U2OS_train_small
 
 model:
-  image_size: 224
+  image_size: 112
+  num_classes: 512
   arch: 'resnet34'
   loss_module: 'arcface' # 'arcface', 'cosface', 'adacos', 'softmax'
   use_fc: True
@@ -18,34 +18,34 @@ model:
   dropout: 0.25
 
 train:
-  batch_size: 320 # 192 for 384; 320 for 224; 128 for 512
+  batch_size: 16 # 192 for 384; 320 for 224; 128 for 512
   num_epochs: 50
   log_freq: 50
   
 val:
-  batch_size: 320 # * num gpus
+  batch_size: 16 # * num gpus
   log_freq: 50
 
 test:
   batch_size: 224 # * num gpus
   
 loss:
-  name: 'arcface' # 'arcface', 'cosface', 'adacos', 'softmax', 'sphere' 
-  log_freq: 50
-  # params: # only for  adacos and amsoftmax
-  #   in_features: 512 
-  #   out_features: 1108    
+  name: 'amsoft' # cross_entropy, focal, arcface, cosface, adacos, amsoft
+  params: # only for  adacos and amsoftmax
+    # gamma: 2
+    in_features: 512 
+    out_features: 1108
 
 optimizer:
-  name: 'sgd'
+  name: adam # sgd, adam
   params:
     lr: 0.001 # 3e-4
 
 scheduler:
-  name: 'cyclic' # exponential, cosine
+  name: 'cosine' # exponential, cosine
   params:
-    # eta_min: 0.00003
-    # T_max: 256 # 34
-    base_lr: 0.0003 
-    max_lr: 0.001 
-    step_size_up: 50
+    eta_min: 0.00003
+    T_max: 256 # 34
+    # base_lr: 0.0003 
+    # max_lr: 0.001 
+    # step_size_up: 50

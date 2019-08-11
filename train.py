@@ -17,7 +17,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from datasets import get_dataframes, get_datasets, get_dataloader
+from datasets import get_dataframes, get_datasets, get_dataloaders
 from models import get_model
 from losses import get_loss
 from optimizers import get_optimizer
@@ -212,7 +212,7 @@ def run(config):
     _, valid_df, _ = get_dataframes(config)
 
     # get dataloders
-    train_loader, val_loader, test_loader = get_dataloader(config)
+    train_loader, val_loader, test_loader = get_dataloaders(config)
 
     print(f'train_dl len: {len(train_loader)}')
     print(f'valid_dl len: {len(val_loader)}')
@@ -233,60 +233,10 @@ def run(config):
     criterion = get_loss(config)
     print(criterion)
     
-    last_epoch = 0
+    last_epoch = 0    
     
-    if config.setup.stage == -1:
-        only_train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, logger, last_epoch)
-    else:
-        train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, logger, last_epoch)
+    train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, logger, last_epoch)
     
-
-def only_train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, logger, last_epoch):
-
-    best_score = np.nan
-    best_epoch = 0
-
-    mb = master_bar(range(last_epoch + 1, config.train.num_epochs + 1))
-
-    for epoch in mb:
-        
-        if torch.cuda.is_available(): torch.cuda.empty_cache()
-
-        train_loss = train_one_epoch(config, logger, train_loader, 
-                                     model, criterion, optimizer, 
-                                     config.train.num_grad_acc, lr_scheduler,
-                                     mb)
-    
-        train_logstr = (f'Epoch: {epoch}\t'
-                        f'Train loss: {train_loss:.3f}\t')
-    
-        # SGDR
-        if config.scheduler.name == 'cosine':
-            lr_scheduler = get_scheduler(config, optimizer)
-
-        # One cyclic lr
-        elif config.scheduler.name == 'cyclic':
-            current_lr = lr_scheduler.get_lr()
-            logger.info(current_lr[-1])                
-
-        logger.info(train_logstr)
-    
-        # save best score, model
-        if train_loss < best_score:
-            best_score = train_loss
-            best_epoch = epoch
-
-            filename = f'{config.setup.version}_e{epoch:02d}_{best_score:.04f}.pth'
-            model_dir = config.saved.model_dir
-
-            save_checkpoint(model_dir, filename, model, epoch, best_score, 
-                            optimizer, save_arch=True, params=config)
-
-            logger.info(f'A snapshot was saved to {filename}')
-
-    logger.info(f'best score: {best_score:.3f}')
-
-
 ## END ##
 
 def test_model(config):
@@ -306,7 +256,16 @@ def test_model(config):
     loss = criterion(output, label_)
 
     print(loss)
-    
+
+
+def test_ds(config):
+    train_dl, valid_dl, test_dl = get_dataloaders(config)
+    x = train_dl.dataset[0][0]
+    print(x)
+    print(torch.max(x))
+    print(torch.min(x))
+    print(torch.mean(x))
+
         
 def parse_args():
     parser = argparse.ArgumentParser(description='RXRX')
@@ -315,19 +274,6 @@ def parse_args():
                         type=str, required=True)                        
     args = parser.parse_args()
     return args
-
-def test_ds(config):
-    # train_transform = get_transform(config, 'train')
-
-    # print(train_transform)
-
-    # train_tsfm = get_transform(config, split=None)
-    # test_tsfm = get_transform(config, split=None)
-
-    train_ds, valid_ds, test_ds = get_datasets(config)
-
-    print(torch.max(train_ds[0][0]))
-    # pass
 
 
 def main():

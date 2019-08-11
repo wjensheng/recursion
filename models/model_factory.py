@@ -21,24 +21,11 @@ class RcicNet(nn.Module):
 
     def __init__(self,
                  n_classes,
-                 model_name='resnet50',
-                 pool='GeM',
-                 args_pooling: dict={},
+                 model_name='resnet50',        
                  use_fc=True,
                  fc_dim=512,
                  dropout=0.0,
-                 loss_module='softmax',
-                 s=30.0,
-                 margin=0.50,
-                 ls_eps=0.0,
-                 theta_zero=0.785):
-        """
-        :param n_classes:
-        :param model_name: name of model from pretrainedmodels
-            e.g. resnet50, resnext101_32x4d, pnasnet5large
-        :param pooling: One of ('SPoC', 'MAC', 'RMAC', 'GeM', 'Rpool', 'Flatten', 'CompactBilinearPooling')
-        :param loss_module: One of ('arcface', 'cosface', 'softmax')
-        """
+                 loss_module='softmax'):
         super(RcicNet, self).__init__()        
                 
         self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
@@ -135,35 +122,12 @@ class RcicNet(nn.Module):
 def get_model(config):
     n_classes = config.model.num_classes
     model_name = config.model.arch
-    pool = config.model.pool
-    args_pooling = {}
     use_fc = config.model.use_fc
     fc_dim = config.model.fc_dim
     dropout = config.model.dropout
     loss_module = config.model.loss_module
-
-    net = RcicNet(n_classes=n_classes, model_name=model_name, pool=pool, args_pooling=args_pooling,
+                
+    net = RcicNet(n_classes=n_classes, model_name=model_name,
                   use_fc=use_fc, fc_dim=fc_dim, dropout=dropout, loss_module=loss_module)
                   
     return net
-
-if __name__ == "__main__":
-    cfg = edict()
-    cfg.model = edict()
-    cfg.model.arch = 'resnet18'
-    cfg.model.pool = 'GeM' 
-    cfg.model.local_whitening = False
-    cfg.model.use_fc = False
-    cfg.model.fc_dim = 512
-    cfg.model.dropout = 0
-    cfg.model.loss_module = 'arcface' # 'arcface', 'cosface', 'softmax'
-    cfg.model.s = 30.0
-    cfg.model.margin = 0.5
-    cfg.model.regional = False
-    cfg.model.whitening = False
-    cfg.model.image_size = 512 # resize
-    cfg.model.num_classes = 1108
-    cfg.model.pretrained = True
-    cfg.model.lr = 3e-4
-    cfg.model.load_trained = True
-    print(get_model(cfg))

@@ -123,9 +123,9 @@ def leak_submission(config):
 
     agree = (sub.sirna == compile_submission(config).sirna).mean() * 100
 
-    print(f'Leak and original agree {agree}% of the time!')
+    print(f'Leak and original agree {agree:.2f}% of the time!')
 
-    sub.to_csv(os.path.join(config.submission.submission_dir, 'submission_with_leak_all.csv'), index=False)
+    sub.to_csv(os.path.join(config.submission.submission_dir, 'unbeliavable.csv'), index=False)
 
 
     
