@@ -1,0 +1,48 @@
+setup:
+  cell_type: 3
+  stage: 1  # 'stage 0: small validation set;' 
+            # 'stage 1: last batch as validation;'
+  version: 'softmax_ce_adam_cos'
+
+data:
+  name: 'RCICDefaultDataset'
+  train: 'train.csv' # U2OS_train_small
+
+model:
+  image_size: 384
+  num_classes: 1108 # 512 for amsoftmax
+  arch: 'densenet121'
+  loss_module: 'softmax' # 'arcface', 'cosface', 'adacos', 'softmax'
+  
+train:
+  batch_size: 16 # 192 for 384; 320 for 224; 128 for 512
+  num_epochs: 50
+  log_freq: 50
+  
+val:
+  batch_size: 96
+  log_freq: 50
+
+test:
+  batch_size: 96
+  
+loss:
+  name: 'ls_cross_entropy' # cross_entropy, focal, arcface, cosface, adacos, amsoft, ls_cross_entropy
+  params: 
+    gamma: 2 # focal
+    in_features: 512 # adacos and amsoftmax
+    out_features: 1108 # adacos and amsoftmax
+
+optimizer:
+  name: adam # sgd, adam
+  params:
+    lr: 0.001 # 3e-4
+
+scheduler:
+  name: 'cosine' # exponential, cosine, cyclic
+  params:
+    eta_min: 0.0003
+    T_max: 70 # 34
+    # base_lr: 0.0003 
+    # max_lr: 0.001 
+    # step_size_up: 50

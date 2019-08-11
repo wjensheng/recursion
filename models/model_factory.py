@@ -29,29 +29,46 @@ class RcicNet(nn.Module):
 
         final_in_features = self.backbone.last_linear.in_features        
         
-        trained_kernel = self.backbone.conv1.weight            
+        if 'resnet' in model_name:
+            trained_kernel = self.backbone.conv1.weight
 
-        new_conv = nn.Conv2d(6, 64, kernel_size=7, stride=2, padding=3, bias=False)
+            new_conv = nn.Conv2d(6, 64, kernel_size=7, stride=2, padding=3, bias=False)
 
-        with torch.no_grad():
-            new_conv.weight[:,:] = torch.stack([torch.mean(trained_kernel, 1)]*6, dim=1)
+            with torch.no_grad():
+                new_conv.weight[:,:] = torch.stack([torch.mean(trained_kernel, 1)]*6, dim=1)
 
-        self.backbone.conv1 = new_conv
+            self.backbone.conv1 = new_conv
 
-        self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
+
+            self.expand = 1
+
+        else: # densenet
+            trained_kernel = self.backbone.features.conv0.weight
+
+            new_conv = nn.Conv2d(6, 64, kernel_size=7, stride=2, padding=3, bias=False)
+
+            with torch.no_grad():
+                new_conv.weight[:,:] = torch.stack([torch.mean(trained_kernel, 1)]*6, dim=1)
+
+            self.backbone.features.conv0 = new_conv
+
+            self.backbone = nn.Sequential(*list(self.backbone.features)[:-1])
+
+            self.expand = 2
                 
         self.pooling = AdaptiveConcatPool2d()
 
         self.flatten = Flatten()
-        self.bn1 = nn.BatchNorm1d(1024)
+        self.bn1 = nn.BatchNorm1d(1024 * self.expand)
         self.dropout1 = nn.Dropout(p=0.25)
-        self.fc1 = nn.Linear(1024, 512)
+        self.fc1 = nn.Linear(1024 * self.expand, 512 * self.expand)
         self.relu = nn.ReLU(inplace=True)
-        self.bn2 = nn.BatchNorm1d(512)   
+        self.bn2 = nn.BatchNorm1d(512 * self.expand)   
         self.dropout2 = nn.Dropout(p=0.5)     
         self._init_params()        
     
-        final_in_features = fc_dim
+        final_in_features = fc_dim * self.expand
 
         self.loss_module = loss_module
         if loss_module == 'arcface':
