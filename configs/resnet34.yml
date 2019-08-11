@@ -15,12 +15,12 @@ model:
   loss_module: 'softmax' # 'arcface', 'cosface', 'adacos', 'softmax'
   
 train:
-  batch_size: 64 # 192 for 384; 320 for 224; 128 for 512
+  batch_size: 32 # 192 for 384; 320 for 224; 128 for 512
   num_epochs: 30
   log_freq: 50
   
 val:
-  batch_size: 96
+  batch_size: 48
   log_freq: 50
 
 test:
@@ -34,14 +34,14 @@ loss:
     out_features: 1108 # adacos and amsoftmax
 
 optimizer:
-  name: adam # sgd, adam
+  name: 'adam' # sgd, adam
   params:
-    lr: 0.001 # 3e-4
+    lr: 0.0003 # 3e-4
 
 scheduler:
   name: 'cosine' # exponential, cosine, cyclic
   params:
-    eta_min: 0.0003
+    eta_min: 0.00003
     T_max: 70 # 34
     # base_lr: 0.0003 
     # max_lr: 0.001 

@@ -63,7 +63,6 @@ class CosFaceLoss(nn.modules.Module):
 
     def forward(self, logits, labels):
         cosine = logits
-        print(cosine.size(), labels.size())
         phi = cosine - self.m
         # --------------------------- convert label to one-hot ---------------------------
         if torch.cuda.is_available():

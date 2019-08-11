@@ -189,8 +189,8 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
             filename = f'{config.setup.version}_e{epoch:02d}_{best_score:.04f}.pth'
             model_dir = config.saved.model_dir
 
-            save_checkpoint(model_dir, filename, model, epoch, best_score, 
-                            optimizer, save_arch=True, params=config)
+            # save_checkpoint(model_dir, filename, model, epoch, best_score, 
+            #                 optimizer, save_arch=True, params=config)
 
             logger.info(f'A snapshot was saved to {filename}')
 
@@ -219,7 +219,7 @@ def run(config):
     
     # model
     model = create_model(config)
-    print(model)
+    # print(model)
 
     # optimizer
     optimizer = get_optimizer(config, model.parameters())
@@ -294,9 +294,9 @@ def main():
 
     seed_everything()  
 
-    run(config)
+    # run(config)
     # test_model(config)    
-    # test_ds(config)
+    test_ds(config)
     print('complete!')
 
 
