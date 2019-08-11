@@ -50,20 +50,13 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # model
     cfg.model = edict()
     cfg.model.arch = 'resnet18'
-    cfg.model.pool = 'GeM' 
-    cfg.model.local_whitening = False
-    cfg.model.use_fc = False
+    cfg.model.use_fc = True
     cfg.model.fc_dim = 512
-    cfg.model.dropout = 0
-    cfg.model.loss_module = 'arcface' # 'arcface', 'cosface', 'softmax', 'sphere'
-    cfg.model.s = 30.0
-    cfg.model.margin = 0.5
-    cfg.model.regional = False
-    cfg.model.whitening = False
+    cfg.model.dropout = 0.25
+    cfg.model.loss_module = 'arcface' # 'arcface', 'cosface', 'adacos', 'softmax'
     cfg.model.image_size = 512 # resize
     cfg.model.num_classes = 1108
     cfg.model.pretrained = True
-    cfg.model.lr = 3e-4
     
     # train
     cfg.train = edict()

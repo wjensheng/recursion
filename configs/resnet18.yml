@@ -9,32 +9,29 @@ data:
   train: 'train.csv' # U2OS_train_small
 
 model:
-  image_size: 112
-  num_classes: 512
+  image_size: 384
+  num_classes: 1108
   arch: 'resnet18'
-  loss_module: 'arcface' # 'arcface', 'cosface', 'adacos', 'softmax'
-  use_fc: True
-  fc_dim: 512
-  dropout: 0.25
-
+  loss_module: 'softmax' # 'arcface', 'cosface', 'adacos', 'softmax'
+  
 train:
-  batch_size: 16 # 192 for 384; 320 for 224; 128 for 512
+  batch_size: 64 # 192 for 384; 320 for 224; 128 for 512
   num_epochs: 50
   log_freq: 50
   
 val:
-  batch_size: 16 # * num gpus
+  batch_size: 96
   log_freq: 50
 
 test:
-  batch_size: 224 # * num gpus
+  batch_size: 96
   
 loss:
-  name: 'amsoft' # cross_entropy, focal, arcface, cosface, adacos, amsoft
-  params: # only for  adacos and amsoftmax
-    # gamma: 2
-    in_features: 512 
-    out_features: 1108
+  name: 'cross_entropy' # cross_entropy, focal, arcface, cosface, adacos, amsoft
+  params: 
+    gamma: 2 # focal
+    # in_features: 512 # adacos and amsoftmax
+    # out_features: 1108 # adacos and amsoftmax
 
 optimizer:
   name: adam # sgd, adam
