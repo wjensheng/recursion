@@ -16,7 +16,7 @@ model:
   
 train:
   batch_size: 16 # 192 for 384; 320 for 224; 128 for 512
-  num_epochs: 50
+  num_epochs: 30
   log_freq: 50
   
 val:

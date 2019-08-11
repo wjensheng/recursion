@@ -38,7 +38,6 @@ class RcicNet(nn.Module):
                 new_conv.weight[:,:] = torch.stack([torch.mean(trained_kernel, 1)]*6, dim=1)
 
             self.backbone.conv1 = new_conv
-
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
 
             self.expand = 1
@@ -52,13 +51,11 @@ class RcicNet(nn.Module):
                 new_conv.weight[:,:] = torch.stack([torch.mean(trained_kernel, 1)]*6, dim=1)
 
             self.backbone.features.conv0 = new_conv
-
             self.backbone = nn.Sequential(*list(self.backbone.features)[:-1])
 
             self.expand = 2
                 
         self.pooling = AdaptiveConcatPool2d()
-
         self.flatten = Flatten()
         self.bn1 = nn.BatchNorm1d(1024 * self.expand)
         self.dropout1 = nn.Dropout(p=0.25)
