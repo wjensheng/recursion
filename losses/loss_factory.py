@@ -191,7 +191,24 @@ class FocalLoss(nn.Module):
                + ', ce=' + str(self.ce) + ')'
 
 
-def cross_entropy(**_) -> Any:
+class LabelSmoothingCrossEntropy(nn.Module):
+    """https://github.com/fastai/fastai/blob/221e4aae0304ef5d32c9d3645afade6751f074f0/fastai/layers.py"""
+
+    def __init__(self, eps:float=0.1, reduction='mean'): 
+        super(LabelSmoothingCrossEntropy, self).__init__()
+        self.eps,self.reduction = eps,reduction
+
+    def forward(self, output, target):
+        c = output.size()[-1]
+        log_preds = F.log_softmax(output, dim=-1)
+        if self.reduction=='sum': loss = -log_preds.sum()
+        else:
+            loss = -log_preds.sum(dim=-1)
+            if self.reduction=='mean':  loss = loss.mean()
+        return loss*self.eps/c + (1-self.eps) * F.nll_loss(log_preds, target, reduction=self.reduction)
+
+
+def cross_entropy(**_):
     return torch.nn.CrossEntropyLoss()
 
 def focal(**_):
@@ -206,8 +223,11 @@ def cosface(**_):
 def adacos(in_features, out_features, **_):
     return AdaCosLoss(in_features, out_features, m=0.50, ls_eps=0, theta_zero=math.pi/4)
 
-def amsoft(in_features, out_features, **_):
+def amsoftmax(in_features, out_features, **_):
     return AdMSoftmaxLoss(in_features, out_features, s=30.0, m=0.4)
+
+def ls_cross_entropy(**__):
+    return LabelSmoothingCrossEntropy()
 
 def get_loss(config):
     f = globals().get(config.loss.name)

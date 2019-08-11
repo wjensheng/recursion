@@ -29,7 +29,7 @@ def compile_classes(config):
     t = np.asarray([])
 
     for i in range(4):
-        filename = f'class_t{i}.pt'
+        filename = f'class_sunday_{i}.pt'
         file = os.path.join(config.submission.submission_dir, filename)
         print(file)                                    
         tmp = torch.load(file)
@@ -91,9 +91,9 @@ def leak_submission(config):
 
     exp_to_group = [3, 1, 0, 0, 0, 0, 2, 2, 3, 0, 0, 3, 1, 0, 0, 0, 2, 3]
 
-    # predicted = compile_classes(config)
+    predicted = compile_classes(config)
 
-    predicted = np.stack(torch.load('submissions/all_submission.pt')).squeeze()
+    # predicted = np.stack(torch.load('submissions/all_submission.pt')).squeeze()
 
     print(predicted.shape)
 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     config.data.test = 'test.csv'
     config.submission = edict()
     config.submission.submission_dir = 'submissions'
-    config.submission.submission_pat = 'submission_t*'
+    config.submission.submission_pat = 'sunday_*'
 
     # compile_submission(config)
     leak_submission(config)

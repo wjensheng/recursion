@@ -10,7 +10,7 @@ data:
 
 model:
   image_size: 384
-  num_classes: 1108
+  num_classes: 1108 # 512 for amsoftmax
   arch: 'resnet34'
   loss_module: 'softmax' # 'arcface', 'cosface', 'adacos', 'softmax'
   
@@ -27,7 +27,7 @@ test:
   batch_size: 96
   
 loss:
-  name: 'cross_entropy' # cross_entropy, focal, arcface, cosface, adacos, amsoft
+  name: 'ls_cross_entropy' # cross_entropy, focal, arcface, cosface, adacos, amsoft, ls_cross_entropy
   params: 
     gamma: 2 # focal
     in_features: 512 # adacos and amsoftmax
