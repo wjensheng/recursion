@@ -2,7 +2,7 @@ setup:
   cell_type: 3
   stage: 1  # 'stage 0: small validation set;' 
             # 'stage 1: last batch as validation;'
-  version: 'softmax_ce_adam_cos'
+  version: '' 
 
 data:
   name: 'RCICDefaultDataset'
@@ -12,7 +12,6 @@ model:
   image_size: 384
   num_classes: 1108 # 512 for amsoftmax
   arch: 'resnet34'
-  loss_module: 'softmax' # 'arcface', 'cosface', 'adacos', 'softmax'
   
 train:
   batch_size: 32 # 192 for 384; 320 for 224; 128 for 512
@@ -24,14 +23,14 @@ val:
   log_freq: 50
 
 test:
-  batch_size: 96
+  batch_size: 48
   
 loss:
-  name: 'ls_cross_entropy' # cross_entropy, focal, arcface, cosface, adacos, amsoft, ls_cross_entropy
+  name: 'ls_cross_entropy' # cross_entropy, arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, 
   params: 
     gamma: 2 # focal
-    in_features: 512 # adacos and amsoftmax
-    out_features: 1108 # adacos and amsoftmax
+    in_features: 512 
+    out_features: 1108 
 
 optimizer:
   name: 'adam' # sgd, adam
@@ -39,10 +38,11 @@ optimizer:
     lr: 0.0003 # 3e-4
 
 scheduler:
-  name: 'cosine' # exponential, cosine, cyclic
+  name: 'cosine' # exponential, cosine
   params:
+    # gamma: 0.95
     eta_min: 0.00003
-    T_max: 70 # 34
+    T_max: 138 # 34
     # base_lr: 0.0003 
     # max_lr: 0.001 
     # step_size_up: 50
