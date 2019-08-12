@@ -19,11 +19,11 @@ class Flatten(nn.Module):
     def __init__(self): super().__init__()
     def forward(self, x): return x.view(x.size(0), -1)        
 
-class RcicNet(nn.Module):
+class RecursionNet(nn.Module):
 
     def __init__(self, n_classes, model_name='resnet50', 
                  fc_dim=512, loss_module='softmax'):
-        super(RcicNet, self).__init__()        
+        super(RecursionNet, self).__init__()        
                 
         self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
 
@@ -74,7 +74,7 @@ class RcicNet(nn.Module):
             self.final = AddMarginProduct(final_in_features, n_classes)
         elif loss_module == 'adacos':
             self.final = AdaCos(final_in_features, n_classes)
-        elif loss_module == 'sphere':
+        elif loss_module == 'sphereface':
             self.final = SphereProduct(final_in_features, n_classes)
         else:
             self.final = nn.Linear(final_in_features, n_classes)
@@ -88,7 +88,11 @@ class RcicNet(nn.Module):
         nn.init.constant_(self.bn2.bias, 0)
         
     def forward(self, x):        
-        feature = self.extract_feat(x)        
+        feature = self.extract_feat(x)
+
+        if self.loss_module == 'amsoftmax':
+            return feature
+            
         logits = self.final(feature)
         return logits
 
@@ -111,7 +115,7 @@ def get_model(config):
     fc_dim = config.model.fc_dim
     loss_module = config.loss.name
                 
-    net = RcicNet(n_classes=n_classes, model_name=model_name,
-                  fc_dim=fc_dim, loss_module=loss_module)
+    net = RecursionNet(n_classes=n_classes, model_name=model_name,
+                       fc_dim=fc_dim, loss_module=loss_module)
                   
     return net

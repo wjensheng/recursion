@@ -142,6 +142,7 @@ class SphereFaceLoss(nn.Module):
 
     def __init__(self, s=30.0, m=1.35):
         super(SphereFaceLoss, self).__init__()
+        self.classify_loss = nn.CrossEntropyLoss()
         self.s = s
         self.m = m
         
@@ -159,9 +160,7 @@ class SphereFaceLoss(nn.Module):
 
     def __repr__(self):
         return self.__class__.__name__ + '(' \
-               + 'in_features=' + str(self.in_features) \
-               + ', out_features=' + str(self.out_features) \
-               + ', s=' + str(self.s) \
+               + 's=' + str(self.s) \
                + ', m=' + str(self.m) + ')'
 
 
