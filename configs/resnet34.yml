@@ -3,6 +3,7 @@ setup:
   stage: 1  # 'stage 0: small validation set;' 
             # 'stage 1: last batch as validation;'
   version: '' 
+  find_lr: True
 
 data:
   name: 'RCICDefaultDataset'

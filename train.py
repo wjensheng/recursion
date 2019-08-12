@@ -21,7 +21,7 @@ from datasets import get_dataframes, get_datasets, get_dataloaders
 from models import get_model
 from losses import get_loss
 from optimizers import get_optimizer
-from schedulers import get_scheduler
+from schedulers import get_scheduler, LRFinder
 from tsfm import get_transform
 
 from utils import * 
@@ -224,18 +224,25 @@ def run(config):
     # optimizer
     optimizer = get_optimizer(config, model.parameters())
     print(optimizer)
+    
+    # criterion    
+    criterion = get_loss(config)
+    print(criterion)
 
     # lr_scheduler
     lr_scheduler = get_scheduler(config, optimizer)
     print(lr_scheduler)
 
-    # criterion    
-    criterion = get_loss(config)
-    print(criterion)
+    if config.find_lr.run:
+        lr_finder = LRFinder(model, optimizer, criterion)
+        lr_finder.range_test(train_loader=train_loader, val_loader=val_loader, 
+                             end_lr=config.find_lr.end_lr, num_iter=config.find_lr.num_iter, 
+                             step_mode=config.find_lr.step_mode)
+        lr_finder.plot()
     
-    last_epoch = 0    
-    
-    train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, logger, last_epoch)
+    else:
+        last_epoch = 0        
+        train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, logger, last_epoch)
     
 ## END ##
 

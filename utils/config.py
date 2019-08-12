@@ -18,7 +18,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.setup.cell_type = 3
     cfg.setup.stage = 1
     cfg.setup.version = 'first_attempt'
-    cfg.setup.is_control = False
+    cfg.setup.is_control = False    
 
     # saved model
     cfg.saved = edict()
@@ -84,6 +84,14 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.scheduler = edict()
     cfg.scheduler.name = ''
     cfg.scheduler.params = edict()
+
+    # find_lr
+    cfg.find_lr = edict()
+    cfg.find_lr.run = False
+    cfg.find_lr.end_lr = 1
+    cfg.find_lr.num_iter = 20
+    cfg.find_lr.step_mode = 'exp'
+
 
     # loss
     cfg.loss = edict()

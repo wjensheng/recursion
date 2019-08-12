@@ -1,8 +1,9 @@
 setup:
-  cell_type: 3
+  cell_type: 0
   stage: 1  # 'stage 0: small validation set;' 
             # 'stage 1: last batch as validation;'
   version: 'original_cosface' 
+  find_lr: True
 
 data:
   name: 'RCICDefaultDataset'
