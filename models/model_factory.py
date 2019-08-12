@@ -74,7 +74,7 @@ class RcicNet(nn.Module):
             self.final = AddMarginProduct(final_in_features, n_classes)
         elif loss_module == 'adacos':
             self.final = AdaCos(final_in_features, n_classes)
-        elif loss_module == 'sphere': # TODO: fix wrapper
+        elif loss_module == 'sphere':
             self.final = SphereProduct(final_in_features, n_classes)
         else:
             self.final = nn.Linear(final_in_features, n_classes)
@@ -109,7 +109,7 @@ def get_model(config):
     n_classes = config.model.num_classes
     model_name = config.model.arch
     fc_dim = config.model.fc_dim
-    loss_module = config.model.loss_module
+    loss_module = config.loss.name
                 
     net = RcicNet(n_classes=n_classes, model_name=model_name,
                   fc_dim=fc_dim, loss_module=loss_module)

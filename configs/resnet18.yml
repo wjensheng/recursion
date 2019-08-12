@@ -12,7 +12,6 @@ model:
   image_size: 112
   num_classes: 1108 # 512 for amsoftmax
   arch: 'resnet18'
-  loss_module: 'softmax' # 'arcface', 'cosface', 'adacos', 'softmax'
   
 train:
   batch_size: 16 # 192 for 384; 320 for 224; 128 for 512
@@ -30,8 +29,8 @@ loss:
   name: 'cross_entropy' # cross_entropy, focal, arcface, cosface, adacos, amsoftmax, ls_cross_entropy
   params: 
     gamma: 2 # focal
-    in_features: 512 # adacos and amsoftmax
-    out_features: 1108 # adacos and amsoftmax
+    in_features: 512 # amsoftmax
+    out_features: 1108 # amsoftmax
 
 optimizer:
   name: 'adam' # sgd, adam

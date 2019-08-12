@@ -251,7 +251,7 @@ def test_model(config):
 
     output = m(input_)    
 
-    print(output.size())
+    print('output size:', output.size())
 
     loss = criterion(output, label_)
 
@@ -295,8 +295,8 @@ def main():
     seed_everything()  
 
     # run(config)
-    # test_model(config)    
-    test_ds(config)
+    test_model(config)    
+    # test_ds(config)
     print('complete!')
 
 

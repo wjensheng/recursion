@@ -40,10 +40,14 @@ class ArcFaceLoss(nn.modules.Module):
         # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
         output = (one_hot * phi) + ((1.0 - one_hot) * cosine)
         output *= self.s
-        loss1 = self.classify_loss(output, labels)
-        loss2 = self.classify_loss(cosine, labels)
-        gamma=1
-        loss=(loss1+gamma*loss2)/(1+gamma)
+
+        loss = self.classify_loss(output, labels)
+
+        # loss1 = self.classify_loss(output, labels)
+        # loss2 = self.classify_loss(cosine, labels)
+        # gamma=1
+        # loss=(loss1+gamma*loss2)/(1+gamma)
+
         return loss
 
     def __repr__(self):
@@ -75,14 +79,15 @@ class CosFaceLoss(nn.modules.Module):
         # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
         output = (one_hot * phi) + ((1.0 - one_hot) * cosine)  # you can use torch.where if your torch.__version__ is 0.4
         output *= self.s
-        loss1 = self.classify_loss(output, labels)
-        loss2 = self.classify_loss(cosine, labels)
-        gamma=1
-        loss=(loss1+gamma*loss2)/(1+gamma)
-        return loss
-        # print(output)
 
-        return output
+        loss = self.classify_loss(output, labels)
+
+        # loss1 = self.classify_loss(output, labels)
+        # loss2 = self.classify_loss(cosine, labels)
+        # gamma=1
+        # loss=(loss1+gamma*loss2)/(1+gamma)
+
+        return loss
 
     def __repr__(self):
         return self.__class__.__name__ + '(' \
@@ -90,12 +95,13 @@ class CosFaceLoss(nn.modules.Module):
                + ', m=' + str(self.m) + ')'
 
 
-
 class AdaCosLoss(nn.modules.Module):
     
     def __init__(self, in_features, out_features, m=0.50, ls_eps=0, theta_zero=math.pi/4):
         super(AdaCosLoss, self).__init__()
         self.classify_loss = nn.CrossEntropyLoss()
+        self.in_features = in_features
+        self.out_features = out_features
         self.theta_zero = theta_zero
         self.s = math.log(out_features - 1) / math.cos(theta_zero)
         self.m = m
@@ -114,7 +120,7 @@ class AdaCosLoss(nn.modules.Module):
         # feature re-scale
         with torch.no_grad():
             B_avg = torch.where(one_hot < 1, torch.exp(self.s * logits), torch.zeros_like(logits))
-            B_avg = torch.sum(B_avg) / input.size(0)
+            B_avg = torch.sum(B_avg) / logits.size(0)
             theta_med = torch.median(theta)
             self.s = torch.log(B_avg) / torch.cos(torch.min(self.theta_zero * torch.ones_like(theta_med), theta_med))
         output *= self.s
@@ -127,10 +133,36 @@ class AdaCosLoss(nn.modules.Module):
     def __repr__(self):
         return self.__class__.__name__ + '(' \
                + 'm=' + str(self.m) \
+               + ', s=' + str(self.s) \
                + ', in_features=' + str(self.in_features) \
-               + ', out_features=' + str(self.out_features) \
-               + ', ls_eps' + str(self.ls_eps) + ')'
+               + ', out_features=' + str(self.out_features) + ')'
 
+
+class SphereFaceLoss(nn.Module):
+
+    def __init__(self, s=30.0, m=1.35):
+        super(SphereFaceLoss, self).__init__()
+        self.s = s
+        self.m = m
+        
+    def forward(self, logits, labels):
+        theta = torch.acos(torch.clamp(logits, -1.0 + 1e-7, 1.0 - 1e-7))
+        target_logits = torch.cos(self.m * theta)
+        one_hot = torch.zeros_like(logits)
+        one_hot.scatter_(1, labels.view(-1, 1).long(), 1)
+        output = logits * (1 - one_hot) + target_logits * one_hot
+        # feature re-scale
+        output *= self.s
+        
+        loss = self.classify_loss(output, labels)
+        return loss
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(' \
+               + 'in_features=' + str(self.in_features) \
+               + ', out_features=' + str(self.out_features) \
+               + ', s=' + str(self.s) \
+               + ', m=' + str(self.m) + ')'
 
 
 class AdMSoftmaxLoss(nn.Module):
@@ -211,13 +243,13 @@ def cross_entropy(**_):
     return torch.nn.CrossEntropyLoss()
 
 def focal(**_):
-    return FocalLoss(**_)
+    return FocalLoss(gamma=1)
 
 def arcface(**_):
-    return ArcFaceLoss(**_)    
+    return ArcFaceLoss(s=65.0, m=0.5, easy_margin=False)    
 
 def cosface(**_):
-    return CosFaceLoss(**_)    
+    return CosFaceLoss(s=30.0, m=0.40) 
 
 def adacos(in_features, out_features, **_):
     return AdaCosLoss(in_features, out_features, m=0.50, ls_eps=0, theta_zero=math.pi/4)
@@ -225,28 +257,12 @@ def adacos(in_features, out_features, **_):
 def amsoftmax(in_features, out_features, **_):
     return AdMSoftmaxLoss(in_features, out_features, s=30.0, m=0.4)
 
+def sphereface(**_):
+    return SphereFaceLoss(s=30.0, m=1.35)
+
 def ls_cross_entropy(**__):
     return LabelSmoothingCrossEntropy()
 
 def get_loss(config):
     f = globals().get(config.loss.name)
     return f(**config.loss.params)
-
-
-if __name__ == "__main__":
-    config = edict()
-    config.loss = edict()
-    config.loss.name = 'arcface'
-    config.loss.params = edict()
-    # config.loss.params.in_features = 512
-    # config.loss.params.out_features = 1108
-
-    criterion = get_loss(config)
-
-    # input_ = torch.randn((8, 512))
-    # label_ = torch.tensor([1, 0, 0, 0] * 2).unsqueeze(1)
-
-    # print(label_)
-    # print(label_.size())
-
-    # print(criterion(input_, label_))
