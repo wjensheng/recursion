@@ -76,7 +76,7 @@ def get_datasets(config):
         RandomRotate90(),
         Flip(),
         Resize(height=SIZE, width=SIZE, always_apply=True)
-    ]) 
+    ])  
 
     test_transform = Compose([
         Resize(height=SIZE, width=SIZE, always_apply=True)

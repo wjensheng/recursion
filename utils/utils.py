@@ -120,12 +120,12 @@ def load_model(path, is_inference=True):
     return model
 
 
-def check_cuda(logger):
+def check_cuda():
     if torch.cuda.is_available():
         num_gpus = torch.cuda.device_count()
-        logger.info(f'{num_gpus} gpu(s) available!')
+        print(f'{num_gpus} gpu(s) available!')
     else:
-        logger.info('Using cpu!')
+        print('Using cpu!')
     
 
 def create_logger(filename: str) -> Any:

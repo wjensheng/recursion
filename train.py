@@ -29,6 +29,7 @@ import utils.config
 import utils.checkpoint
 import utils.metrics
 
+import wandb
 
 def create_model(config):
     model = get_model(config)
@@ -58,8 +59,8 @@ def train_momentum(model, train=True):
                             layer.track_running_stats = train                
 
 
-def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, lr_scheduler, mb):
-    logger.info('training')
+def train_one_epoch(config, train_loader, model, criterion, optimizer, lr_scheduler, mb):
+    # logger.info('training')
 
     batch_time = AverageMeter()
     losses = AverageMeter()
@@ -110,8 +111,8 @@ def train_one_epoch(config, logger, train_loader, model, criterion, optimizer, l
     return losses.avg
 
 
-def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df, mb):
-    logger.info('validatation')
+def validate_one_epoch(config, val_loader, model, criterion, valid_df, mb):
+    # logger.info('validatation')
     
     losses = AverageMeter()
     
@@ -149,7 +150,7 @@ def validate_one_epoch(config, logger, val_loader, model, criterion, valid_df, m
     return losses.avg, combined_valid_accuracy
     
 
-def train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, logger, last_epoch):
+def train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, last_epoch):
 
     best_score = 0.0
     best_epoch = 0
@@ -160,26 +161,25 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
         
         if torch.cuda.is_available(): torch.cuda.empty_cache()
 
-        train_loss = train_one_epoch(config, logger, train_loader, model, criterion, optimizer, lr_scheduler, mb)
+        train_loss = train_one_epoch(config, train_loader, model, criterion, optimizer, lr_scheduler, mb)
     
-        train_logstr = (f'Epoch: {epoch}\t'
-                        f'Train loss: {train_loss:.3f}\t')
+        # train_logstr = (f'Epoch: {epoch}\t'
+        #                 f'Train loss: {train_loss:.3f}\t')
     
-        val_loss, val_accuracy = validate_one_epoch(config, logger, val_loader, model, criterion, valid_df, mb)
+        val_loss, val_accuracy = validate_one_epoch(config, val_loader, model, criterion, valid_df, mb)
     
-        valid_logstr = (f'Val loss: {val_loss:.3f}\t'
-                        f'Val accuracy: {val_accuracy:.3f}')
+        # valid_logstr = (f'Val loss: {val_loss:.3f}\t'
+        #                 f'Val accuracy: {val_accuracy:.3f}')
     
         # SGDR
         if config.scheduler.name == 'cosine':
             lr_scheduler = get_scheduler(config, optimizer)
-
-        # One cyclic lr
-        elif config.scheduler.name == 'cyclic':
-            current_lr = lr_scheduler.get_lr()
-            logger.info(current_lr[-1])                
-
-        logger.info(train_logstr + valid_logstr)
+        
+        wandb.log({
+            'Train loss': train_loss,
+            'Valid loss': val_loss,
+            'Valid accuracy': val_accuracy
+        })
     
         # save best score, model
         if val_accuracy > best_score:
@@ -192,21 +192,20 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
             # save_checkpoint(model_dir, filename, model, epoch, best_score, 
             #                 optimizer, save_arch=True, params=config)
 
-            logger.info(f'A snapshot was saved to {filename}')
+            # logger.info(f'A snapshot was saved to {filename}')
 
-    logger.info(f'best score: {best_score:.3f}')
+    # wandb.log(f'best score: {best_score:.3f}')
 
 
 def run(config):
 
-    # create logger
-    log_filename = f'log_training_{config.setup.version}.txt'
-    logger = create_logger(os.path.join(config.experiment_dir, log_filename))
+    wandb.init(project='recursion')
+    wandb.config.update(config)
 
-    logger.info('=' * 50)
-
+    pprint.PrettyPrinter(indent=2).pprint(config)
+    
     # check gpu status
-    check_cuda(logger)
+    check_cuda()
 
     # valid_df for combined_accuracy
     _, valid_df, _ = get_dataframes(config)
@@ -219,7 +218,7 @@ def run(config):
     
     # model
     model = create_model(config)
-    # print(model)
+    wandb.watch(model)
 
     # optimizer
     optimizer = get_optimizer(config, model.parameters())
@@ -242,7 +241,7 @@ def run(config):
     
     else:
         last_epoch = 0        
-        train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, logger, last_epoch)
+        train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, last_epoch)
     
 ## END ##
 
@@ -286,9 +285,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    config = utils.config.load_config(args.config, args)
-
-    pprint.PrettyPrinter(indent=2).pprint(config)
+    config = utils.config.load_config(args.config, args)    
 
     if not os.path.exists(config.experiment_dir):
         os.makedirs(config.experiment_dir)    
