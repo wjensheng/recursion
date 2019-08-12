@@ -192,10 +192,6 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
             # save_checkpoint(model_dir, filename, model, epoch, best_score, 
             #                 optimizer, save_arch=True, params=config)
 
-            # logger.info(f'A snapshot was saved to {filename}')
-
-    # wandb.log(f'best score: {best_score:.3f}')
-
 
 def run(config):
 
@@ -203,7 +199,7 @@ def run(config):
     wandb.config.update(config)
 
     pprint.PrettyPrinter(indent=2).pprint(config)
-    
+
     # check gpu status
     check_cuda()
 
