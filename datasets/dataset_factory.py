@@ -9,6 +9,8 @@ import pandas as pd
 from collections import defaultdict
 from easydict import EasyDict as edict
 
+from sklearn.preprocessing import LabelEncoder
+
 import torch.utils.data
 import torch.utils.data.sampler
 from torch.utils.data import DataLoader, ConcatDataset
@@ -57,6 +59,11 @@ def create_train_test(train_csv, test_csv, plate):
     
     test_df = test_csv[test_csv['plate'] == plate]
     train_df = train_csv[train_csv['sirna'].isin(d[plate])]
+
+    le = LabelEncoder()
+
+    train_df['sirna'] = le.fit_transform(train_df['sirna'])
+
     return train_df, test_df
     
 

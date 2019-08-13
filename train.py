@@ -227,17 +227,9 @@ def run(config):
     # lr_scheduler
     lr_scheduler = get_scheduler(config, optimizer)
     print(lr_scheduler)
-
-    if config.find_lr.run:
-        lr_finder = LRFinder(model, optimizer, criterion)
-        lr_finder.range_test(train_loader=train_loader, val_loader=val_loader, 
-                             end_lr=config.find_lr.end_lr, num_iter=config.find_lr.num_iter, 
-                             step_mode=config.find_lr.step_mode)
-        lr_finder.plot()
     
-    else:
-        last_epoch = 0        
-        train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, last_epoch)
+    last_epoch = 0        
+    train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, last_epoch)
     
 ## END ##
 
@@ -261,11 +253,14 @@ def test_model(config):
 
 
 def test_ds(config):
-    # tr, val, te = get_dataframes(config)
+    tr, val, te = get_dataframes(config)
 
-    # print(tr.shape, val.shape, te.shape)
+    print(len(tr), len(val), len(te))
 
-    train_dl, valid_dl, test_dl = get_dataloaders(config)
+    print(tr['sirna'].nunique())
+    print(val['sirna'].nunique())
+
+    # train_dl, valid_dl, test_dl = get_dataloaders(config)
     # x = train_dl.dataset[0][0]
     # print(x)
     # print(torch.max(x))
