@@ -261,12 +261,15 @@ def test_model(config):
 
 
 def test_ds(config):
-    train_dl, valid_dl, test_dl = get_dataloaders(config)
-    x = train_dl.dataset[0][0]
-    print(x)
-    print(torch.max(x))
-    print(torch.min(x))
-    print(torch.mean(x))
+    tr, val, te = get_dataframes(config)
+
+    print(tr.shape, val.shape, te.shape)
+    # train_dl, valid_dl, test_dl = get_dataloaders(config)
+    # x = train_dl.dataset[0][0]
+    # print(x)
+    # print(torch.max(x))
+    # print(torch.min(x))
+    # print(torch.mean(x))
 
         
 def parse_args():
@@ -294,9 +297,9 @@ def main():
 
     seed_everything()  
 
-    run(config)
+    # run(config)
     # test_model(config)    
-    # test_ds(config)
+    test_ds(config)
     print('complete!')
 
 

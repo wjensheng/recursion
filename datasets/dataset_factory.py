@@ -6,6 +6,7 @@ import os
 import numpy as np
 import pandas as pd 
 
+from collections import defaultdict
 from easydict import EasyDict as edict
 
 import torch.utils.data
@@ -40,6 +41,24 @@ def get_two_sites(config, df, tsfm, mode):
 
     return ds
 
+def create_train_test(train_csv, test_csv, plate):
+    plate_groups = np.zeros((1108,4), int)
+    for sirna in range(1108):
+        grp = train_csv.loc[train_csv.sirna==sirna,:].plate.value_counts().index.values
+        assert len(grp) == 3
+        plate_groups[sirna,0:3] = grp
+        plate_groups[sirna,3] = 10 - grp.sum() # 1 + 2 + 3 + 4 = 10        
+
+    d = defaultdict(list)
+    sequence = plate_groups[:,3]
+
+    for i, x in enumerate(sequence):
+        d[x].append(i)
+    
+    test_df = test_csv[test_csv['plate'] == plate]
+    train_df = train_csv[train_csv['sirna'].isin(d[plate])]
+    return train_df, test_df
+    
 
 def manual_split(df):    
     last_batch = ['HEPG2-07', 'HUVEC-16', 'RPE-07', 'U2OS-03']
@@ -63,6 +82,13 @@ def get_dataframes(config):
     if config.setup.stage == 1:
         train_df = filter_experiments(train_df, CELL_TYPE[config.setup.cell_type])
         test_df = filter_experiments(test_df, CELL_TYPE[config.setup.cell_type])
+
+    # stage 2: build 277 cell classifiers
+    elif config.setup.stage == 2:
+        train_df, test_df = create_train_test(train_df, test_df, config.setup.plate)
+
+    else:
+        raise ValueError('Wrong setup mode')
     
     train_df, valid_df = manual_split(train_df)
 

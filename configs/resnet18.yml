@@ -1,7 +1,8 @@
 setup:
-  cell_type: 3
-  stage: 1  # 'stage 0: small validation set;' 
+  stage: 2  # 'stage 0: small validation set;' 
             # 'stage 1: last batch as validation;'
+  plate: 1 # 1,2,3,4
+  cell_type: 3
   version: '' 
 
 find_lr:
@@ -12,7 +13,7 @@ find_lr:
 
 data:
   name: 'RCICDefaultDataset'
-  train: 'U2OS_train_small.csv' # U2OS_train_small
+  train: 'train.csv' # U2OS_train_small
 
 model:
   image_size: 112
