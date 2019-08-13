@@ -114,7 +114,7 @@ def get_model(config):
     model_name = config.model.arch
     fc_dim = config.model.fc_dim
     loss_module = config.loss.name
-                
+
     net = RecursionNet(n_classes=n_classes, model_name=model_name,
                        fc_dim=fc_dim, loss_module=loss_module)
                   

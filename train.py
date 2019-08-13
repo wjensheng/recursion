@@ -98,13 +98,6 @@ def train_one_epoch(config, train_loader, model, criterion, optimizer, lr_schedu
         batch_time.update(time.time() - end)
         end = time.time()
         
-        # lr_str = ''
-        # if idx % config.train.log_freq == 0:
-        #     logger.info(f'[{idx}/{num_steps}]\t'
-        #                 f'time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-        #                 f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
-        #                 + lr_str)
-
     if config.scheduler.name != 'cosine':
         lr_scheduler.step()
 
@@ -139,12 +132,6 @@ def validate_one_epoch(config, val_loader, model, criterion, valid_df, mb):
             for i in range(len(id_codes)):
                 valid_fc_dict[id_codes[i]] += output[i],
                 
-        # lr_str = ''
-        # if idx % config.val.log_freq == 0:
-        #     logger.info(f'[{idx}/{num_steps}]\t'
-        #                 f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
-        #                 + lr_str)
-    
     combined_valid_accuracy = utils.metrics.combined_accuracy(valid_fc_dict, valid_df)
 
     return losses.avg, combined_valid_accuracy
@@ -163,13 +150,7 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
 
         train_loss = train_one_epoch(config, train_loader, model, criterion, optimizer, lr_scheduler, mb)
     
-        # train_logstr = (f'Epoch: {epoch}\t'
-        #                 f'Train loss: {train_loss:.3f}\t')
-    
         val_loss, val_accuracy = validate_one_epoch(config, val_loader, model, criterion, valid_df, mb)
-    
-        # valid_logstr = (f'Val loss: {val_loss:.3f}\t'
-        #                 f'Val accuracy: {val_accuracy:.3f}')
     
         # SGDR
         if config.scheduler.name == 'cosine':
@@ -257,7 +238,7 @@ def test_ds(config):
 
     print(len(tr), len(val), len(te))
 
-    print(tr['sirna'].nunique())
+    print(tr['sirna'].unique())
     print(val['sirna'].nunique())
 
     # train_dl, valid_dl, test_dl = get_dataloaders(config)
