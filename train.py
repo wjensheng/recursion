@@ -19,7 +19,7 @@ import torch.nn.functional as F
 
 from datasets import get_dataframes, get_datasets, get_dataloaders
 from models import get_model
-from losses import gget_loss
+from losses import get_loss
 from optimizers import get_optimizer
 from schedulers import get_scheduler, LRFinder
 from tsfm import get_transform

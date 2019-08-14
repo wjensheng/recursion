@@ -5,11 +5,11 @@ setup:
   cell_type: 3
   version: 'resnet18_plate1' 
 
-find_lr:
-  run: False
-  end_lr: 1
-  num_iter: 20
-  step_mode: 'linear'
+# find_lr:
+#   run: False
+#   end_lr: 1
+#   num_iter: 20
+#   step_mode: 'linear'
 
 data:
   name: 'RCICDefaultDataset'
