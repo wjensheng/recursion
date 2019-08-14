@@ -34,9 +34,8 @@ def _get_default_config(filename: str, args: Any) -> edict:
 
     # submissions
     cfg.submission = edict()
-    cfg.submission.submission_file = 'compile_submission.csv'
     cfg.submission.submission_dir = 'submissions/'
-    cfg.submission.submission_pat = 'log_rn34-arcfaceloss-*'
+    cfg.submission.pattern = 'first_try'
 
     # transforms
     cfg.transform = edict()

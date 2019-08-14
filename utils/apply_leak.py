@@ -6,6 +6,9 @@ import torch
 
 from easydict import EasyDict as edict
 
+import argparse
+import utils.config
+
 def compile(path, pattern):
     df = pd.DataFrame()
     for file in glob.glob(os.path.join(path, pattern)):
@@ -28,8 +31,10 @@ def compile_splits(path, pattern):
 def compile_classes(config):
     t = np.asarray([])
 
+    pattern = config.submission.pattern
+
     for i in range(4):
-        filename = f'class_sunday_{i}.pt'
+        filename = f'class_{pattern}_t{i}.pt'
         file = os.path.join(config.submission.submission_dir, filename)
         print(file)                                    
         tmp = torch.load(file)
@@ -40,7 +45,8 @@ def compile_classes(config):
 
 def compile_submission(config, save=False):
     # take df of 4 cell types
-    df = compile(config.submission.submission_dir, config.submission.submission_pat)
+    pattern = config.submission.pattern + '_t*'
+    df = compile(config.submission.submission_dir, pattern)
 
     assert df['id_code'].nunique() == 19897 # len of test_csv
 
@@ -93,9 +99,7 @@ def leak_submission(config):
 
     predicted = compile_classes(config)
 
-    # predicted = np.stack(torch.load('submissions/all_submission.pt')).squeeze()
-
-    print(predicted.shape)
+    assert len(predicted) == 19897, "Predicted wrong size!"
 
     def select_plate_group(pp_mult, idx):
         sub_test = test_csv.loc[test_csv.experiment == all_test_exp[idx],:]
@@ -108,7 +112,6 @@ def leak_submission(config):
 
     record = np.empty((len(sub), 1108))
     for idx in range(len(all_test_exp)):
-        #print('Experiment', idx)
         indices = (test_csv.experiment == all_test_exp[idx])
         
         preds = predicted[indices,:].copy()
@@ -119,25 +122,32 @@ def leak_submission(config):
 
         sub.loc[indices,'sirna'] = preds.argmax(1)
 
-    np.save(os.path.join(config.submission.submission_dir, 'masked_preds_all'), sub)
+    # np.save(os.path.join(config.submission.submission_dir, 'masked_preds_all'), sub)
 
     agree = (sub.sirna == compile_submission(config).sirna).mean() * 100
 
     print(f'Leak and original agree {agree:.2f}% of the time!')
 
-    sub.to_csv(os.path.join(config.submission.submission_dir, 'unbeliavable.csv'), index=False)
+    submission_pattern = config.submission.pattern
+    fn = f'{submission_pattern}_with_leak.csv'
+
+    sub.to_csv(os.path.join(config.submission.submission_dir, fn), index=False)
+
+    print('Applied leak, csv saved to {}!'.format(config.submission.submission_dir))
 
 
-    
+def parse_args():
+    parser = argparse.ArgumentParser(description='RXRX')
+    parser.add_argument('--config', 
+                        help='model configuration file (YAML)', 
+                        type=str, required=True)                        
+    args = parser.parse_args()
+    return args
+
+
 if __name__ == "__main__":
-    config = edict()
-    config.data = edict()
-    config.data.data_dir = 'data'
-    config.data.train = 'train.csv'
-    config.data.test = 'test.csv'
-    config.submission = edict()
-    config.submission.submission_dir = 'submissions'
-    config.submission.submission_pat = 'sunday_*'
+    args = parse_args()
 
-    # compile_submission(config)
+    config = utils.config.load_config(args.config, args)    
+
     leak_submission(config)

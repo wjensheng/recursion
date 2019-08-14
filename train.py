@@ -19,7 +19,7 @@ import torch.nn.functional as F
 
 from datasets import get_dataframes, get_datasets, get_dataloaders
 from models import get_model
-from losses import get_loss
+from losses import gget_loss
 from optimizers import get_optimizer
 from schedulers import get_scheduler, LRFinder
 from tsfm import get_transform
@@ -137,10 +137,48 @@ def validate_one_epoch(config, val_loader, model, criterion, valid_df, mb):
     return losses.avg, combined_valid_accuracy
     
 
+def test_inference(data_loader: Any, model: Any):
+
+    model.eval()
+    train_momentum(model, False)
+
+    test_fc_dict = defaultdict(list)
+    
+    with torch.no_grad():
+        for i, data in enumerate(tqdm(data_loader)):
+
+            input_, id_codes = data
+
+            # if using gpu
+            if torch.cuda.is_available():
+                input_ = input_.cuda()
+        
+            output = model(input_) # TODO: fix for no loss
+            
+            for i in range(len(output)):
+                test_fc_dict[id_codes[i]] += output[i],
+            
+    submission, all_classes_preds  = utils.metrics.weighted_preds(test_fc_dict)
+
+    cell_type = config.setup.cell_type
+    submission_pattern = config.submission.pattern
+
+    submission_fn = f'{submission_pattern}_t{cell_type}.csv'
+    submission.to_csv(os.path.join(config.submission.submission_dir, submission_fn), index=False)
+
+    softmax_preds = all_classes_preds['predicted_sirna'].values
+
+    softmax_preds_fn = f'class_{submission_pattern}_t{cell_type}.pt'
+    torch.save(softmax_preds, os.path.join(config.submission.submission_dir, softmax_preds_fn))
+
+    print('csv and pt files saved to {}!'.format(config.submission.submission_dir))
+
+
 def train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, last_epoch):
 
     best_score = 0.0
     best_epoch = 0
+    best_model = None
 
     mb = master_bar(range(last_epoch + 1, config.train.num_epochs + 1))
 
@@ -166,12 +204,15 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
         if val_accuracy > best_score:
             best_score = val_accuracy
             best_epoch = epoch
+            best_model = model
 
-            filename = f'{config.setup.version}_e{epoch:02d}_{best_score:.04f}.pth'
-            model_dir = config.saved.model_dir
+            # filename = f'{config.setup.version}_e{epoch:02d}_{best_score:.04f}.pth'
+            # model_dir = config.saved.model_dir
 
             # save_checkpoint(model_dir, filename, model, epoch, best_score, 
             #                 optimizer, save_arch=True, params=config)
+
+    return best_model
 
 
 def run(config):
@@ -210,7 +251,10 @@ def run(config):
     print(lr_scheduler)
     
     last_epoch = 0        
-    train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, last_epoch)
+    best_model = train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, last_epoch)
+
+    # generate and save predictions
+    test_inference(test_loader, best_model)
     
 ## END ##
 
