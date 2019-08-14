@@ -265,8 +265,8 @@ def test_model(config):
     print(m)
     print(criterion)
 
-    for k, v in m.named_parameters():
-        print(k)
+    # for k, v in m.named_parameters():
+    #     print(k)
 
     input_ = torch.randn((16, 6, 224, 224))
     label_ = torch.tensor([1, 2, 3, 4] * 4)
@@ -314,8 +314,8 @@ def main():
 
     seed_everything()  
 
-    run(config)
-    # test_model(config)    
+    # run(config)
+    test_model(config)    
     # test_ds(config)
     print('complete!')
 

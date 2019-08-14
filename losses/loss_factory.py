@@ -167,25 +167,17 @@ class SphereFaceLoss(nn.Module):
 class AdMSoftmaxLoss(nn.Module):
     """https://github.com/cvqluu/Additive-Margin-Softmax-Loss-Pytorch"""
 
-    def __init__(self, in_features, out_features, s=30.0, m=0.4):
+    def __init__(self, s=30.0, m=0.4):
         super(AdMSoftmaxLoss, self).__init__()
         self.s = s
         self.m = m
-        self.in_features = in_features
-        self.out_features = out_features
-        self.fc = nn.Linear(in_features, out_features, bias=False)
-
-    def forward(self, x, labels):
-        assert len(x) == len(labels)
-        assert torch.min(labels) >= 0
-        assert torch.max(labels) < self.out_features
         
-        for W in self.fc.parameters():
-            W = F.normalize(W, dim=1)
-
-        x = F.normalize(x, dim=1)
-
-        wf = self.fc(x)
+    def forward(self, logits, labels):        
+        # assert len(x) == len(labels)
+        # assert torch.min(labels) >= 0
+        # assert torch.max(labels) < self.out_features
+        
+        wf = logits
         numerator = self.s * (torch.diagonal(wf.transpose(0, 1)[labels]) - self.m)
         excl = torch.cat([torch.cat((wf[i, :y], wf[i, y+1:])).unsqueeze(0) for i, y in enumerate(labels)], dim=0)
         denominator = torch.exp(numerator) + torch.sum(torch.exp(self.s * excl), dim=1)
@@ -195,9 +187,7 @@ class AdMSoftmaxLoss(nn.Module):
     def __repr__(self):
         return self.__class__.__name__ + '(' \
                + 's=' + str(self.s) \
-               + ', m=' + str(self.m) \
-               + ', in_features=' + str(self.in_features) \
-               + ', out_features=' + str(self.out_features) + ')'
+               + ', m=' + str(self.m) + ')'
 
 
 class FocalLoss(nn.Module):
@@ -242,27 +232,20 @@ class NormSoftmaxLoss(nn.Module):
     """
     L2 normalize weights and apply temperature scaling on logits.
     """
-    def __init__(self,
-                 dim,
-                 num_instances,
-                 temperature=0.05):
+    def __init__(self, temperature=0.05):
         super(NormSoftmaxLoss, self).__init__()
-
-        self.weight = nn.Parameter(torch.Tensor(num_instances, dim))
-        # Initialization from nn.Linear (https://github.com/pytorch/pytorch/blob/v1.0.0/torch/nn/modules/linear.py#L129)
-        stdv = 1. / math.sqrt(self.weight.size(1))
-        self.weight.data.uniform_(-stdv, stdv)
-
+                
         self.temperature = temperature
         self.loss_fn = nn.CrossEntropyLoss()
 
-    def forward(self, embeddings, instance_targets):
-        norm_weight = nn.functional.normalize(self.weight, dim=1)
-
-        prediction_logits = nn.functional.linear(embeddings, norm_weight)
-
+    def forward(self, logits, instance_targets):        
+        prediction_logits = logits
         loss = self.loss_fn(prediction_logits / self.temperature, instance_targets)
         return loss
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(' \
+                + 'temperature=' + str(self.temperature) + ')'
 
 
 def cross_entropy(**_):
@@ -281,10 +264,10 @@ def adacos(in_features, out_features, **_):
     return AdaCosLoss(in_features, out_features, m=0.50, ls_eps=0, theta_zero=math.pi/4)
 
 def amsoftmax(in_features, out_features, **_):
-    return AdMSoftmaxLoss(in_features, out_features, s=30.0, m=0.4)
+    return AdMSoftmaxLoss(s=30.0, m=0.4)
 
 def normsoftmax(in_features, out_features, **_):
-    return NormSoftmaxLoss(in_features, out_features, temperature=0.05)
+    return NormSoftmaxLoss(temperature=0.05)
 
 def sphereface(**_):
     return SphereFaceLoss(s=30.0, m=1.35)

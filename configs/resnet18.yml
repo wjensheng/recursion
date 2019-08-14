@@ -3,7 +3,7 @@ setup:
             # 'stage 1: last batch as validation;'
   plate: 1 # 1,2,3,4
   cell_type: 3
-  version: 'resnet18_'
+  version: 'resnet18_normsoftmax'
   run_test: True
 
 # find_lr:
@@ -34,10 +34,10 @@ test:
   batch_size: 96
   
 loss:
-  name: 'arcface' # cross_entropy, arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, 
+  name: 'adacos' # cross_entropy, arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, normsoftmax
   params: 
     gamma: 2 # focal
-    in_features: 512 
+    in_features: 512
     out_features: 1108 
 
 optimizer:

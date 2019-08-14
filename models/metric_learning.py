@@ -175,3 +175,66 @@ class SphereProduct(nn.Module):
                + ', out_features=' + str(self.out_features) \
                + ', s=' + str(self.s) \
                + ', m=' + str(self.m) + ')'
+
+
+class AdaptiveMargin(nn.Module):
+    def __init__(self, in_features, out_features):
+        super(AdaptiveMargin, self).__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.fc = nn.Linear(in_features, out_features, bias=False)
+
+    def forward(self, x):
+        for W in self.fc.parameters():
+            W = F.normalize(W, dim=1)
+
+        x = F.normalize(x, dim=1)
+
+        logits = self.fc(x)
+
+        return logits
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(' \
+               + 'in_features=' + str(self.in_features) \
+               + ', out_features=' + str(self.out_features) + ')'
+
+
+class EmbeddedFeatureWrapper(nn.Module):
+    """
+    Wraps a base model with embedding layer modifications.
+    """
+    def __init__(self, in_features, out_features):
+        super(EmbeddedFeatureWrapper, self).__init__()
+
+        self.standardize = nn.LayerNorm(in_features, elementwise_affine=False)
+
+        self.remap = None
+        if in_features != out_features:
+            self.remap = nn.Linear(in_features, out_features, bias=False)
+
+        self.weight = nn.Parameter(torch.Tensor(in_features, out_features))
+        # Initialization from nn.Linear (https://github.com/pytorch/pytorch/blob/v1.0.0/torch/nn/modules/linear.py#L129)
+        stdv = 1. / math.sqrt(self.weight.size(1))
+        self.weight.data.uniform_(-stdv, stdv)
+
+
+    def forward(self, input):
+        x = self.standardize(input)
+
+        if self.remap:
+            x = self.remap(x)
+
+        x = F.normalize(x, dim=1)
+        
+        norm_weight = nn.functional.normalize(self.weight, dim=1)
+
+        logits = nn.functional.linear(x, norm_weight)
+
+        return logits
+
+
+    def __str__(self):
+        return self.__class__.__name__ + '(' \
+                + 'in_features=' + str(self.in_features) \
+                + ', out_features=' + str(self.out_features) + ')'

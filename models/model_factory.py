@@ -6,7 +6,7 @@ import pretrainedmodels
 import easydict as edict
 
 import models.pooling as pooling
-from models.metric_learning import ArcMarginProduct, AddMarginProduct, AdaCos, SphereProduct
+from models.metric_learning import *
 
 class AdaptiveConcatPool2d(nn.Module):
     def __init__(self):
@@ -26,6 +26,7 @@ class RecursionNet(nn.Module):
         super(RecursionNet, self).__init__()        
                 
         self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
+        self.loss_module = loss_module
 
         final_in_features = self.backbone.last_linear.in_features        
         
@@ -53,21 +54,22 @@ class RecursionNet(nn.Module):
             self.backbone.features.conv0 = new_conv
             self.backbone = nn.Sequential(*list(self.backbone.features)[:-1])
 
-            self.expand = 2
-                
+            self.expand = 2                
+        
         self.pooling = AdaptiveConcatPool2d()
         self.flatten = Flatten()
-        self.bn1 = nn.BatchNorm1d(1024 * self.expand)
-        self.dropout1 = nn.Dropout(p=0.25)
-        self.fc1 = nn.Linear(1024 * self.expand, 512 * self.expand)
-        self.relu = nn.ReLU(inplace=True)
-        self.bn2 = nn.BatchNorm1d(512 * self.expand)   
-        self.dropout2 = nn.Dropout(p=0.5)     
-        self._init_params()        
+
+        if loss_module != 'normsoftmax':
+            self.bn1 = nn.BatchNorm1d(1024 * self.expand)
+            self.dropout1 = nn.Dropout(p=0.25)
+            self.fc1 = nn.Linear(1024 * self.expand, 512 * self.expand)
+            self.relu = nn.ReLU(inplace=True)
+            self.bn2 = nn.BatchNorm1d(512 * self.expand)   
+            self.dropout2 = nn.Dropout(p=0.5)     
+            self._init_params()        
     
         final_in_features = fc_dim * self.expand
-
-        self.loss_module = loss_module
+        
         if loss_module == 'arcface':
             self.final = ArcMarginProduct(final_in_features, n_classes)
         elif loss_module == 'cosface':
@@ -76,11 +78,15 @@ class RecursionNet(nn.Module):
             self.final = AdaCos(final_in_features, n_classes)
         elif loss_module == 'sphereface':
             self.final = SphereProduct(final_in_features, n_classes)
+        elif loss_module == 'normsoftmax': # * 2 since it stops after AdaptiveConcat2d, 
+            self.final = EmbeddedFeatureWrapper(final_in_features * 2, n_classes)
+        elif loss_module == 'amsoftmax':
+            self.final = AdaptiveMargin(final_in_features, n_classes)
         else:
             self.final = nn.Linear(final_in_features, n_classes)
 
     def _init_params(self):
-        nn.init.kaiming_normal_(self.fc1.weight)        
+        nn.init.kaiming_normal_(self.fc1.weight)
         nn.init.constant_(self.fc1.bias, 0)
         nn.init.constant_(self.bn1.weight, 1)
         nn.init.constant_(self.bn1.bias, 0)
@@ -89,10 +95,6 @@ class RecursionNet(nn.Module):
         
     def forward(self, x):        
         feature = self.extract_feat(x)
-
-        if self.loss_module == 'amsoftmax':
-            return feature
-            
         logits = self.final(feature)
         return logits
 
@@ -100,12 +102,15 @@ class RecursionNet(nn.Module):
         x = self.backbone(x)
         x = self.pooling(x)
         x = self.flatten(x)
-        x = self.bn1(x)
-        x = self.dropout1(x)
-        x = self.fc1(x)
-        x = self.relu(x)        
-        x = self.bn2(x)
-        x = self.dropout2(x)
+
+        if self.loss_module != 'normsoftmax':
+            x = self.bn1(x)
+            x = self.dropout1(x)
+            x = self.fc1(x)
+            x = self.relu(x)        
+            x = self.bn2(x)
+            x = self.dropout2(x)
+
         return x
 
 
