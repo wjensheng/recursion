@@ -1,55 +1,39 @@
 setup:
-  stage: 2  # 'stage 0: small validation set;' 
-            # 'stage 1: last batch as validation;'
+  stage: 1  # 'stage 1: last batch as validation;'
+            # 'stage 2: num_classes = 277
   plate: 1 # 1,2,3,4
   cell_type: 3
-  version: '' 
-
-find_lr:
-  run: False
-  end_lr: 1
-  num_iter: 20
-  step_mode: 'linear'
+  version: 'densenet121'
+  run_test: True 
 
 data:
-  name: 'RCICDefaultDataset'
   train: 'train.csv'
 
 model:
   image_size: 256
-  num_classes: 1108 # 512 for amsoftmax
+  num_classes: 1108
   arch: 'densenet121'
   
 train:
-  batch_size: 24 # 192 for 384; 320 for 224; 128 for 512
+  batch_size: 24
   num_epochs: 30
-  log_freq: 50
   
 val:
   batch_size: 32
-  log_freq: 50
 
 test:
   batch_size: 32
   
 loss:
-  name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, 
-  params: 
-    gamma: 2 # focal
-    in_features: 512 
-    out_features: 1108 
-
+  name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+  
 optimizer:
-  name: 'adam' # sgd, adam
+  name: 'adamw'
   params:
-    lr: 0.0003 # 3e-4
+    lr: 0.0003
 
 scheduler:
-  name: 'cosine' # exponential, cosine
+  name: 'cosine'
   params:
-    # gamma: 0.95
     eta_min: 0.00003
-    T_max: 184
-    # base_lr: 0.0003 
-    # max_lr: 0.001 
-    # step_size_up: 50
+    T_max: 368
