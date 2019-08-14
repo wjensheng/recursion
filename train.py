@@ -69,10 +69,6 @@ def train_one_epoch(config, train_loader, model, criterion, optimizer, lr_schedu
     model.train()
     train_momentum(model)
 
-    num_steps = len(train_loader)
-
-    end = time.time()
-
     for idx, data in enumerate(progress_bar(train_loader, parent=mb)):
         input_, id_codes, target = data
 
@@ -94,9 +90,6 @@ def train_one_epoch(config, train_loader, model, criterion, optimizer, lr_schedu
         
         if config.scheduler.name == 'cosine':
             lr_scheduler.step()                
-
-        batch_time.update(time.time() - end)
-        end = time.time()
         
     if config.scheduler.name != 'cosine':
         lr_scheduler.step()
@@ -113,8 +106,6 @@ def validate_one_epoch(config, val_loader, model, criterion, valid_df, mb):
     train_momentum(model, False)
 
     valid_fc_dict = defaultdict(list)
-
-    num_steps = len(val_loader)
 
     with torch.no_grad():
         for idx, data in enumerate(progress_bar(val_loader, parent=mb)):
@@ -160,6 +151,9 @@ def test_inference(config, data_loader: Any, model: Any):
             
     submission, all_classes_preds  = utils.metrics.weighted_preds(test_fc_dict)
 
+
+def save_predictions(config, submission, all_classes_preds):
+
     cell_type = config.setup.cell_type
     submission_pattern = config.submission.pattern
 
@@ -172,7 +166,7 @@ def test_inference(config, data_loader: Any, model: Any):
     torch.save(softmax_preds, os.path.join(config.submission.submission_dir, softmax_preds_fn))
 
     print('csv and pt files saved to {}!'.format(config.submission.submission_dir))
-
+    
 
 def train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, last_epoch):
 
@@ -259,7 +253,8 @@ def run(config):
 
     # generate and save predictions
     if config.setup.run_test:
-        test_inference(test_loader, best_model)
+        submission, all_classes_preds = test_inference(config, test_loader, best_model)
+        save_predictions(config, submission, all_classes_preds)
     
 ## END ##
 
@@ -292,13 +287,6 @@ def test_ds(config):
 
     print(tr['sirna'].unique())
     print(val['sirna'].nunique())
-
-    # train_dl, valid_dl, test_dl = get_dataloaders(config)
-    # x = train_dl.dataset[0][0]
-    # print(x)
-    # print(torch.max(x))
-    # print(torch.min(x))
-    # print(torch.mean(x))
 
         
 def parse_args():

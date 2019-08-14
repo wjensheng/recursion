@@ -238,6 +238,33 @@ class LabelSmoothingCrossEntropy(nn.Module):
         return loss*self.eps/c + (1-self.eps) * F.nll_loss(log_preds, target, reduction=self.reduction)
 
 
+class NormSoftmaxLoss(nn.Module):
+    """
+    L2 normalize weights and apply temperature scaling on logits.
+    """
+    def __init__(self,
+                 dim,
+                 num_instances,
+                 temperature=0.05):
+        super(NormSoftmaxLoss, self).__init__()
+
+        self.weight = nn.Parameter(torch.Tensor(num_instances, dim))
+        # Initialization from nn.Linear (https://github.com/pytorch/pytorch/blob/v1.0.0/torch/nn/modules/linear.py#L129)
+        stdv = 1. / math.sqrt(self.weight.size(1))
+        self.weight.data.uniform_(-stdv, stdv)
+
+        self.temperature = temperature
+        self.loss_fn = nn.CrossEntropyLoss()
+
+    def forward(self, embeddings, instance_targets):
+        norm_weight = nn.functional.normalize(self.weight, dim=1)
+
+        prediction_logits = nn.functional.linear(embeddings, norm_weight)
+
+        loss = self.loss_fn(prediction_logits / self.temperature, instance_targets)
+        return loss
+
+
 def cross_entropy(**_):
     return torch.nn.CrossEntropyLoss()
 
@@ -255,6 +282,9 @@ def adacos(in_features, out_features, **_):
 
 def amsoftmax(in_features, out_features, **_):
     return AdMSoftmaxLoss(in_features, out_features, s=30.0, m=0.4)
+
+def normsoftmax(in_features, out_features, **_):
+    return NormSoftmaxLoss(in_features, out_features, temperature=0.05)
 
 def sphereface(**_):
     return SphereFaceLoss(s=30.0, m=1.35)

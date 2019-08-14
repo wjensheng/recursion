@@ -4,6 +4,7 @@ setup:
   plate: 1 # 1,2,3,4
   cell_type: 3
   version: 'resnet18_'
+  run_test: True
 
 # find_lr:
 #   run: False
