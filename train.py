@@ -137,7 +137,7 @@ def validate_one_epoch(config, val_loader, model, criterion, valid_df, mb):
     return losses.avg, combined_valid_accuracy
     
 
-def test_inference(data_loader: Any, model: Any):
+def test_inference(config, data_loader: Any, model: Any):
 
     model.eval()
     train_momentum(model, False)
@@ -258,7 +258,8 @@ def run(config):
     best_model = train(config, model, valid_df, train_loader, val_loader, criterion, optimizer, lr_scheduler, last_epoch)
 
     # generate and save predictions
-    test_inference(test_loader, best_model)
+    if config.setup.run_test:
+        test_inference(test_loader, best_model)
     
 ## END ##
 
@@ -268,6 +269,9 @@ def test_model(config):
 
     print(m)
     print(criterion)
+
+    for k, v in m.named_parameters():
+        print(k)
 
     input_ = torch.randn((16, 6, 224, 224))
     label_ = torch.tensor([1, 2, 3, 4] * 4)

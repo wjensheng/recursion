@@ -7,7 +7,7 @@ from utils import *
 def test_inference(data_loader: Any, model: Any):
 
     model.eval()
-    # train_momentum(model, False)
+    train_momentum(model, False)
 
     test_fc_dict = defaultdict(list)
     

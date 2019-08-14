@@ -1,9 +1,9 @@
 setup:
-  stage: 2  # 'stage 0: small validation set;' 
+  stage: 1  # 'stage 0: small validation set;' 
             # 'stage 1: last batch as validation;'
   plate: 1 # 1,2,3,4
   cell_type: 3
-  version: 'resnet18_plate1' 
+  version: 'resnet18_'
 
 # find_lr:
 #   run: False
@@ -17,7 +17,7 @@ data:
 
 model:
   image_size: 320
-  num_classes: 277 # 512 for amsoftmax
+  num_classes: 1108 # 512 for amsoftmax
   arch: 'resnet18'
   
 train:
@@ -33,11 +33,11 @@ test:
   batch_size: 96
   
 loss:
-  name: 'cross_entropy' # cross_entropy, arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, 
+  name: 'arcface' # cross_entropy, arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, 
   params: 
     gamma: 2 # focal
     in_features: 512 
-    out_features: 277 
+    out_features: 1108 
 
 optimizer:
   name: 'adamw' # sgd, adam
@@ -47,9 +47,5 @@ optimizer:
 scheduler:
   name: 'cosine' # exponential, cosine
   params:
-    # gamma: 0.95
     eta_min: 0.00003
-    T_max: 334 # 34
-    # base_lr: 0.0003 
-    # max_lr: 0.001 
-    # step_size_up: 50
+    T_max: 276
