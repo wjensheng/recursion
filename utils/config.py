@@ -24,7 +24,6 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # saved model
     cfg.saved = edict()
     cfg.saved.model_dir = 'experiments/models'
-    cfg.saved.model = 'rn34_best_model_17.pth'
     
     # data
     cfg.data = edict()
@@ -37,12 +36,12 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.submission.submission_dir = 'submissions/'
     cfg.submission.pattern = 'first_try'
 
-    # transforms
-    cfg.transform = edict()
-    cfg.transform.name = 'tta_transform'
-    cfg.transform.test = 'tta_transform'
-    cfg.transform.num_preprocessor = 4
-    cfg.transform.params = edict()
+    # # transforms
+    # cfg.transform = edict()
+    # cfg.transform.name = 'tta_transform'
+    # cfg.transform.test = 'tta_transform'
+    # cfg.transform.num_preprocessor = 4
+    # cfg.transform.params = edict()
 
     # num works
     cfg.num_workers = 4 # * torch.cuda.device_count()
@@ -85,13 +84,12 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.scheduler.name = ''
     cfg.scheduler.params = edict()
 
-    # find_lr
-    cfg.find_lr = edict()
-    cfg.find_lr.run = False
-    cfg.find_lr.end_lr = 1
-    cfg.find_lr.num_iter = 20
-    cfg.find_lr.step_mode = 'exp'
-
+    # # find_lr
+    # cfg.find_lr = edict()
+    # cfg.find_lr.run = False
+    # cfg.find_lr.end_lr = 1
+    # cfg.find_lr.num_iter = 20
+    # cfg.find_lr.step_mode = 'exp'
 
     # loss
     cfg.loss = edict()

@@ -206,11 +206,15 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
             best_epoch = epoch
             best_model = model
 
-            # filename = f'{config.setup.version}_e{epoch:02d}_{best_score:.04f}.pth'
+            
             # model_dir = config.saved.model_dir
 
             # save_checkpoint(model_dir, filename, model, epoch, best_score, 
             #                 optimizer, save_arch=True, params=config)
+
+    # checkpoint = f't{config.setup.cell_type}_e{best_epoch:02d}_{best_score:.04f}.pth'
+
+    # torch.save(best_model.state_dict(), os.path.join(saved.model_dir, checkpoint))
 
     return best_model
 
