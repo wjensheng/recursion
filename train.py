@@ -151,6 +151,8 @@ def test_inference(config, data_loader: Any, model: Any):
             
     submission, all_classes_preds  = utils.metrics.weighted_preds(test_fc_dict)
 
+    return submission, all_classes_preds
+
 
 def save_predictions(config, submission, all_classes_preds):
 
@@ -199,16 +201,14 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
             best_score = val_accuracy
             best_epoch = epoch
             best_model = model
-
             
             # model_dir = config.saved.model_dir
 
             # save_checkpoint(model_dir, filename, model, epoch, best_score, 
             #                 optimizer, save_arch=True, params=config)
 
-    # checkpoint = f't{config.setup.cell_type}_e{best_epoch:02d}_{best_score:.04f}.pth'
-
-    # torch.save(best_model.state_dict(), os.path.join(saved.model_dir, checkpoint))
+    checkpoint = f't{config.setup.cell_type}_e{best_epoch:02d}_{best_score:.04f}.pth'
+    torch.save(best_model.state_dict(), os.path.join(saved.model_dir, checkpoint))
 
     return best_model
 
@@ -265,9 +265,11 @@ def test_model(config):
     print(m)
     print(criterion)
 
-    # for k, v in m.named_parameters():
-    #     print(k)
-
+    # layers = list(criterion.named_parameters()) + \
+    #          list(set(m.named_parameters()) - set(m.backbone.named_parameters()))
+    # for l in layers:
+    #     print(l)
+    
     input_ = torch.randn((16, 6, 224, 224))
     label_ = torch.tensor([1, 2, 3, 4] * 4)
 
@@ -317,6 +319,7 @@ def main():
     run(config)
     # test_model(config)    
     # test_ds(config)
+
     print('complete!')
 
 

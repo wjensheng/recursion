@@ -3,20 +3,21 @@ setup:
             # 'stage 2: num_classes = 277
   plate: 1 # 1,2,3,4
   cell_type: 3
-  version: 'resnet18_normsoftmax'
+  version: 'resnet18_arcface-t3'
   run_test: True 
 
 data:
-  train: 'train.csv'
+  train: 'train.csv' # 'U2OS_train_small.csv'
 
 model:
   image_size: 320
   num_classes: 1108
+  fc_dim: 512
   arch: 'resnet18'
   
 train:
   batch_size: 48
-  num_epochs: 30
+  num_epochs: 50
   
 val:
   batch_size: 96
@@ -25,7 +26,9 @@ test:
   batch_size: 96
   
 loss:
-  name: 'normsoftmax' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+  name: 'arcface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+  params:
+    in_featues: 1024
   
 optimizer:
   name: 'adamw'

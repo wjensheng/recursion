@@ -207,6 +207,8 @@ class EmbeddedFeatureWrapper(nn.Module):
     def __init__(self, in_features, out_features):
         super(EmbeddedFeatureWrapper, self).__init__()
 
+        self.in_features = in_features, 
+        self.out_features = out_features
         self.standardize = nn.LayerNorm(in_features, elementwise_affine=False)
 
         self.remap = None
