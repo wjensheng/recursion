@@ -7,17 +7,17 @@ setup:
   run_test: True 
 
 data:
-  train: 'train.csv' # 'U2OS_train_small.csv'
+  train: 'U2OS_train_small.csv' # 'U2OS_train_small.csv'
 
 model:
-  image_size: 320
+  image_size: 112
   num_classes: 1108
   fc_dim: 512
   arch: 'resnet18'
   
 train:
   batch_size: 48
-  num_epochs: 50
+  num_epochs: 1
   
 val:
   batch_size: 96
@@ -28,7 +28,7 @@ test:
 loss:
   name: 'arcface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
   params:
-    in_featues: 1024
+    in_features: 1024
   
 optimizer:
   name: 'adamw'

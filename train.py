@@ -60,7 +60,6 @@ def train_momentum(model, train=True):
 
 
 def train_one_epoch(config, train_loader, model, criterion, optimizer, lr_scheduler, mb):
-    # logger.info('training')
 
     batch_time = AverageMeter()
     losses = AverageMeter()
@@ -85,8 +84,13 @@ def train_one_epoch(config, train_loader, model, criterion, optimizer, lr_schedu
         losses.update(loss.data.item(), input_.size(0))
 
         loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
+
+        if config.train.num_grad_acc is None:
+            optimizer.step()
+            optimizer.zero_grad()
+        elif (idx+1) % config.train.num_grad_acc == 0:
+            optimizer.step()
+            optimizer.zero_grad()
         
         if config.scheduler.name == 'cosine':
             lr_scheduler.step()                
@@ -98,7 +102,6 @@ def train_one_epoch(config, train_loader, model, criterion, optimizer, lr_schedu
 
 
 def validate_one_epoch(config, val_loader, model, criterion, valid_df, mb):
-    # logger.info('validatation')
     
     losses = AverageMeter()
     
@@ -144,7 +147,7 @@ def test_inference(config, data_loader: Any, model: Any):
             if torch.cuda.is_available():
                 input_ = input_.cuda()
         
-            output = model(input_) # TODO: fix for no loss
+            output = model(input_)
             
             for i in range(len(output)):
                 test_fc_dict[id_codes[i]] += output[i],
@@ -201,14 +204,9 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
             best_score = val_accuracy
             best_epoch = epoch
             best_model = model
-            
-            # model_dir = config.saved.model_dir
-
-            # save_checkpoint(model_dir, filename, model, epoch, best_score, 
-            #                 optimizer, save_arch=True, params=config)
-
+                    
     checkpoint = f't{config.setup.cell_type}_e{best_epoch:02d}_{best_score:.04f}.pth'
-    torch.save(best_model.state_dict(), os.path.join(saved.model_dir, checkpoint))
+    torch.save(best_model.state_dict(), os.path.join(config.saved.model_dir, checkpoint))
 
     return best_model
 
@@ -314,7 +312,7 @@ def main():
     if not os.path.exists(config.submission.submission_dir):
         os.makedirs(config.submission.submission_dir)
 
-    seed_everything()  
+    seed_everything()      
 
     run(config)
     # test_model(config)    
