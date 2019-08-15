@@ -31,6 +31,8 @@ import utils.metrics
 
 import wandb
 
+from toy import NormNet, NormSoftmaxLoss
+
 def create_model(config):
     model = get_model(config)
 
@@ -231,7 +233,8 @@ def run(config):
     print(f'valid_dl len: {len(val_loader)}')
     
     # model
-    model = create_model(config)
+    # model = create_model(config)
+    model = NormNet()
     wandb.watch(model)
 
     # optimizer
@@ -239,7 +242,8 @@ def run(config):
     print(optimizer)
     
     # criterion    
-    criterion = get_loss(config)
+    # criterion = get_loss(config)
+    criterion = NormSoftmaxLoss()
     print(criterion)
 
     # lr_scheduler
@@ -257,8 +261,11 @@ def run(config):
 ## END ##
 
 def test_model(config):
-    m = create_model(config)
-    criterion = get_loss(config)
+    # m = create_model(config)
+    # criterion = get_loss(config)
+
+    m = NormNet()
+    criterion = NormSoftmaxLoss()    
 
     print(m)
     print(criterion)

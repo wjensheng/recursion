@@ -68,7 +68,7 @@ def create_train_test(train_csv, test_csv, plate):
     
 
 def manual_split(df):    
-    last_batch = ['HEPG2-07', 'HUVEC-16', 'RPE-07', 'U2OS-03']
+    last_batch = ['HEPG2-07', 'HUVEC-15', 'HUVEC-16', 'RPE-07', 'U2OS-03']
     valid_df = df[df['experiment'].isin(last_batch)]
     train_df = df[~df['experiment'].isin(last_batch)]
     return train_df, valid_df  

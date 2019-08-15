@@ -12,7 +12,6 @@ data:
 model:
   image_size: 112
   num_classes: 1108
-  fc_dim: 512
   arch: 'resnet18'
   
 train:
@@ -26,9 +25,9 @@ test:
   batch_size: 96
   
 loss:
-  name: 'arcface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+  name: 'normsoftmax' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
   params:
-    in_features: 1024
+    in_features: 512
   
 optimizer:
   name: 'adamw'
