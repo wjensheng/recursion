@@ -18,6 +18,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.setup.stage = True
     cfg.setup.cell_type = 3 # must be stage 1
     cfg.setup.version = 'first_attempt'
+    cfg.setup.USE_MIXED_PRECISION = True
     cfg.setup.run_test = False    
 
     # saved model
@@ -49,7 +50,6 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.model = edict()
     cfg.model.arch = 'resnet18'
     cfg.model.fc_dim = 512
-    cfg.model.loss_module = 'arcface' # 'arcface', 'cosface', 'adacos', 'softmax'
     cfg.model.image_size = 512 # resize
     cfg.model.num_classes = 1108
     

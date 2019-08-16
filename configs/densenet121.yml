@@ -3,6 +3,8 @@ setup:
   cell_type: 3
   version: 'densenet121'
   run_test: True 
+  USE_MIXED_PRECISION: True
+  
 
 submission:
   pattern: 'cosface'

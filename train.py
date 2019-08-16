@@ -31,6 +31,16 @@ import utils.metrics
 
 import wandb
 
+if torch.cuda.is_available():
+    try:
+        from apex.parallel import DistributedDataParallel as DDP
+        from apex.fp16_utils import *
+        from apex import amp, optimizers
+        from apex.multi_tensor_apply import multi_tensor_applier
+    except ImportError:
+        raise ImportError("Please install apex from https://www.github.com/nvidia/apex to run this example.")
+
+
 def create_model(config):
     model = get_model(config)
 
@@ -83,7 +93,11 @@ def train_one_epoch(config, train_loader, model, criterion, optimizer, lr_schedu
         
         losses.update(loss.data.item(), input_.size(0))
 
-        loss.backward()
+        if config.setup.USE_MIXED_PRECISION:
+            with amp.scale_loss(loss, optimizer) as scaled_loss:
+                scaled_loss.backward()        
+        else:
+            loss.backward()
 
         if config.train.num_grad_acc is None:
             optimizer.step()
@@ -231,12 +245,16 @@ def run(config):
     print(f'valid_dl len: {len(val_loader)}')
     
     # model
-    model = create_model(config)
+    model = create_model(config)    
     wandb.watch(model)
 
     # optimizer
     optimizer = get_optimizer(config, model.parameters())
     print(optimizer)
+
+    # mixed precision
+    if config.setup.USE_MIXED_PRECISION:
+        model, optimizer = amp.initialize(model, optimizer, opt_level="O1")
     
     # criterion    
     criterion = get_loss(config)
