@@ -43,34 +43,31 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # cfg.transform.params = edict()
 
     # num works
-    cfg.num_workers = 4 # * torch.cuda.device_count()
+    cfg.num_workers = 4 
 
     # model
     cfg.model = edict()
     cfg.model.arch = 'resnet18'
     cfg.model.fc_dim = 512
-    cfg.model.dropout = 0.25
     cfg.model.loss_module = 'arcface' # 'arcface', 'cosface', 'adacos', 'softmax'
     cfg.model.image_size = 512 # resize
     cfg.model.num_classes = 1108
     
     # train
     cfg.train = edict()
-    cfg.train.batch_size = 64 # * torch.cuda.device_count()
+    cfg.train.batch_size = 64 
     cfg.train.num_epochs = 50
-    cfg.train.log_freq = 100
     cfg.train.num_grad_acc = None
     # cfg.train.num_ttas = 1
     
     # valid
     cfg.val = edict()
-    cfg.val.batch_size = 64 # * torch.cuda.device_count()
-    cfg.val.log_freq = 100
+    cfg.val.batch_size = 64 # 
     # cfg.test.num_ttas = 1
 
     # test
     cfg.test = edict()
-    cfg.test.batch_size = 64 # * torch.cuda.device_count()
+    cfg.test.batch_size = 64 # 
     cfg.test.model = ''
     # cfg.test.num_ttas = 1
 

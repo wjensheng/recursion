@@ -15,9 +15,11 @@ class AdaptiveConcatPool2d(nn.Module):
         self.mp = nn.AdaptiveMaxPool2d(1)
     def forward(self, x): return torch.cat([self.mp(x), self.ap(x)], 1)
 
+
 class Flatten(nn.Module):
     def __init__(self): super().__init__()
     def forward(self, x): return x.view(x.size(0), -1)        
+
 
 class RecursionNet(nn.Module):
 
@@ -57,16 +59,14 @@ class RecursionNet(nn.Module):
             self.expand = 2                
         
         self.pooling = AdaptiveConcatPool2d()
-        self.flatten = Flatten()
-
-        if loss_module != 'normsoftmax':
-            self.bn1 = nn.BatchNorm1d(1024 * self.expand)
-            self.dropout1 = nn.Dropout(p=0.25)
-            self.fc1 = nn.Linear(1024 * self.expand, 512 * self.expand)
-            self.relu = nn.ReLU(inplace=True)
-            self.bn2 = nn.BatchNorm1d(512 * self.expand)   
-            self.dropout2 = nn.Dropout(p=0.5)     
-            self._init_params()        
+        self.flatten = Flatten()        
+        self.bn1 = nn.BatchNorm1d(1024 * self.expand)
+        self.dropout1 = nn.Dropout(p=0.25)
+        self.fc1 = nn.Linear(1024 * self.expand, 512 * self.expand)
+        self.relu = nn.ReLU(inplace=True)
+        self.bn2 = nn.BatchNorm1d(512 * self.expand)   
+        self.dropout2 = nn.Dropout(p=0.5)     
+        self._init_params()        
     
         final_in_features = fc_dim * self.expand
         
@@ -78,8 +78,6 @@ class RecursionNet(nn.Module):
             self.final = AdaCos(final_in_features, n_classes)
         elif loss_module == 'sphereface':
             self.final = SphereProduct(final_in_features, n_classes)
-        elif loss_module == 'normsoftmax': # * 2 since it stops after AdaptiveConcat2d, 
-            self.final = EmbeddedFeatureWrapper(final_in_features * 2, n_classes)
         elif loss_module == 'amsoftmax':
             self.final = AdaptiveMargin(final_in_features, n_classes)
         else:
@@ -101,15 +99,13 @@ class RecursionNet(nn.Module):
     def extract_feat(self, x):
         x = self.backbone(x)
         x = self.pooling(x)
-        x = self.flatten(x)
-
-        if self.loss_module != 'normsoftmax':
-            x = self.bn1(x)
-            x = self.dropout1(x)
-            x = self.fc1(x)
-            x = self.relu(x)        
-            x = self.bn2(x)
-            x = self.dropout2(x)
+        x = self.flatten(x)        
+        x = self.bn1(x)
+        x = self.dropout1(x)
+        x = self.fc1(x)
+        x = self.relu(x)        
+        x = self.bn2(x)
+        x = self.dropout2(x)
 
         return x
 
