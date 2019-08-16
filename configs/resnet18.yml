@@ -1,23 +1,23 @@
 setup:
   stage: True # False takes in all cells
   cell_type: 3
-  version: 'resnet18_arcface-t3'
+  version: 'resnet18_cosface_radam_t3'
   run_test: True 
 
 submission:
   pattern: 'cosface'
 
 data:
-  train: 'U2OS_train_small.csv' # 'U2OS_train_small.csv'
+  train: 'train.csv' # 'U2OS_train_small.csv'
 
 model:
-  image_size: 112
+  image_size: 320
   num_classes: 1108
   arch: 'resnet18'
   
 train:
   batch_size: 48
-  num_epochs: 1
+  num_epochs: 60
   
 val:
   batch_size: 96
@@ -26,14 +26,15 @@ test:
   batch_size: 96
   
 loss:
-  name: 'normsoftmax' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+  name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
   params:
-    in_features: 512
+    in_features: 1024
   
 optimizer:
-  name: 'adamw'
+  name: 'radam'
   params:
     lr: 0.0003
+    weight_decay: 0.01
 
 scheduler:
   name: 'cosine'
