@@ -21,7 +21,7 @@ from datasets import get_dataframes, get_datasets, get_dataloaders
 from models import get_model
 from losses import get_loss
 from optimizers import get_optimizer
-from schedulers import get_scheduler, LRFinder
+from schedulers import get_scheduler
 from tsfm import get_transform
 
 from utils import * 
@@ -30,8 +30,6 @@ import utils.checkpoint
 import utils.metrics
 
 import wandb
-
-from toy import NormNet, NormSoftmaxLoss
 
 def create_model(config):
     model = get_model(config)
@@ -233,8 +231,7 @@ def run(config):
     print(f'valid_dl len: {len(val_loader)}')
     
     # model
-    # model = create_model(config)
-    model = NormNet()
+    model = create_model(config)
     wandb.watch(model)
 
     # optimizer
@@ -242,8 +239,7 @@ def run(config):
     print(optimizer)
     
     # criterion    
-    # criterion = get_loss(config)
-    criterion = NormSoftmaxLoss()
+    criterion = get_loss(config)
     print(criterion)
 
     # lr_scheduler
@@ -261,11 +257,8 @@ def run(config):
 ## END ##
 
 def test_model(config):
-    # m = create_model(config)
-    # criterion = get_loss(config)
-
-    m = NormNet()
-    criterion = NormSoftmaxLoss()    
+    m = create_model(config)
+    criterion = get_loss(config)
 
     print(m)
     print(criterion)

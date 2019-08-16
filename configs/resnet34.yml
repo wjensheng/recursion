@@ -1,10 +1,11 @@
 setup:
-  stage: 1  # 'stage 1: last batch as validation;'
-            # 'stage 2: num_classes = 277
-  plate: 1 # 1,2,3,4
+  stage: True # False takes in all cells
   cell_type: 3
   version: 'resnet34_normsoftmax'
   run_test: True 
+
+submission:
+  pattern: 'cosface'
 
 data:
   train: 'train.csv'

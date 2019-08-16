@@ -7,7 +7,7 @@ import torch
 from easydict import EasyDict as edict
 
 import argparse
-import utils.config
+import config
 
 def compile(path, pattern):
     df = pd.DataFrame()
@@ -148,6 +148,6 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    config = utils.config.load_config(args.config, args)    
+    config = config.load_config(args.config, args)    
 
     leak_submission(config)

@@ -15,9 +15,8 @@ def _get_default_config(filename: str, args: Any) -> edict:
 
     # setups
     cfg.setup = edict()
-    cfg.setup.stage = 2
+    cfg.setup.stage = True
     cfg.setup.cell_type = 3 # must be stage 1
-    cfg.setup.plate = 1 # must be stage 2    
     cfg.setup.version = 'first_attempt'
     cfg.setup.run_test = False    
 

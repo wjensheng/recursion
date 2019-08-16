@@ -86,16 +86,9 @@ def get_dataframes(config):
                                        config.  data.test))
 
     # stage 1: train on all dataset, valid on last batches
-    if config.setup.stage == 1:
+    if config.setup.stage:
         train_df = filter_experiments(train_df, CELL_TYPE[config.setup.cell_type])
         test_df = filter_experiments(test_df, CELL_TYPE[config.setup.cell_type])
-
-    # stage 2: build 277 cell classifiers
-    elif config.setup.stage == 2:
-        train_df, test_df = create_train_test(train_df, test_df, config.setup.plate)
-
-    else:
-        raise ValueError('Wrong setup mode')
     
     train_df, valid_df = manual_split(train_df)
 
