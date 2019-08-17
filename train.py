@@ -31,6 +31,7 @@ import utils.metrics
 
 import wandb
 
+
 def create_model(config):
     model = get_model(config)
 
@@ -112,24 +113,28 @@ def validate_one_epoch(config, val_loader, model, criterion, valid_df, mb):
 
     with torch.no_grad():
         for idx, data in enumerate(progress_bar(val_loader, parent=mb)):
-            input_, id_codes, target = data
 
+            input_, id_codes, target = data
+            bs, num_tta, c, h, w = input_.size()
+            
             # if using gpu
             if torch.cuda.is_available():
                 input_, target = input_.cuda(), target.cuda()
                         
-            output = model(input_)
-            loss = criterion(output, target)
+            output = model(input_.view(-1, c, h, w))
+            output_avg = output.view(bs, num_tta, -1).mean(1)            
+            
+            loss = criterion(output_avg, target)
                         
             losses.update(loss.data.item(), input_.size(0))
             
             for i in range(len(id_codes)):
-                valid_fc_dict[id_codes[i]] += output[i],
+                valid_fc_dict[id_codes[i]] += output_avg[i],
                 
     combined_valid_accuracy = utils.metrics.combined_accuracy(valid_fc_dict, valid_df)
 
     return losses.avg, combined_valid_accuracy
-    
+
 
 def test_inference(config, data_loader: Any, model: Any):
 
@@ -142,15 +147,17 @@ def test_inference(config, data_loader: Any, model: Any):
         for i, data in enumerate(tqdm(data_loader)):
 
             input_, id_codes = data
-
+            bs, num_tta, c, h, w = input_.size()
+            
             # if using gpu
             if torch.cuda.is_available():
                 input_ = input_.cuda()
         
-            output = model(input_)
+            output = model(input_.view(-1, c, h, w))
+            output_avg = output.view(bs, num_tta, -1).mean(1)            
             
             for i in range(len(output)):
-                test_fc_dict[id_codes[i]] += output[i],
+                test_fc_dict[id_codes[i]] += output_avg[i],
             
     submission, all_classes_preds  = utils.metrics.weighted_preds(test_fc_dict)
 
@@ -194,9 +201,9 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
             lr_scheduler = get_scheduler(config, optimizer)
         
         wandb.log({
-            'Train loss': train_loss,
-            'Valid loss': val_loss,
-            'Valid accuracy': val_accuracy
+           'Train loss': train_loss,
+           'Valid loss': val_loss,
+           'Valid accuracy': val_accuracy
         })
     
         # save best score, model
@@ -213,7 +220,7 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
 
 def run(config):
 
-    wandb.init(project='recursion')
+    wandb.init(project=config.setup.project)
     wandb.config.update(config)
 
     pprint.PrettyPrinter(indent=2).pprint(config)
@@ -268,25 +275,40 @@ def test_model(config):
     # for l in layers:
     #     print(l)
     
-    input_ = torch.randn((16, 6, 224, 224))
+    input_ = torch.randn((16, 4, 6, 224, 224))
     label_ = torch.tensor([1, 2, 3, 4] * 4)
 
-    output = m(input_)    
+    # train_ds, valid_ds, test_ds = get_datasets(config)
+    # input_ = test_ds[0][0]
 
-    print('output size:', output.size())
+    print(input_.size())
+    bs, num_tta, c, h, w = input_.size()
 
-    loss = criterion(output, label_)
+    # output = m(input_)    
+    output = m(input_.view(-1, c, h, w))
+    output_avg = output.view(bs, num_tta, -1).mean(1)            
+                                                                                            
+    loss = criterion(output_avg, label_)                                                                          
+
+    print('output size:', output_avg.size())
+
+    # loss = criterion(output, label_)
 
     print(loss)
 
 
 def test_ds(config):
-    tr, val, te = get_dataframes(config)
+    # tr, val, te = get_dataframes(config)
 
-    print(len(tr), len(val), len(te))
+    # print(len(tr), len(val), len(te))
 
-    print(tr['sirna'].unique())
-    print(val['sirna'].nunique())
+    # print(tr['sirna'].unique())
+    # print(val['sirna'].nunique())
+
+    train_ds, valid_ds, test_ds = get_datasets(config)
+
+    print(train_ds[0][0].size())
+    print(valid_ds[0][0].size())
 
         
 def parse_args():

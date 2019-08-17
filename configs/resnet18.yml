@@ -1,7 +1,7 @@
 setup:
   stage: True # False takes in all cells
   cell_type: 3
-  version: 'resnet18_cosface_radam_t3'
+  version: 'resnet18_cosface_radam_t3_tta'
   run_test: True 
 
 submission:
@@ -11,13 +11,13 @@ data:
   train: 'train.csv' # 'U2OS_train_small.csv'
 
 model:
-  image_size: 320
+  image_size: 112
   num_classes: 1108
   arch: 'resnet18'
   
 train:
   batch_size: 48
-  num_epochs: 60
+  num_epochs: 1
   
 val:
   batch_size: 96

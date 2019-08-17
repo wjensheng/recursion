@@ -2,9 +2,8 @@ setup:
   stage: True # False takes in all cells
   cell_type: 3
   version: 'densenet121'
-  run_test: True 
-  USE_MIXED_PRECISION: True
-  
+  run_test: False
+  project: 'recursion-densenet'
 
 submission:
   pattern: 'cosface'
