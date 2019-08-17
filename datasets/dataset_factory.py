@@ -16,15 +16,47 @@ import torch.utils.data.sampler
 from torch.utils.data import DataLoader, ConcatDataset
 from torchvision import models, transforms as T
 
+from albumentations import (
+    HorizontalFlip, IAAPerspective, ShiftScaleRotate, CLAHE, RandomRotate90,
+    Transpose, ShiftScaleRotate, Blur, OpticalDistortion, GridDistortion, HueSaturationValue,
+    IAAAdditiveGaussianNoise, GaussNoise, MotionBlur, MedianBlur, IAAPiecewiseAffine,
+    IAASharpen, IAAEmboss, RandomBrightnessContrast, Flip, OneOf, Compose
+)
 from albumentations import Compose, RandomRotate90, Flip, Transpose, Resize, Normalize
 from albumentations import RandomContrast, RandomBrightness, RandomGamma
 from albumentations import Blur, MotionBlur, InvertImg
 from albumentations import Rotate, ShiftScaleRotate, RandomScale
 from albumentations import GridDistortion, ElasticTransform
+from albumentations.augmentations import functional as F
+from albumentations.core.transforms_interface import DualTransform
 
 from .default import DefaultDataset
 
 CELL_TYPE = ['HEPG2', 'HUVEC', 'RPE', 'U2OS']
+
+def five_crop(img, size):
+    w, h = img.shape
+    crop_h, crop_w = size
+    if crop_w > w or crop_h > h:
+        raise ValueError("Requested crop size {} is bigger \
+                          than input size {}".format(size, (h, w)))
+
+    tl = F.crop(img, 0, 0, crop_w, crop_h)
+    tr = F.crop(img, w - crop_w, 0, w, crop_h)
+    bl = F.crop(img, 0, h - crop_h, crop_w, h)
+    br = F.crop(img, w - crop_w, h - crop_h, w, h)
+    center = F.center_crop(img, crop_h, crop_w)
+    return (tl, tr, bl, br, center)
+
+
+class FiveCrop(DualTransform):
+    def __init__(self, size, always_apply=False, p=1.0):
+        super(FiveCrop, self).__init__(always_apply, p)
+        self.size = size
+
+    def apply(self, img, **params):
+        return five_crop(img, size=self.size)
+
 
 def get_two_sites(config, df, tsfm, mode):
     ds_s1 = DefaultDataset(df, 
@@ -83,7 +115,7 @@ def get_dataframes(config):
     train_df = pd.read_csv(os.path.join(config.data.data_dir, 
                                         config.data.train))
     test_df = pd.read_csv(os.path.join(config.data.data_dir, 
-                                       config.  data.test))
+                                       config.data.test))
 
     # stage 1: train on all dataset, valid on last batches
     if config.setup.stage:
@@ -101,10 +133,22 @@ def get_datasets(config):
     train_transform = Compose([
         RandomRotate90(),
         Flip(),
+        Flip(),
+        GaussNoise(),
+        OneOf([
+            MotionBlur(p=0.2),
+            Blur(blur_limit=3, p=0.1),
+        ], p=0.2),
+        OneOf([
+            OpticalDistortion(p=0.3),
+            GridDistortion(p=0.1),
+        ], p=0.2),
+        RandomBrightnessContrast(),
         Resize(height=SIZE, width=SIZE, always_apply=True)
     ])  
 
     test_transform = Compose([
+        tta_transform(size=SIZE),
         Resize(height=SIZE, width=SIZE, always_apply=True)
     ])
 
@@ -164,3 +208,48 @@ def get_dataloaders(config):
 #                             num_workers=config.transform.num_preprocessor,
 #                             pin_memory=False)
 #     return dataloader
+
+
+def strong_aug(p=0.5):
+    return Compose([
+        Flip(),
+        GaussNoise(),
+        OneOf([
+            MotionBlur(p=0.2),
+            Blur(blur_limit=3, p=0.1),
+        ], p=0.2),
+        ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.2, rotate_limit=45, p=0.2),
+        OneOf([
+            OpticalDistortion(p=0.3),
+            GridDistortion(p=0.1),
+        ], p=0.2),
+        RandomBrightnessContrast(),
+    ], p=p)
+
+def tta_transform(size=512, num_tta=4, **_):
+
+    def transform(image):
+        assert num_tta == 4 or num_tta == 8
+        images = [image]
+        data = {"image": image,}
+        images.append(strong_aug(p=1.0)(**data)['image'])
+        images.append(strong_aug(p=1.0)(**data)['image'])
+        images.append(strong_aug(p=1.0)(**data)['image'])
+
+        # if num_tta == 8:
+        #     images.append(np.transpose(image, (1,0,2)))
+        #     images.append(np.flipud(images[-1]))
+        #     images.append(np.fliplr(images[-2]))
+        #     images.append(np.flipud(images[-1]))
+        images = np.stack(images, axis=0)
+        
+        assert images.shape == (num_tta, 6, size, size), 'shape: {}'.format(images.shape)
+
+        return images
+
+    return transform
+
+if __name__ == "__main__":
+    input_ = np.random.randn(6, 512, 512) * 255   
+    output = tta_transform()(input_)
+    

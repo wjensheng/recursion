@@ -281,12 +281,17 @@ def test_model(config):
 
 
 def test_ds(config):
-    tr, val, te = get_dataframes(config)
+    # tr, val, te = get_dataframes(config)
 
-    print(len(tr), len(val), len(te))
+    # print(len(tr), len(val), len(te))
 
-    print(tr['sirna'].unique())
-    print(val['sirna'].nunique())
+    # print(tr['sirna'].unique())
+    # print(val['sirna'].nunique())
+
+    train_ds, valid_ds, test_ds = get_datasets(config)
+
+    print(train_ds[0][0].size())
+    print(test_ds[0][0].size())
 
         
 def parse_args():
@@ -314,9 +319,9 @@ def main():
 
     seed_everything()      
 
-    run(config)
+    # run(config)
     # test_model(config)    
-    # test_ds(config)
+    test_ds(config)
 
     print('complete!')
 
