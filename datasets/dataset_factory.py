@@ -241,7 +241,7 @@ def tta_transform(size=512, num_tta=4, **_):
         #     images.append(np.flipud(images[-1]))
         #     images.append(np.fliplr(images[-2]))
         #     images.append(np.flipud(images[-1]))
-        images = np.stack(images, axis=0)
+        images = np.stack(images, axis=0) # (4, 512, 512, 6)
 
         images = torch.from_numpy(images.transpose((0, 3, 1, 2))).float()
 
@@ -257,6 +257,7 @@ def tta_transform(size=512, num_tta=4, **_):
     return transform
 
 if __name__ == "__main__":
-    input_ = np.random.randn(6, 512, 512) * 255   
-    output = tta_transform()(input_)
+    input_ = np.random.randn(512, 512) * 255   
+    # output = tta_transform()(input_)
     
+    print(five_crop(input_, (320, 320)))
