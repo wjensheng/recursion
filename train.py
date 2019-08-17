@@ -112,8 +112,8 @@ def validate_one_epoch(config, val_loader, model, criterion, valid_df, mb):
 
     with torch.no_grad():
         for idx, data in enumerate(progress_bar(val_loader, parent=mb)):
-            input_, id_codes, target = data
 
+            input_, id_codes, target = data
             bs, num_tta, c, h, w = input_.size()
             
             # if using gpu
@@ -131,12 +131,12 @@ def validate_one_epoch(config, val_loader, model, criterion, valid_df, mb):
             losses.update(loss.data.item(), input_.size(0))
             
             for i in range(len(id_codes)):
-                valid_fc_dict[id_codes[i]] += output[i],
+                valid_fc_dict[id_codes[i]] += output_avg[i],
                 
     combined_valid_accuracy = utils.metrics.combined_accuracy(valid_fc_dict, valid_df)
 
     return losses.avg, combined_valid_accuracy
-    
+
 
 def test_inference(config, data_loader: Any, model: Any):
 
@@ -149,18 +149,19 @@ def test_inference(config, data_loader: Any, model: Any):
         for i, data in enumerate(tqdm(data_loader)):
 
             input_, id_codes = data
-            # bs, num_tta, c, h, w = input_.size()
+            bs, num_tta, c, h, w = input_.size()
             
             # if using gpu
             if torch.cuda.is_available():
                 input_ = input_.cuda()
         
-            output = model(input_)
-            # output = model(input_.view(-1, c, h, w))
-            # output_avg = output.view(bs, num_tta, -1).mean(1)            
+            # output = model(input_)
+
+            output = model(input_.view(-1, c, h, w))
+            output_avg = output.view(bs, num_tta, -1).mean(1)            
             
             for i in range(len(output)):
-                test_fc_dict[id_codes[i]] += output[i],
+                test_fc_dict[id_codes[i]] += output_avg[i],
             
     submission, all_classes_preds  = utils.metrics.weighted_preds(test_fc_dict)
 
@@ -203,11 +204,11 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
         if config.scheduler.name == 'cosine':
             lr_scheduler = get_scheduler(config, optimizer)
         
-        wandb.log({
-            'Train loss': train_loss,
-            'Valid loss': val_loss,
-            'Valid accuracy': val_accuracy
-        })
+        #wandb.log({
+        #    'Train loss': train_loss,
+        #    'Valid loss': val_loss,
+        #    'Valid accuracy': val_accuracy
+        #})
     
         # save best score, model
         if val_accuracy > best_score:
@@ -223,8 +224,8 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
 
 def run(config):
 
-    wandb.init(project='recursion')
-    wandb.config.update(config)
+    #wandb.init(project='recursion')
+    #wandb.config.update(config)
 
     pprint.PrettyPrinter(indent=2).pprint(config)
 
@@ -242,7 +243,7 @@ def run(config):
     
     # model
     model = create_model(config)    
-    wandb.watch(model)
+    # wandb.watch(model)
 
     # optimizer
     optimizer = get_optimizer(config, model.parameters())
