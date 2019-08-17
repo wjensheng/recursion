@@ -278,19 +278,20 @@ def test_model(config):
     # for l in layers:
     #     print(l)
     
-    # input_ = torch.randn((16, 6, 224, 224))
-    label_ = torch.tensor([1, 2, 3, 4] * 12)
+    input_ = torch.randn((16, 4, 6, 224, 224))
+    label_ = torch.tensor([1, 2, 3, 4] * 4)
 
-    train_ds, valid_ds, test_ds = get_datasets(config)
-    input_ = test_ds[0][0]
+    # train_ds, valid_ds, test_ds = get_datasets(config)
+    # input_ = test_ds[0][0]
+
+    print(input_.size())
+    bs, num_tta, c, h, w = input_.size()
 
     # output = m(input_)    
-    print(input_.size())
-    num_tta, c, h, w = input_.size()
     output = m(input_.view(-1, c, h, w))
     output_avg = output.view(bs, num_tta, -1).mean(1)            
                                                                                             
-    loss = criterion(output_avg, target)                                                                          
+    loss = criterion(output_avg, label_)                                                                          
 
     print('output size:', output_avg.size())
 
@@ -310,7 +311,7 @@ def test_ds(config):
     train_ds, valid_ds, test_ds = get_datasets(config)
 
     print(train_ds[0][0].size())
-    print(test_ds[0][0].size())
+    print(valid_ds[0][0].size())
 
         
 def parse_args():
@@ -338,8 +339,8 @@ def main():
 
     seed_everything()      
 
-    # run(config)
-    test_model(config)    
+    run(config)
+    # test_model(config)    
     # test_ds(config)
 
     print('complete!')

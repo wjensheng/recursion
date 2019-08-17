@@ -100,7 +100,7 @@ def create_train_test(train_csv, test_csv, plate):
     
 
 def manual_split(df):    
-    last_batch = ['HEPG2-07', 'HUVEC-15', 'HUVEC-16', 'RPE-07', 'U2OS-03']
+    last_batch = ['HEPG2-07', 'HUVEC-16', 'RPE-07', 'U2OS-03']
     valid_df = df[df['experiment'].isin(last_batch)]
     train_df = df[~df['experiment'].isin(last_batch)]
     return train_df, valid_df  
@@ -130,30 +130,11 @@ def get_dataframes(config):
 def get_datasets(config):
     SIZE = config.model.image_size
 
-    train_transform = Compose([
-        RandomRotate90(),
-        Flip(),
-        GaussNoise(),
-        OneOf([
-            MotionBlur(p=0.2),
-            Blur(blur_limit=3, p=0.1),
-        ], p=0.2),
-        OneOf([
-            OpticalDistortion(p=0.3),
-            GridDistortion(p=0.1),
-        ], p=0.2),
-        Resize(height=SIZE, width=SIZE, always_apply=True),
-    ])  
-
-    test_transform = Compose([
-        tta_transform(size=SIZE),        
-    ])
-
     train_df, valid_df, test_df = get_dataframes(config)
 
-    train_ds = get_two_sites(config, train_df, train_transform, 'train')
-    valid_ds = get_two_sites(config, valid_df, test_transform, 'train')
-    test_ds = get_two_sites(config, test_df, test_transform, 'test')
+    train_ds = get_two_sites(config, train_df, train_transform(size=SIZE), 'train')
+    valid_ds = get_two_sites(config, valid_df, test_transform(size=SIZE), 'train')
+    test_ds = get_two_sites(config, test_df, test_transform(size=SIZE), 'test')
 
     return train_ds, valid_ds, test_ds
 
@@ -182,19 +163,35 @@ def get_dataloaders(config):
     return train_dl, valid_dl, test_dl
 
 
-# def test_augmentation(size, p=1.0):
-#     return Compose([
-#         Flip(),
-#         GaussNoise(),
-#         OneOf([
-#             MotionBlur(p=0.2),
-#             Blur(blur_limit=3, p=0.1),
-#         ], p=0.2),
-#         Resize(height=size, width=size, always_apply=True)
-#     ], p=p)
 
+def train_transform(size=512, **_):
 
-def tta_transform(size=512, num_tta=4, **_):
+    base_aug = Compose([
+        Flip(),
+        GaussNoise(),
+        OneOf([
+            MotionBlur(p=0.2),
+            Blur(blur_limit=3, p=0.1),
+        ], p=0.2),
+        Resize(height=size, width=size, always_apply=True)
+    ])
+
+    def transform(image):
+        img = base_aug(image=image)['image']
+
+        img = torch.from_numpy(img.transpose((2, 0, 1))).float()
+
+        img = T.Normalize(mean=[6.74696984, 14.74640167, 10.51260864, 10.45369445,  5.49959796, 9.81545561],
+                          std=[7.95876312, 12.17305868, 5.86172946, 7.83451711, 4.701167, 5.43130431])(img)
+
+        img = T.RandomErasing()(img)
+
+        return img
+
+    return transform
+        
+    
+def test_transform(size=512, num_tta=4, **_):
 
     def transform(image):        
         assert num_tta == 4 or num_tta == 8
@@ -207,7 +204,7 @@ def tta_transform(size=512, num_tta=4, **_):
         images.append(np.flipud(image))
         images.append(np.fliplr(images[-1]))
 
-        images = np.stack(images, axis=0) # (4, 512, 512, 6)
+        images = np.stack(images, axis=0)
 
         images = torch.from_numpy(images.transpose((0, 3, 1, 2))).float()
 
