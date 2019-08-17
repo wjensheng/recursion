@@ -289,10 +289,8 @@ def test_model(config):
     num_tta, c, h, w = input_.size()
     output = m(input_.view(-1, c, h, w))
     output_avg = output.view(bs, num_tta, -1).mean(1)            
-                                        
-                                                    # loss = criterion(output, target)
-    loss = criterion(output_avg, target)
-                                                                            
+                                                                                            
+    loss = criterion(output_avg, target)                                                                          
 
     print('output size:', output_avg.size())
 

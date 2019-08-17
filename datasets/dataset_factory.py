@@ -133,7 +133,6 @@ def get_datasets(config):
     train_transform = Compose([
         RandomRotate90(),
         Flip(),
-        Flip(),
         GaussNoise(),
         OneOf([
             MotionBlur(p=0.2),
@@ -143,8 +142,7 @@ def get_datasets(config):
             OpticalDistortion(p=0.3),
             GridDistortion(p=0.1),
         ], p=0.2),
-        RandomBrightnessContrast(),
-        Resize(height=SIZE, width=SIZE, always_apply=True),        
+        Resize(height=SIZE, width=SIZE, always_apply=True),
     ])  
 
     test_transform = Compose([
@@ -184,6 +182,54 @@ def get_dataloaders(config):
     return train_dl, valid_dl, test_dl
 
 
+# def test_augmentation(size, p=1.0):
+#     return Compose([
+#         Flip(),
+#         GaussNoise(),
+#         OneOf([
+#             MotionBlur(p=0.2),
+#             Blur(blur_limit=3, p=0.1),
+#         ], p=0.2),
+#         Resize(height=size, width=size, always_apply=True)
+#     ], p=p)
+
+
+def tta_transform(size=512, num_tta=4, **_):
+
+    def transform(image):        
+        assert num_tta == 4 or num_tta == 8
+        image = Resize(height=size, width=size, always_apply=True)(image=image)['image'] 
+
+        image = image.astype(np.float32)
+
+        images = [image]        
+        images.append(np.fliplr(image))
+        images.append(np.flipud(image))
+        images.append(np.fliplr(images[-1]))
+
+        images = np.stack(images, axis=0) # (4, 512, 512, 6)
+
+        images = torch.from_numpy(images.transpose((0, 3, 1, 2))).float()
+
+        norm = T.Normalize(mean=[6.74696984, 14.74640167, 10.51260864, 10.45369445,  5.49959796, 9.81545561],
+                           std=[7.95876312, 12.17305868, 5.86172946, 7.83451711, 4.701167, 5.43130431])
+        
+        images = torch.stack([norm(img) for img in images])       
+        
+        assert images.size() == (num_tta, 6, size, size), 'shape: {}'.format(images.size())
+
+        return images
+
+    return transform
+
+if __name__ == "__main__":
+    input_ = np.random.randn(512, 512) * 255   
+    # output = tta_transform()(input_)
+    
+    print(five_crop(input_, (320, 320)))
+
+
+
 
 # def get_dataset(config, split, transform=None, last_epoch=-1):
 #     f = globals().get(config.name)
@@ -208,60 +254,7 @@ def get_dataloaders(config):
 #                             pin_memory=False)
 #     return dataloader
 
-
-def strong_aug(size, p=1.0):
-    return Compose([
-        Flip(),
-        GaussNoise(),
-        OneOf([
-            MotionBlur(p=0.2),
-            Blur(blur_limit=3, p=0.1),
-        ], p=0.2),
-        ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.2, rotate_limit=45, p=0.2),
-        OneOf([
-            OpticalDistortion(p=0.3),
-            GridDistortion(p=0.1),
-        ], p=0.2),
-        RandomBrightnessContrast(),
-        # Resize(height=size, width=size, always_apply=True)
-    ], p=p)
-
-def tta_transform(size=512, num_tta=4, **_):
-
-    def transform(image):        
-        assert num_tta == 4 or num_tta == 8
-        image = Resize(height=size, width=size, always_apply=True)(image=image)['image'] 
-        images = [image]
-        data = {"image": image,}
-        images.append(strong_aug(size=size, p=1.0)(**data)['image'])
-        images.append(strong_aug(size=size, p=1.0)(**data)['image'])
-        images.append(strong_aug(size=size, p=1.0)(**data)['image'])
-
-        for i in images:
-            print(i.shape)
-
-        # if num_tta == 8:
-        #     images.append(np.transpose(image, (1,0,2)))
-        #     images.append(np.flipud(images[-1]))
-        #     images.append(np.fliplr(images[-2]))
-        #     images.append(np.flipud(images[-1]))
-        images = np.stack(images, axis=0) # (4, 512, 512, 6)
-
-        images = torch.from_numpy(images.transpose((0, 3, 1, 2))).float()
-
-        norm = T.Normalize(mean=[6.74696984, 14.74640167, 10.51260864, 10.45369445,  5.49959796, 9.81545561],
-                          std=[7.95876312, 12.17305868, 5.86172946, 7.83451711, 4.701167, 5.43130431])
-        
-        images = torch.stack([norm(img) for img in images])       
-        
-        assert images.size() == (num_tta, 6, size, size), 'shape: {}'.format(images.size())
-
-        return images
-
-    return transform
-
-if __name__ == "__main__":
-    input_ = np.random.randn(512, 512) * 255   
-    # output = tta_transform()(input_)
-    
-    print(five_crop(input_, (320, 320)))
+# data = {"image": image,}
+# images.append(test_augmentation(size=size, p=1.0)(**data)['image'])
+# images.append(test_augmentation(size=size, p=1.0)(**data)['image'])
+# images.append(test_augmentation(size=size, p=1.0)(**data)['image'])
