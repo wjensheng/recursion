@@ -1,7 +1,7 @@
 setup:
   stage: True # False takes in all cells
   cell_type: 3
-  version: 'resnet18_cosface_radam_t3'
+  version: 'resnet18_cosface_radam_t3_tta'
   run_test: True 
 
 submission:
