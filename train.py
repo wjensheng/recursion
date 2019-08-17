@@ -31,6 +31,7 @@ import utils.metrics
 
 import wandb
 
+
 def create_model(config):
     model = get_model(config)
 
@@ -120,12 +121,9 @@ def validate_one_epoch(config, val_loader, model, criterion, valid_df, mb):
             if torch.cuda.is_available():
                 input_, target = input_.cuda(), target.cuda()
                         
-            # output = model(input_)
-
             output = model(input_.view(-1, c, h, w))
             output_avg = output.view(bs, num_tta, -1).mean(1)            
             
-            # loss = criterion(output, target)
             loss = criterion(output_avg, target)
                         
             losses.update(loss.data.item(), input_.size(0))
@@ -155,8 +153,6 @@ def test_inference(config, data_loader: Any, model: Any):
             if torch.cuda.is_available():
                 input_ = input_.cuda()
         
-            # output = model(input_)
-
             output = model(input_.view(-1, c, h, w))
             output_avg = output.view(bs, num_tta, -1).mean(1)            
             
@@ -204,11 +200,11 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
         if config.scheduler.name == 'cosine':
             lr_scheduler = get_scheduler(config, optimizer)
         
-        #wandb.log({
-        #    'Train loss': train_loss,
-        #    'Valid loss': val_loss,
-        #    'Valid accuracy': val_accuracy
-        #})
+        wandb.log({
+           'Train loss': train_loss,
+           'Valid loss': val_loss,
+           'Valid accuracy': val_accuracy
+        })
     
         # save best score, model
         if val_accuracy > best_score:
@@ -224,8 +220,8 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
 
 def run(config):
 
-    #wandb.init(project='recursion')
-    #wandb.config.update(config)
+    wandb.init(project=config.setup.project)
+    wandb.config.update(config)
 
     pprint.PrettyPrinter(indent=2).pprint(config)
 
@@ -243,7 +239,7 @@ def run(config):
     
     # model
     model = create_model(config)    
-    # wandb.watch(model)
+    wandb.watch(model)
 
     # optimizer
     optimizer = get_optimizer(config, model.parameters())

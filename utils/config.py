@@ -18,7 +18,8 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.setup.stage = True
     cfg.setup.cell_type = 3 # must be stage 1
     cfg.setup.version = 'first_attempt'
-    cfg.setup.run_test = False    
+    cfg.setup.run_test = False  
+    cfg.setup.project = 'recursion'
 
     # saved model
     cfg.saved = edict()
@@ -62,7 +63,6 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # valid
     cfg.val = edict()
     cfg.val.batch_size = 64 # 
-    # cfg.test.num_ttas = 1
 
     # test
     cfg.test = edict()
