@@ -46,10 +46,10 @@ class DefaultDataset(Dataset):
         img = np.stack([channel for channel in img_channels],axis=2)
 
         if self.transform is not None:
-            img = self.transform(image=img)['image']
+            img = self.transform(image=img)
 
         if self.mode == 'train':
-            img = torch.from_numpy(img.transpose((2, 0, 1))).float()
+            img = torch.from_numpy(img['image'].transpose((2, 0, 1))).float()
 
             img = T.Normalize(mean=[6.74696984, 14.74640167, 10.51260864, 10.45369445,  5.49959796, 9.81545561],
                             std=[7.95876312, 12.17305868, 5.86172946, 7.83451711, 4.701167, 5.43130431])(img)

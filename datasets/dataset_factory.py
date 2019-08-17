@@ -223,18 +223,22 @@ def strong_aug(size, p=1.0):
             GridDistortion(p=0.1),
         ], p=0.2),
         RandomBrightnessContrast(),
-        Resize(height=size, width=size, always_apply=True)
+        # Resize(height=size, width=size, always_apply=True)
     ], p=p)
 
 def tta_transform(size=512, num_tta=4, **_):
 
     def transform(image):        
         assert num_tta == 4 or num_tta == 8
+        image = Resize(height=size, width=size, always_apply=True)(image=image)['image'] 
         images = [image]
         data = {"image": image,}
-        images.append(strong_aug(p=1.0)(**data)['image'])
-        images.append(strong_aug(p=1.0)(**data)['image'])
-        images.append(strong_aug(p=1.0)(**data)['image'])
+        images.append(strong_aug(size=size, p=1.0)(**data)['image'])
+        images.append(strong_aug(size=size, p=1.0)(**data)['image'])
+        images.append(strong_aug(size=size, p=1.0)(**data)['image'])
+
+        for i in images:
+            print(i.shape)
 
         # if num_tta == 8:
         #     images.append(np.transpose(image, (1,0,2)))
@@ -248,7 +252,7 @@ def tta_transform(size=512, num_tta=4, **_):
         norm = T.Normalize(mean=[6.74696984, 14.74640167, 10.51260864, 10.45369445,  5.49959796, 9.81545561],
                           std=[7.95876312, 12.17305868, 5.86172946, 7.83451711, 4.701167, 5.43130431])
         
-        images = T.Lambda(lambda images: torch.stack([norm(img) for img in images]))        
+        images = torch.stack([norm(img) for img in images])       
         
         assert images.size() == (num_tta, 6, size, size), 'shape: {}'.format(images.size())
 
