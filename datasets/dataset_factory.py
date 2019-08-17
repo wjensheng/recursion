@@ -144,12 +144,11 @@ def get_datasets(config):
             GridDistortion(p=0.1),
         ], p=0.2),
         RandomBrightnessContrast(),
-        Resize(height=SIZE, width=SIZE, always_apply=True)
+        Resize(height=SIZE, width=SIZE, always_apply=True),        
     ])  
 
     test_transform = Compose([
-        tta_transform(size=SIZE),
-        Resize(height=SIZE, width=SIZE, always_apply=True)
+        tta_transform(size=SIZE),        
     ])
 
     train_df, valid_df, test_df = get_dataframes(config)
@@ -210,7 +209,7 @@ def get_dataloaders(config):
 #     return dataloader
 
 
-def strong_aug(p=0.5):
+def strong_aug(size, p=1.0):
     return Compose([
         Flip(),
         GaussNoise(),
@@ -224,11 +223,12 @@ def strong_aug(p=0.5):
             GridDistortion(p=0.1),
         ], p=0.2),
         RandomBrightnessContrast(),
+        Resize(height=size, width=size, always_apply=True)
     ], p=p)
 
 def tta_transform(size=512, num_tta=4, **_):
 
-    def transform(image):
+    def transform(image):        
         assert num_tta == 4 or num_tta == 8
         images = [image]
         data = {"image": image,}
@@ -242,8 +242,15 @@ def tta_transform(size=512, num_tta=4, **_):
         #     images.append(np.fliplr(images[-2]))
         #     images.append(np.flipud(images[-1]))
         images = np.stack(images, axis=0)
+
+        images = torch.from_numpy(images.transpose((0, 3, 1, 2))).float()
+
+        norm = T.Normalize(mean=[6.74696984, 14.74640167, 10.51260864, 10.45369445,  5.49959796, 9.81545561],
+                          std=[7.95876312, 12.17305868, 5.86172946, 7.83451711, 4.701167, 5.43130431])
         
-        assert images.shape == (num_tta, 6, size, size), 'shape: {}'.format(images.shape)
+        images = T.Lambda(lambda images: torch.stack([norm(img) for img in images]))        
+        
+        assert images.size() == (num_tta, 6, size, size), 'shape: {}'.format(images.size())
 
         return images
 
