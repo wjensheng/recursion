@@ -1,11 +1,11 @@
 setup:
   stage: True # False takes in all cells
   cell_type: 3
-  version: 'densenet201-512'
+  version: 'densenet121-512'
   run_test: False 
 
 submission:
-  pattern: 'cosface-dn201'
+  pattern: 'cosface-dn121'
 
 data:
   train: 'train.csv'
@@ -13,7 +13,7 @@ data:
 model:
   image_size: 512
   num_classes: 1108
-  arch: 'densenet201'
+  arch: 'densenet121'
   
 train:
   batch_size: 32

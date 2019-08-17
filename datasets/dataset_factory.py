@@ -167,12 +167,13 @@ def get_dataloaders(config):
 def train_transform(size=512, **_):
 
     base_aug = Compose([
+        RandomRotate90(),
         Flip(),
-        GaussNoise(),
-        OneOf([
-            MotionBlur(p=0.2),
-            Blur(blur_limit=3, p=0.1),
-        ], p=0.2),
+        # GaussNoise(),
+        # OneOf([
+        #     MotionBlur(p=0.2),
+        #     Blur(blur_limit=3, p=0.1),
+        # ], p=0.2),
         Resize(height=size, width=size, always_apply=True)
     ])
 
@@ -184,7 +185,7 @@ def train_transform(size=512, **_):
         img = T.Normalize(mean=[6.74696984, 14.74640167, 10.51260864, 10.45369445,  5.49959796, 9.81545561],
                           std=[7.95876312, 12.17305868, 5.86172946, 7.83451711, 4.701167, 5.43130431])(img)
 
-        img = T.RandomErasing()(img)
+        # img = T.RandomErasing()(img)
 
         return img
 
@@ -194,10 +195,7 @@ def train_transform(size=512, **_):
 def test_transform(size=512, num_tta=4, **_):
 
     def transform(image):        
-        assert num_tta == 4 or num_tta == 8
-        image = Resize(height=size, width=size, always_apply=True)(image=image)['image'] 
-
-        image = image.astype(np.float32)
+        image = Resize(height=size, width=size, always_apply=True)(image=image)['image']
 
         images = [image]        
         images.append(np.fliplr(image))
