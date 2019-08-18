@@ -103,13 +103,13 @@ class RecursionNet(nn.Module):
         # else:
         #     self.final = nn.Linear(final_in_features, n_classes)
 
-    def _init_params(self):
-        nn.init.kaiming_normal_(self.fc1.weight)
-        nn.init.constant_(self.fc1.bias, 0)
-        nn.init.constant_(self.bn1.weight, 1)
-        nn.init.constant_(self.bn1.bias, 0)
-        nn.init.constant_(self.bn2.weight, 1)
-        nn.init.constant_(self.bn2.bias, 0)
+    # def _init_params(self):
+    #     nn.init.kaiming_normal_(self.fc1.weight)
+    #     nn.init.constant_(self.fc1.bias, 0)
+    #     nn.init.constant_(self.bn1.weight, 1)
+    #     nn.init.constant_(self.bn1.bias, 0)
+    #     nn.init.constant_(self.bn2.weight, 1)
+    #     nn.init.constant_(self.bn2.bias, 0)
         
     def forward(self, x):        
         global_feat = self.gap(self.backbone(x))  # (b, 2048, 1, 1)
