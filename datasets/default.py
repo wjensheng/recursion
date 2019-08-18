@@ -54,6 +54,7 @@ class DefaultDataset(Dataset):
                           std=[7.95876312, 12.17305868, 5.86172946, 7.83451711, 4.701167, 5.43130431])(img)
             
         if self.mode == 'train':
+            # img = T.RandomErasing()(img)
             return img, self.records[index].id_code, int(self.records[index].sirna)
         else:
             return img, self.records[index].id_code            
