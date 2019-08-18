@@ -55,22 +55,28 @@ def weights_init_classifier(m):
 
 class RecursionNet(nn.Module):
 
-    def __init__(self, num_classes, last_stride, model_path, neck, neck_feat, in_planes=2048, model_name='se_resnet50', loss_module='softmax'):
+    def __init__(self, num_classes, neck_feat, in_planes=2048, model_name='se_resnet50', loss_module='softmax'):
         super(RecursionNet, self).__init__()
                 
         self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
+        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.num_classes = num_classes
+        self.neck_feat = neck_feat
+        self.in_planes = in_planes
 
         final_in_features = self.backbone.last_linear.in_features
 
-        trained_kernel = self.backbone.layer0.conv1.weight
-        self.backbone.layer1.conv1 = create_new_conv(trained_kernel)
-        self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
-        
-        self.gap = nn.AdaptiveAvgPool2d(1)
-        self.num_classes = num_classes
-        self.neck = neck
-        self.neck_feat = neck_feat
+        if 'se_resnet' in model_name:
+            trained_kernel = self.backbone.layer0.conv1.weight
+            self.backbone.layer1.conv1 = create_new_conv(trained_kernel)
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
 
+        elif 'resnet' in model_name:
+            self.in_planes = 512
+            trained_kernel = self.backbone.conv1.weight            
+            self.backbone.conv1 = create_new_conv(trained_kernel)
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:-3], last_block)
+                
         self.bottleneck = nn.BatchNorm1d(self.in_planes)
         self.bottleneck.bias.requires_grad_(False)  # no shift
         self.classifier = nn.Linear(self.in_planes, self.num_classes, bias=False)
