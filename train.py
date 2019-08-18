@@ -213,7 +213,7 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
 
 def run(config):
 
-    wandb.init(project='recursion')
+    wandb.init(project=config.setup.project)
     wandb.config.update(config)
 
     pprint.PrettyPrinter(indent=2).pprint(config)

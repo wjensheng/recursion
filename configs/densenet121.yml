@@ -3,8 +3,7 @@ setup:
   cell_type: 3
   version: 'densenet121'
   run_test: True 
-  USE_MIXED_PRECISION: True
-  
+  project: 'recursion-densenet'
 
 submission:
   pattern: 'cosface'
@@ -18,7 +17,7 @@ model:
   arch: 'densenet121'
   
 train:
-  batch_size: 24
+  batch_size: 16
   num_epochs: 30
   
 val:
@@ -28,10 +27,10 @@ test:
   batch_size: 32
   
 loss:
-  name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+  name: 'cross_entropy' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
   
 optimizer:
-  name: 'adamw'
+  name: 'radam'
   params:
     lr: 0.0003
 
@@ -39,4 +38,4 @@ scheduler:
   name: 'cosine'
   params:
     eta_min: 0.00003
-    T_max: 368
+    T_max: 276
