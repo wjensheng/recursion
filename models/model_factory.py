@@ -49,7 +49,12 @@ class RecursionNet(nn.Module):
         elif 'resnet' in model_name:
             trained_kernel = self.backbone.conv1.weight            
             self.backbone.conv1 = create_new_conv(trained_kernel)
-            self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
+
+            # before_downsample = list(list(self.backbone.children())[-3][0].children())[:-1]
+            # after_downsample =  list(list(self.backbone.children())[-3][1].children())
+            # last_block = nn.Sequential(*before_downsample, *after_downsample)
+
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:-3], last_block)
             self.expand = 1
         
         elif 'densenet' in model_name:

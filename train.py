@@ -260,7 +260,7 @@ def test_model(config):
     m = create_model(config)
     criterion = get_loss(config)
 
-    print(m)
+    # print(m)
     print(criterion)
 
     # layers = list(criterion.named_parameters()) + \
@@ -314,8 +314,8 @@ def main():
 
     seed_everything()      
 
-    run(config)
-    # test_model(config)    
+    # run(config)
+    test_model(config)    
     # test_ds(config)
 
     print('complete!')
