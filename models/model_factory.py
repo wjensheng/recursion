@@ -21,6 +21,15 @@ class Flatten(nn.Module):
     def forward(self, x): return x.view(x.size(0), -1)        
 
 
+def create_new_conv(trained_kernel):
+    new_conv = nn.Conv2d(6, 64, kernel_size=7, stride=2, padding=3, bias=False)
+
+    with torch.no_grad():
+        new_conv.weight[:,:] = torch.stack([torch.mean(trained_kernel, 1)]*6, dim=1)
+
+    return new_conv
+
+
 class RecursionNet(nn.Module):
 
     def __init__(self, n_classes, model_name='resnet50', 
@@ -28,35 +37,29 @@ class RecursionNet(nn.Module):
         super(RecursionNet, self).__init__()        
                 
         self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
-        self.loss_module = loss_module
 
         final_in_features = self.backbone.last_linear.in_features        
-        
-        if 'resnet' in model_name:
-            trained_kernel = self.backbone.conv1.weight
 
-            new_conv = nn.Conv2d(6, 64, kernel_size=7, stride=2, padding=3, bias=False)
-
-            with torch.no_grad():
-                new_conv.weight[:,:] = torch.stack([torch.mean(trained_kernel, 1)]*6, dim=1)
-
-            self.backbone.conv1 = new_conv
+        if 'se_resnet' in model_name:
+            trained_kernel = self.backbone.layer0.conv1.weight
+            self.backbone.layer1.conv1 = create_new_conv(trained_kernel)
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
-
             self.expand = 1
-
-        else: # densenet
-            trained_kernel = self.backbone.features.conv0.weight
-
-            new_conv = nn.Conv2d(6, 64, kernel_size=7, stride=2, padding=3, bias=False)
-
-            with torch.no_grad():
-                new_conv.weight[:,:] = torch.stack([torch.mean(trained_kernel, 1)]*6, dim=1)
-
-            self.backbone.features.conv0 = new_conv
+        
+        elif 'resnet' in model_name:
+            trained_kernel = self.backbone.conv1.weight            
+            self.backbone.conv1 = create_new_conv(trained_kernel)
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
+            self.expand = 1
+        
+        elif 'densenet' in model_name:
+            trained_kernel = self.backbone.features.conv0.weight            
+            self.backbone.features.conv0 = create_new_conv(trained_kernel)
             self.backbone = nn.Sequential(*list(self.backbone.features)[:-1])
+            self.expand = 2           
 
-            self.expand = 2                
+        else:
+            raise ValueError('Wrong model_name')
         
         self.pooling = AdaptiveConcatPool2d()
         self.flatten = Flatten()        
@@ -106,7 +109,6 @@ class RecursionNet(nn.Module):
         x = self.relu(x)        
         x = self.bn2(x)
         x = self.dropout2(x)
-
         return x
 
 
