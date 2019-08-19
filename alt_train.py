@@ -37,6 +37,7 @@ def train_one_epoch(config, train_loader, model, center_criterion, optimizer, op
             target = target.cuda()
 
         score, feat = model(img)
+
         loss = loss_fn(score, feat, target)
 
         losses.update(loss.data.item(), img.size(0))
@@ -96,7 +97,7 @@ def create_model(config):
     return model
 
 
-def do_train_with_center(config, model, center_criterion, train_loader, val_loader, valid_df, optimizer, optimizer_center, scheduler, scheduler_center, loss_fn, start_epoch):
+def do_train_with_center(config, model, center_criterion, train_loader, val_loader, valid_df, optimizer, optimizer_center, scheduler, loss_fn, start_epoch):
 
     best_score = 0.0
     best_epoch = 0
@@ -113,11 +114,13 @@ def do_train_with_center(config, model, center_criterion, train_loader, val_load
     
         scheduler = get_scheduler(config, optimizer)
         
-        wandb.log({
-            'Train loss': train_loss,
-            'Valid loss': val_loss,
-            'Valid accuracy': val_accuracy
-        })
+        # wandb.log({
+        #     'Train loss': train_loss,
+        #     'Valid loss': val_loss,
+        #     'Valid accuracy': val_accuracy
+        # })
+
+        print(train_loss, val_loss, val_accuracy)
     
         # save best score, model
         if val_accuracy > best_score:
@@ -133,13 +136,10 @@ def do_train_with_center(config, model, center_criterion, train_loader, val_load
 
 def run(config):
 
-    # valid_df for combined_accuracy
     _, valid_df, _ = get_dataframes(config)
 
-    # get dataloders
     train_loader, val_loader, test_loader = get_dataloaders(config)
 
-    # get model
     model = create_model(config)
 
     loss_func, center_criterion = make_loss_with_center(config) 
@@ -149,18 +149,18 @@ def run(config):
     start_epoch = 0
 
     do_train_with_center(
-        config,
-        model,
-        center_criterion,
-        train_loader,
-        val_loader,
-        optimizer,
-        optimizer_center,
-        scheduler,      # modify for using self trained model
-        loss_func,
-        start_epoch     # add for using self trained model
+        config, 
+        model, 
+        center_criterion, 
+        train_loader, 
+        val_loader, 
+        valid_df, 
+        optimizer, 
+        optimizer_center, 
+        scheduler, 
+        loss_func, 
+        start_epoch
     )
-
 
 def test_model(config):
     model = create_model(config)
@@ -170,6 +170,7 @@ def test_model(config):
     print(loss_func)
     print(center_criterion)
 
+    print('\ntraining...\n')
     model.train()
 
     img = torch.randn((16, 6, 224, 224))
@@ -178,9 +179,16 @@ def test_model(config):
     score, feat = model(img)
     loss = loss_func(score, feat, target)
     
-    print(score)
+    print('score size:', score.size())
+    print('feature size:', feat.size())
+    print('loss:', loss.item())
+
+    print('\nvalidation...\n')
+    model.eval()
+
+    feat = model(img)
+
     print(feat.size())
-    print(loss.item())
 
 
 def parse_args():
@@ -197,8 +205,8 @@ def main():
 
     config = utils.config.load_config(args.config, args)
 
-    test_model(config)
-    # run(config)
+    # test_model(config)
+    run(config)
 
     print('complete!')
 

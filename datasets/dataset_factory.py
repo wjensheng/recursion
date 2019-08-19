@@ -101,7 +101,7 @@ def get_datasets(config):
     train_transform = Compose([
         RandomRotate90(),
         Flip(),
-        Resize(height=SIZE, width=SIZE, always_apply=True)
+        Resize(height=SIZE, width=SIZE, always_apply=True)        
     ])  
 
     test_transform = Compose([

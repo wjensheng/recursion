@@ -97,7 +97,7 @@ class RecursionNet(nn.Module):
         feat = self.bottleneck(global_feat)
 
         if self.training:
-            print('training...')
+            # print("Training")
             cls_score = self.classifier(feat)
             return cls_score, global_feat  # global feature for triplet loss
 
