@@ -52,6 +52,8 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.model.fc_dim = 512
     cfg.model.image_size = 512 # resize
     cfg.model.num_classes = 1108
+    cfg.model.in_planes = 2048 # 512
+    cfg.model.neck_feat = 'after' # 'before'
     
     # train
     cfg.train = edict()
@@ -89,10 +91,12 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # cfg.find_lr.step_mode = 'exp'
 
     # loss
-    cfg.loss = edict()
+    cfg.loss = edict() 
     cfg.loss.name = 'arcface' # 'arcface', 'cosface', 'softmax', 'sphere'
     cfg.loss.params = edict()
     cfg.loss.params.gamma = 1
+    cfg.loss.params.margin = 0.3 # triplet loss
+    cfg.loss.params.CENTER_LOSS_WEIGHT = 0.0005
     cfg.loss.params.in_features = 512
     cfg.loss.params.out_features = 1108
     

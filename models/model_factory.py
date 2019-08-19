@@ -55,7 +55,7 @@ def weights_init_classifier(m):
 
 class RecursionNet(nn.Module):
 
-    def __init__(self, num_classes, neck_feat, in_planes=2048, model_name='se_resnet50', loss_module='softmax'):
+    def __init__(self, num_classes, neck_feat, in_planes=2048, model_name='se_resnet50'):
         super(RecursionNet, self).__init__()
                 
         self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
@@ -150,13 +150,13 @@ class RecursionNet(nn.Module):
     #     return x
 
 
-def get_model(config):
-    n_classes = config.model.num_classes
+def get_model(config):    
+    num_classes = config.model.num_classes
     model_name = config.model.arch
-    fc_dim = config.model.fc_dim
-    loss_module = config.loss.name
+    neck_feat = config.model.neck_feat
+    in_planes = config.model.in_planes
 
-    net = RecursionNet(n_classes=n_classes, model_name=model_name,
-                       fc_dim=fc_dim, loss_module=loss_module)
+    net = RecursionNet(num_classes=num_classes, neck_feat=neck_feat, 
+                       in_planes=in_planes, model_name=model_name)
                   
     return net
