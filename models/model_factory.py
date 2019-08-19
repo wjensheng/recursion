@@ -75,6 +75,11 @@ class RecursionNet(nn.Module):
             self.in_planes = 512
             trained_kernel = self.backbone.conv1.weight            
             self.backbone.conv1 = create_new_conv(trained_kernel)
+
+            before_downsample = list(list(self.backbone.children())[-3][0].children())[:-1]
+            after_downsample =  list(list(self.backbone.children())[-3][1].children())
+            last_block = nn.Sequential(*before_downsample, *after_downsample)
+
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-3], last_block)
                 
         self.bottleneck = nn.BatchNorm1d(self.in_planes)
@@ -84,38 +89,6 @@ class RecursionNet(nn.Module):
         self.bottleneck.apply(weights_init_kaiming)
         self.classifier.apply(weights_init_classifier)
 
-        # self.pooling = AdaptiveConcatPool2d()
-        # self.flatten = Flatten()        
-        # self.bn1 = nn.BatchNorm1d(1024 * self.expand)
-        # self.dropout1 = nn.Dropout(p=0.25)
-        # self.fc1 = nn.Linear(1024 * self.expand, 512 * self.expand)
-        # self.relu = nn.ReLU(inplace=True)
-        # self.bn2 = nn.BatchNorm1d(512 * self.expand)   
-        # self.dropout2 = nn.Dropout(p=0.5)     
-        # self._init_params()        
-    
-        # final_in_features = fc_dim * self.expand
-        
-        # if loss_module == 'arcface':
-        #     self.final = ArcMarginProduct(final_in_features, n_classes)
-        # elif loss_module == 'cosface':
-        #     self.final = AddMarginProduct(final_in_features, n_classes)
-        # elif loss_module == 'adacos':
-        #     self.final = AdaCos(final_in_features, n_classes)
-        # elif loss_module == 'sphereface':
-        #     self.final = SphereProduct(final_in_features, n_classes)
-        # elif loss_module == 'amsoftmax':
-        #     self.final = AdaptiveMargin(final_in_features, n_classes)
-        # else:
-        #     self.final = nn.Linear(final_in_features, n_classes)
-
-    # def _init_params(self):
-    #     nn.init.kaiming_normal_(self.fc1.weight)
-    #     nn.init.constant_(self.fc1.bias, 0)
-    #     nn.init.constant_(self.bn1.weight, 1)
-    #     nn.init.constant_(self.bn1.bias, 0)
-    #     nn.init.constant_(self.bn2.weight, 1)
-    #     nn.init.constant_(self.bn2.bias, 0)
         
     def forward(self, x):        
         global_feat = self.gap(self.backbone(x))  # (b, 2048, 1, 1)
@@ -124,6 +97,7 @@ class RecursionNet(nn.Module):
         feat = self.bottleneck(global_feat)
 
         if self.training:
+            print('training...')
             cls_score = self.classifier(feat)
             return cls_score, global_feat  # global feature for triplet loss
 

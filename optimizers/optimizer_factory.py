@@ -110,19 +110,3 @@ def sgd(parameters, lr=0.001, momentum=0.9, weight_decay=0, nesterov=True, **_):
 def get_optimizer(config, parameters):
     f = globals().get(config.optimizer.name)
     return f(parameters, **config.optimizer.params)
-
-def test():
-    c = edict()
-    # optimizer
-    c.optimizer = edict()
-    c.optimizer.name = 'adam'
-    c.optimizer.params = edict()
-
-    # model = get_pretrainedmodels(num_outputs=10)
-
-    # optim = get_optimizer(c, model.parameters())
-
-    # print(optim)
-
-if __name__ == "__main__":
-    test()
