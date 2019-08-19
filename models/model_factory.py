@@ -109,8 +109,6 @@ class RecursionNet(nn.Module):
                 # print("Test with feature before BN")
                 return global_feat
 
-
-
     # def extract_feat(self, x):
     #     x = self.backbone(x)
     #     x = self.pooling(x)

@@ -26,9 +26,9 @@ test:
   batch_size: 96
   
 loss:
-  name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
-  params:
-    in_features: 1024
+  name: 'triplet_center' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+  # params:
+  #   in_features: 1024
   
 optimizer:
   name: 'radam'

@@ -12,7 +12,9 @@ from models import get_model
 from losses import make_loss_with_center
 from optimizers import make_optimizer_with_center
 from schedulers import get_scheduler
-import utils
+
+from utils import *
+import utils.config
 
 import wandb
 
@@ -196,6 +198,7 @@ def main():
     config = utils.config.load_config(args.config, args)
 
     test_model(config)
+    # run(config)
 
     print('complete!')
 
