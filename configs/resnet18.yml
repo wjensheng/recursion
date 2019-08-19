@@ -25,7 +25,7 @@ val:
 test:
   batch_size: 96
   
-loss:
+loss: 
   name: 'cross_entropy' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
   params:
     in_features: 1024
