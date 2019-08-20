@@ -260,7 +260,7 @@ def test_model(config):
     m = create_model(config)
     criterion = get_loss(config)
 
-    # print(m)
+    print(m)
     print(criterion)
 
     # layers = list(criterion.named_parameters()) + \
@@ -323,8 +323,6 @@ def main():
     args = parse_args()
 
     config = utils.config.load_config(args.config, args)
-    
-    
 
     if not os.path.exists(config.experiment_dir):
         os.makedirs(config.experiment_dir)    
@@ -340,7 +338,7 @@ def main():
     pprint.PrettyPrinter(indent=2).pprint(config)
 
     # run(config)
-    # test_model(config)    
+    test_model(config)    
     # test_ds(config)
 
     print('complete!')
