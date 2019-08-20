@@ -44,7 +44,9 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # cfg.transform.params = edict()
 
     # num works
-    cfg.num_workers = 4 
+    cfg.dataloader = edict()
+    cfg.dataloader.num_workers = 4  
+    cfg.dataloader.num_instance = 4
 
     # model
     cfg.model = edict()

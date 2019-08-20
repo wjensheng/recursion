@@ -7,7 +7,7 @@ import torch.nn as nn
 from collections import defaultdict
 from fastprogress import master_bar, progress_bar
 
-from datasets import get_dataframes, get_datasets, get_dataloaders
+from datasets import get_dataframes, get_datasets, make_data_loader
 from models import get_model
 from losses import make_loss_with_center
 from optimizers import make_optimizer_with_center
@@ -138,7 +138,7 @@ def run(config):
 
     _, valid_df, _ = get_dataframes(config)
 
-    train_loader, val_loader, test_loader = get_dataloaders(config)
+    train_loader, val_loader = make_data_loader(config)
 
     model = create_model(config)
 
@@ -191,6 +191,11 @@ def test_model(config):
     print(feat.size())
 
 
+def test_dl(config):
+    train_loader, val_loader = make_data_loader(config)
+
+    print(train_loader)
+
 def parse_args():
     parser = argparse.ArgumentParser(description='RXRX')
     parser.add_argument('--config', 
@@ -206,7 +211,8 @@ def main():
     config = utils.config.load_config(args.config, args)
 
     # test_model(config)
-    run(config)
+    test_dl(config)
+    # run(config)
 
     print('complete!')
 
