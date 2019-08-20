@@ -293,7 +293,28 @@ def parse_args():
     parser = argparse.ArgumentParser(description='RXRX')
     parser.add_argument('--config', 
                         help='model configuration file (YAML)', 
-                        type=str, required=True)                        
+                        type=str, required=True)
+    # parser.add_argument("--image_size", 
+    #                     dest='image_size', help="size of an image", 
+    #                     type=int, default=320)
+    # parser.add_argument("--num_epochs", 
+    #                     dest='num_epochs', help="number of epochs to train", 
+    #                     type=int, default=30)
+    # parser.add_argument("--loss", 
+    #                     dest='loss', help="loss function", 
+    #                     type=str)
+    # parser.add_argument("--optim_lr", 
+    #                     dest='optim_lr', help="learning rate for optimizer", 
+    #                     type=float)
+    # parser.add_argument("--optim_wd", 
+    #                     dest='optim_wd', help="weight decay for optimizer", 
+    #                     type=float)
+    # parser.add_argument("--eta_min", 
+    #                     dest='eta_min', help="eta min for SGDR", 
+    #                     type=float)
+    # parser.add_argument("--t_max", 
+    #                     dest='t_max', help="T max for SGDR", 
+    #                     type=float)
     args = parser.parse_args()
     return args
 
@@ -301,7 +322,9 @@ def parse_args():
 def main():
     args = parse_args()
 
-    config = utils.config.load_config(args.config, args)    
+    config = utils.config.load_config(args.config, args)
+    
+    
 
     if not os.path.exists(config.experiment_dir):
         os.makedirs(config.experiment_dir)    
@@ -314,8 +337,10 @@ def main():
 
     seed_everything()      
 
+    pprint.PrettyPrinter(indent=2).pprint(config)
+
     # run(config)
-    test_model(config)    
+    # test_model(config)    
     # test_ds(config)
 
     print('complete!')
