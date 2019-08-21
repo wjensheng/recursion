@@ -50,9 +50,9 @@ class RecursionNet(nn.Module):
             trained_kernel = self.backbone.conv1.weight            
             self.backbone.conv1 = create_new_conv(trained_kernel)
 
-            self.backbone.layer4[0].downsample[0].stride = (1,1)
-            self.backbone.layer4[0].conv1.stride = (1, 1)
-            self.backbone.layer4[0].conv2.stride = (1, 1)
+            # self.backbone.layer4[0].downsample[0].stride = (1,1)
+            # self.backbone.layer4[0].conv1.stride = (1, 1)
+            # self.backbone.layer4[0].conv2.stride = (1, 1)
 
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
             self.expand = 1
