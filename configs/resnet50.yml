@@ -1,0 +1,43 @@
+setup:
+  stage: True # False takes in all cells
+  cell_type: 3
+  version: 'pcb'
+  run_test: False 
+
+submission:
+  pattern: 'pcb'
+
+data:
+  train: 'train.csv' # 'U2OS_train_small.csv'
+
+model:
+  image_size: 256
+  num_classes: 1108
+  arch: 'resnet50'
+  
+train:
+  batch_size: 48
+  num_epochs: 60
+  
+val:
+  batch_size: 96
+
+test:
+  batch_size: 96
+  
+loss: 
+  name: 'cross_entropy' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+  params:
+    in_features: 1024
+  
+optimizer:
+  name: 'radam'
+  params:
+    lr: 0.0003
+    weight_decay: 0.01
+
+scheduler:
+  name: 'cosine'
+  params:
+    eta_min: 0.00003
+    T_max: 276

@@ -340,7 +340,7 @@ def main():
     pprint.PrettyPrinter(indent=2).pprint(config)
 
     # run(config)
-    # test_model(config)    
+    test_model(config)    
     # test_ds(config)
 
     print('complete!')
