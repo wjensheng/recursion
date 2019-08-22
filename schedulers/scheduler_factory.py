@@ -12,7 +12,7 @@ from torch.optim.lr_scheduler import _LRScheduler
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-def step(optimizer, last_epoch, step_size=10, gamma=0.1, **_):
+def step(optimizer, last_epoch, step_size=30, gamma=0.1, **_):
     return lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma, last_epoch=last_epoch)
 
 def multi_step(optimizer, last_epoch, milestones=[500, 5000], gamma=0.1, **_):

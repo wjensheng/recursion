@@ -37,7 +37,8 @@ optimizer:
     weight_decay: 0.01
 
 scheduler:
-  name: 'cosine'
+  name: 'step' # cosine
   params:
-    eta_min: 0.00003
-    T_max: 276
+    # eta_min: 0.00003
+    # T_max: 276
+    step_size: 30

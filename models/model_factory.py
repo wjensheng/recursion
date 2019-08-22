@@ -6,6 +6,7 @@ import pretrainedmodels
 import easydict as edict
 import numpy as np
 
+import os
 import models.pooling as pooling
 from models.metric_learning import *
 from models.resnet import *

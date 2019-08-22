@@ -253,7 +253,7 @@ def run(config):
     if config.setup.run_test:
         submission, all_classes_preds = test_inference(config, test_loader, best_model)
         save_predictions(config, submission, all_classes_preds)
-    
+
 ## END ##
 
 def test_model(config):
