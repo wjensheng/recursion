@@ -9,6 +9,7 @@ import numpy as np
 import models.pooling as pooling
 from models.metric_learning import *
 from models.resnet import *
+from models.densenet import *
 
 class AdaptiveConcatPool2d(nn.Module):
     def __init__(self):
@@ -40,56 +41,54 @@ def create_new_conv(trained_kernel):
 
 class RecursionNet(nn.Module):
 
-    def __init__(self, n_classes, model_name='resnet50', 
+    def __init__(self, num_classes, model_name='resnet50', 
                  fc_dim=512, loss_module='softmax', filter_size=5):
         super(RecursionNet, self).__init__()        
 
         if model_name == 'resnet18':        
             self.backbone = resnet18(filter_size=filter_size)
-            self.expand = 1
             if torch.cuda.is_available(): 
                 self.backbone.load_state_dict(torch.load('weights/resnet18_lpf%i.pth.tar'%filter_size)['state_dict'])
             else:
                 self.backbone.load_state_dict(torch.load('weights/resnet18_lpf%i.pth.tar'%filter_size, map_location=torch.device('cpu'))['state_dict'])
             
+        elif model_name == 'resnet50':
+            self.backbone = resnet50(filter_size=filter_size)
             # if torch.cuda.is_available(): 
-            #     self.backbone.load_state_dict(torch.load('weights/resnet18_lpf%i.pth.tar'%filter_size)['state_dict'])
+            #     self.backbone.load_state_dict(torch.load('weights/resnet50_lpf%i.pth.tar'%filter_size)['state_dict'])
             # else:
-            #     self.backbone.load_state_dict(torch.load('weights/resnet18_lpf%i.pth.tar'%filter_size, map_location=torch.device('cpu'))['state_dict'])             
+            #     self.backbone.load_state_dict(torch.load('weights/resnet50_lpf%i.pth.tar'%filter_size, map_location=torch.device('cpu'))['state_dict'])
 
-
-        final_in_features = self.backbone.fc.in_features        
+        final_in_features = self.backbone.fc.in_features
 
         # change first filter
         trained_kernel = self.backbone.conv1
         self.backbone.conv1 = create_new_conv(trained_kernel)
 
+        # remove head
         self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])        
             
         self.pooling = AdaptiveConcatPool2d()
         self.flatten = Flatten()        
-        self.bn1 = nn.BatchNorm1d(1024 * self.expand)
-        # self.dropout1 = nn.Dropout(p=0.25)
-        self.fc1 = nn.Linear(1024 * self.expand, 512 * self.expand)
+        self.bn1 = nn.BatchNorm1d(final_in_features * 2)
+        self.fc1 = nn.Linear(final_in_features * 2, final_in_features)
         self.relu = nn.ReLU(inplace=True)
-        self.bn2 = nn.BatchNorm1d(512 * self.expand)   
-        self.dropout2 = nn.Dropout(p=0.25)
-        self._init_params()        
-    
-        final_in_features = fc_dim * self.expand
-        
+        self.bn2 = nn.BatchNorm1d(final_in_features)   
+        self.dropout1 = nn.Dropout(p=0.25)
+        self._init_params()  
+
         if loss_module == 'arcface':
-            self.final = ArcMarginProduct(final_in_features, n_classes)
+            self.final = ArcMarginProduct(final_in_features, num_classes)
         elif loss_module == 'cosface':
-            self.final = AddMarginProduct(final_in_features, n_classes)
+            self.final = AddMarginProduct(final_in_features, num_classes)
         elif loss_module == 'adacos':
-            self.final = AdaCos(final_in_features, n_classes)
+            self.final = AdaCos(final_in_features, num_classes)
         elif loss_module == 'sphereface':
-            self.final = SphereProduct(final_in_features, n_classes)
+            self.final = SphereProduct(final_in_features, num_classes)
         elif loss_module == 'amsoftmax':
-            self.final = AdaptiveMargin(final_in_features, n_classes)
+            self.final = AdaptiveMargin(final_in_features, num_classes)
         else:
-            self.final = nn.Linear(final_in_features, n_classes)
+            self.final = nn.Linear(final_in_features, num_classes)
 
     def _init_params(self):
         nn.init.kaiming_normal_(self.fc1.weight)
@@ -109,20 +108,19 @@ class RecursionNet(nn.Module):
         x = self.pooling(x)
         x = self.flatten(x)        
         x = self.bn1(x)
-        # x = self.dropout1(x)
         x = self.fc1(x)
         x = self.relu(x)        
         x = self.bn2(x)
-        x = self.dropout2(x)
+        x = self.dropout1(x)
         return x
 
 def get_model(config):
-    n_classes = config.model.num_classes
+    num_classes = config.model.num_classes
     model_name = config.model.arch
     fc_dim = config.model.fc_dim
     loss_module = config.loss.name
 
-    net = RecursionNet(n_classes=n_classes, model_name=config.model.arch,
+    net = RecursionNet(num_classes=num_classes, model_name=config.model.arch,
                        fc_dim=fc_dim, loss_module=loss_module)
                   
     return net

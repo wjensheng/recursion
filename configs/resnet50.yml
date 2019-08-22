@@ -1,7 +1,7 @@
 setup:
   stage: True # False takes in all cells
   cell_type: 3
-  version: 'resnet34_normsoftmax'
+  version: 'resnet50'
   run_test: True 
 
 submission:
@@ -11,9 +11,9 @@ data:
   train: 'train.csv'
 
 model:
-  image_size: 320
+  image_size: 256
   num_classes: 1108
-  arch: 'resnet34'
+  arch: 'resnet50'
   
 train:
   batch_size: 32
@@ -26,7 +26,7 @@ test:
   batch_size: 48
   
 loss:
-  name: 'normsoftmax' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+  name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
   
 optimizer:
   name: 'adamw'

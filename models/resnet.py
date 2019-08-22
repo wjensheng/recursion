@@ -1,117 +1,20 @@
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
+import torch.utils.model_zoo as model_zoo
+from models.models_lpf import *
 
-class Downsample(nn.Module):
-    def __init__(self, pad_type='reflect', filt_size=3, stride=2, channels=None, pad_off=0):
-        super(Downsample, self).__init__()
-        self.filt_size = filt_size
-        self.pad_off = pad_off
-        self.pad_sizes = [int(1.*(filt_size-1)/2), int(np.ceil(1.*(filt_size-1)/2)), int(1.*(filt_size-1)/2), int(np.ceil(1.*(filt_size-1)/2))]
-        self.pad_sizes = [pad_size+pad_off for pad_size in self.pad_sizes]
-        self.stride = stride
-        self.off = int((self.stride-1)/2.)
-        self.channels = channels
-
-        # print('Filter size [%i]'%filt_size)
-        if(self.filt_size==1):
-            a = np.array([1.,])
-        elif(self.filt_size==2):
-            a = np.array([1., 1.])
-        elif(self.filt_size==3):
-            a = np.array([1., 2., 1.])
-        elif(self.filt_size==4):    
-            a = np.array([1., 3., 3., 1.])
-        elif(self.filt_size==5):    
-            a = np.array([1., 4., 6., 4., 1.])
-        elif(self.filt_size==6):    
-            a = np.array([1., 5., 10., 10., 5., 1.])
-        elif(self.filt_size==7):    
-            a = np.array([1., 6., 15., 20., 15., 6., 1.])
-
-        filt = torch.Tensor(a[:,None]*a[None,:])
-        filt = filt/torch.sum(filt)
-        self.register_buffer('filt', filt[None,None,:,:].repeat((self.channels,1,1,1)))
-
-        self.pad = get_pad_layer(pad_type)(self.pad_sizes)
-
-    def forward(self, inp):
-        if(self.filt_size==1):
-            if(self.pad_off==0):
-                return inp[:,:,::self.stride,::self.stride]    
-            else:
-                return self.pad(inp)[:,:,::self.stride,::self.stride]
-        else:
-            return F.conv2d(self.pad(inp), self.filt, stride=self.stride, groups=inp.shape[1])
-
-def get_pad_layer(pad_type):
-    if(pad_type in ['refl','reflect']):
-        PadLayer = nn.ReflectionPad2d
-    elif(pad_type in ['repl','replicate']):
-        PadLayer = nn.ReplicationPad2d
-    elif(pad_type=='zero'):
-        PadLayer = nn.ZeroPad2d
-    else:
-        print('Pad type [%s] not recognized'%pad_type)
-    return PadLayer
+__all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
+           'resnet152',]
 
 
-class Downsample1D(nn.Module):
-    def __init__(self, pad_type='reflect', filt_size=3, stride=2, channels=None, pad_off=0):
-        super(Downsample1D, self).__init__()
-        self.filt_size = filt_size
-        self.pad_off = pad_off
-        self.pad_sizes = [int(1. * (filt_size - 1) / 2), int(np.ceil(1. * (filt_size - 1) / 2))]
-        self.pad_sizes = [pad_size + pad_off for pad_size in self.pad_sizes]
-        self.stride = stride
-        self.off = int((self.stride - 1) / 2.)
-        self.channels = channels
-
-        # print('Filter size [%i]' % filt_size)
-        if(self.filt_size == 1):
-            a = np.array([1., ])
-        elif(self.filt_size == 2):
-            a = np.array([1., 1.])
-        elif(self.filt_size == 3):
-            a = np.array([1., 2., 1.])
-        elif(self.filt_size == 4):
-            a = np.array([1., 3., 3., 1.])
-        elif(self.filt_size == 5):
-            a = np.array([1., 4., 6., 4., 1.])
-        elif(self.filt_size == 6):
-            a = np.array([1., 5., 10., 10., 5., 1.])
-        elif(self.filt_size == 7):
-            a = np.array([1., 6., 15., 20., 15., 6., 1.])
-
-        filt = torch.Tensor(a)
-        filt = filt / torch.sum(filt)
-        self.register_buffer('filt', filt[None, None, :].repeat((self.channels, 1, 1)))
-
-        self.pad = get_pad_layer_1d(pad_type)(self.pad_sizes)
-
-    def forward(self, inp):
-        if(self.filt_size == 1):
-            if(self.pad_off == 0):
-                return inp[:, :, ::self.stride]
-            else:
-                return self.pad(inp)[:, :, ::self.stride]
-        else:
-            return F.conv1d(self.pad(inp), self.filt, stride=self.stride, groups=inp.shape[1])
+# model_urls = {
+#     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
+#     'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
+#     'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
+#     'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
+#     'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
+# }
 
 
-def get_pad_layer_1d(pad_type):
-    if(pad_type in ['refl', 'reflect']):
-        PadLayer = nn.ReflectionPad1d
-    elif(pad_type in ['repl', 'replicate']):
-        PadLayer = nn.ReplicationPad1d
-    elif(pad_type == 'zero'):
-        PadLayer = nn.ZeroPad1d
-    else:
-        print('Pad type [%s] not recognized' % pad_type)
-    return PadLayer
-
-    
 def conv3x3(in_planes, out_planes, stride=1, groups=1):
     """3x3 convolution with padding"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
@@ -198,12 +101,8 @@ class Bottleneck(nn.Module):
         out = self.conv3(out)
         out = self.bn3(out)
 
-        print(out.size())
-
         if self.downsample is not None:
             identity = self.downsample(x)
-
-        print(identity.size())
 
         out += identity
         out = self.relu(out)
@@ -305,10 +204,57 @@ class ResNet(nn.Module):
 
         return x
 
+
 def resnet18(pretrained=False, filter_size=1, pool_only=True, **kwargs):
     """Constructs a ResNet-18 model.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
     model = ResNet(BasicBlock, [2, 2, 2, 2], filter_size=filter_size, pool_only=pool_only, **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(model_urls['resnet18']))
+    return model
+
+
+def resnet34(pretrained=False, filter_size=1, pool_only=True, **kwargs):
+    """Constructs a ResNet-34 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = ResNet(BasicBlock, [3, 4, 6, 3], filter_size=filter_size, pool_only=pool_only, **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(model_urls['resnet34']))
+    return model
+
+
+def resnet50(pretrained=False, filter_size=1, pool_only=True, **kwargs):
+    """Constructs a ResNet-50 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = ResNet(Bottleneck, [3, 4, 6, 3], filter_size=filter_size, pool_only=pool_only, **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
+    return model
+
+
+def resnet101(pretrained=False, filter_size=1, pool_only=True, **kwargs):
+    """Constructs a ResNet-101 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = ResNet(Bottleneck, [3, 4, 23, 3], filter_size=filter_size, pool_only=pool_only, **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(model_urls['resnet101']))
+    return model
+
+
+def resnet152(pretrained=False, filter_size=1, pool_only=True, **kwargs):
+    """Constructs a ResNet-152 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = ResNet(Bottleneck, [3, 8, 36, 3], filter_size=filter_size, pool_only=pool_only, **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(model_urls['resnet152']))
     return model
