@@ -41,33 +41,38 @@ def create_new_conv(trained_kernel):
 
 class RecursionNet(nn.Module):
 
-    def __init__(self, num_classes, model_name='resnet50', 
-                 fc_dim=512, loss_module='softmax', filter_size=5):
+    def __init__(self, num_classes, model_name='resnet18', 
+                 fc_dim=512, loss_module='softmax', antialias=True, filter_size=5):
         super(RecursionNet, self).__init__()        
 
-        if model_name == 'resnet18':        
-            self.backbone = resnet18(filter_size=filter_size)
-            if torch.cuda.is_available(): 
-                self.backbone.load_state_dict(torch.load('weights/resnet18_lpf%i.pth.tar'%filter_size)['state_dict'])
+        if antialias: # only supports resnet18's weights
+            self.backbone = globals().get(model_name)(filter_size=filter_size)
+            if torch.cuda.is_available():                
+                self.backbone.load_state_dict(torch.load('weights/{0}_lpf{1}.pth.tar'.format(model_name, filter_size))['state_dict'])
             else:
-                self.backbone.load_state_dict(torch.load('weights/resnet18_lpf%i.pth.tar'%filter_size, map_location=torch.device('cpu'))['state_dict'])
+                self.backbone.load_state_dict(torch.load('weights/{0}_lpf{1}.pth.tar'.format(model_name, filter_size), map_location=torch.device('cpu'))['state_dict'])
+
+            # change first filter
+            trained_kernel = self.backbone.conv1
+            self.backbone.conv1 = create_new_conv(trained_kernel)
+
+            # get in_features
+            final_in_features = self.backbone.fc.in_features            
+
+            # remove head
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
             
-        elif model_name == 'resnet50':
-            self.backbone = resnet50(filter_size=filter_size)
-            # if torch.cuda.is_available(): 
-            #     self.backbone.load_state_dict(torch.load('weights/resnet50_lpf%i.pth.tar'%filter_size)['state_dict'])
-            # else:
-            #     self.backbone.load_state_dict(torch.load('weights/resnet50_lpf%i.pth.tar'%filter_size, map_location=torch.device('cpu'))['state_dict'])
+        else:
+            self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
 
-        final_in_features = self.backbone.fc.in_features
+            trained_kernel = self.backbone.features.conv0            
+            self.backbone.features.conv0 = create_new_conv(trained_kernel)
 
-        # change first filter
-        trained_kernel = self.backbone.conv1
-        self.backbone.conv1 = create_new_conv(trained_kernel)
+            final_in_features = self.backbone.last_linear.in_features
 
-        # remove head
-        self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])        
-            
+            self.backbone = nn.Sequential(*list(self.backbone.features)[:-1])
+
+                        
         self.pooling = AdaptiveConcatPool2d()
         self.flatten = Flatten()        
         self.bn1 = nn.BatchNorm1d(final_in_features * 2)
@@ -119,8 +124,9 @@ def get_model(config):
     model_name = config.model.arch
     fc_dim = config.model.fc_dim
     loss_module = config.loss.name
+    antialias = config.model.antialias
 
     net = RecursionNet(num_classes=num_classes, model_name=config.model.arch,
-                       fc_dim=fc_dim, loss_module=loss_module)
+                       fc_dim=fc_dim, loss_module=loss_module, antialias=antialias)
                   
     return net

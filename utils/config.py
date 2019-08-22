@@ -52,6 +52,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.model.fc_dim = 512
     cfg.model.image_size = 512 # resize
     cfg.model.num_classes = 1108
+    cfg.model.antialias = True
     
     # train
     cfg.train = edict()
