@@ -39,6 +39,7 @@ def create_new_conv(trained_kernel):
 
     return new_conv
 
+
 class RecursionNet(nn.Module):
 
     def __init__(self, num_classes, model_name='resnet18', 
@@ -47,10 +48,15 @@ class RecursionNet(nn.Module):
         
         if antialias: # only supports resnet18's weights
             self.backbone = globals().get(model_name)(filter_size=filter_size)
+
+            file_name = 'weights/{0}_lpf{1}.pth.tar'.format(model_name, filter_size)
+            if not os.path.exists(file_name):
+                raise ValueError('Weights not available!')
+                
             if torch.cuda.is_available():                
-                self.backbone.load_state_dict(torch.load('weights/{0}_lpf{1}.pth.tar'.format(model_name, filter_size))['state_dict'])
+                self.backbone.load_state_dict(torch.load(file_name)['state_dict'])
             else:
-                self.backbone.load_state_dict(torch.load('weights/{0}_lpf{1}.pth.tar'.format(model_name, filter_size), map_location=torch.device('cpu'))['state_dict'])
+                self.backbone.load_state_dict(torch.load(file_name, map_location=torch.device('cpu'))['state_dict'])
 
             # change first filter
             trained_kernel = self.backbone.conv1
