@@ -1,7 +1,7 @@
 setup:
   stage: True # False takes in all cells
   cell_type: 3
-  version: 'densenet121'
+  version: 'densenet201'
   run_test: True 
   project: 'recursion-densenet'  
 
@@ -15,7 +15,7 @@ model:
   image_size: 256
   num_classes: 1108
   antialias: False
-  arch: 'densenet121'
+  arch: 'densenet201'
   
 train:
   batch_size: 16
