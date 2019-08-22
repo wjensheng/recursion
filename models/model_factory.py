@@ -40,9 +40,10 @@ class RecursionNet(nn.Module):
         super(RecursionNet, self).__init__()        
                 
         self.backbone = resnet18(filter_size=filter_size)
-        self.backbone.load_state_dict(torch.load('weights/resnet18_lpf%i.pth.tar'%filter_size, map_location=torch.device(DEVICE))['state_dict'])
+        self.backbone.load_state_dict(torch.load('weights/resnet18_lpf%i.pth.tar'%filter_size)['state_dict'])
 
-        print(self.backbone)
+        self.backbone = resnext50_32x4d()
+        self.backbone.load_state_dict(torch.load('weights/resnet18_lpf%i.pth.tar'%filter_size)['state_dict'])
 
         final_in_features = self.backbone.fc.in_features        
 
@@ -55,11 +56,11 @@ class RecursionNet(nn.Module):
         self.pooling = AdaptiveConcatPool2d()
         self.flatten = Flatten()        
         self.bn1 = nn.BatchNorm1d(1024 * self.expand)
-        self.dropout1 = nn.Dropout(p=0.25)
+        # self.dropout1 = nn.Dropout(p=0.25)
         self.fc1 = nn.Linear(1024 * self.expand, 512 * self.expand)
         self.relu = nn.ReLU(inplace=True)
         self.bn2 = nn.BatchNorm1d(512 * self.expand)   
-        self.dropout2 = nn.Dropout(p=0.5)     
+        self.dropout2 = nn.Dropout(p=0.25)
         self._init_params()        
     
         final_in_features = fc_dim * self.expand
@@ -410,6 +411,11 @@ def resnet18(pretrained=False, filter_size=1, pool_only=True, **kwargs):
     model = ResNet(BasicBlock, [2, 2, 2, 2], filter_size=filter_size, pool_only=pool_only, **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet18']))
+    return model
+
+
+def resnext50_32x4d(pretrained=False, filter_size=1, pool_only=True, **kwargs):
+    model = ResNet(Bottleneck, [3, 4, 6, 3], groups=4, width_per_group=32, filter_size=filter_size, pool_only=pool_only, **kwargs)
     return model
 
 
