@@ -1,8 +1,8 @@
 setup:
   stage: True # False takes in all cells
   cell_type: 3
-  version: 'resnet18_cosface_radam_t3_tta'
-  run_test: True 
+  version: 'resnet18-step'
+  run_test: False
 
 submission:
   pattern: 'cosface'
@@ -33,7 +33,7 @@ loss:
 optimizer:
   name: 'radam'
   params:
-    lr: 0.0003
+    lr: 0.0005
     weight_decay: 0.01
 
 scheduler:
