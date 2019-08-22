@@ -43,10 +43,12 @@ class RecursionNet(nn.Module):
 
     def __init__(self, num_classes, model_name='resnet18', 
                  fc_dim=512, loss_module='softmax', antialias=True, filter_size=5):
-        super(RecursionNet, self).__init__()        
-
+        super(RecursionNet, self).__init__()
+        
+        self.backbone = globals().get(model_name)(filter_size=filter_size)
+        
         if antialias: # only supports resnet18's weights
-            self.backbone = globals().get(model_name)(filter_size=filter_size)
+            # self.backbone = globals().get(model_name)(filter_size=filter_size)
             if torch.cuda.is_available():                
                 self.backbone.load_state_dict(torch.load('weights/{0}_lpf{1}.pth.tar'.format(model_name, filter_size))['state_dict'])
             else:
@@ -63,14 +65,14 @@ class RecursionNet(nn.Module):
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
             
         else:
-            self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
+            # self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
 
             trained_kernel = self.backbone.features.conv0            
             self.backbone.features.conv0 = create_new_conv(trained_kernel)
 
             final_in_features = self.backbone.last_linear.in_features
 
-            self.backbone = nn.Sequential(*list(self.backbone.features)[:-1])
+            self.backbone = nn.Sequential(*list(self.backbone.features)[:-1])            
 
                         
         self.pooling = AdaptiveConcatPool2d()
@@ -126,7 +128,7 @@ def get_model(config):
     loss_module = config.loss.name
     antialias = config.model.antialias
 
-    net = RecursionNet(num_classes=num_classes, model_name=config.model.arch,
+    net = RecursionNet(num_classes=num_classes, model_name='densenet201', # config.model.arch
                        fc_dim=fc_dim, loss_module=loss_module, antialias=antialias)
                   
     return net
