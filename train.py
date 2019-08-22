@@ -260,7 +260,7 @@ def test_model(config):
     m = create_model(config)
     criterion = get_loss(config)
 
-    print(m)
+    # print(m)
     print(criterion)
 
     # layers = list(criterion.named_parameters()) + \
