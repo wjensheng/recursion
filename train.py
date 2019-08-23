@@ -259,19 +259,11 @@ def run(config):
 def test_model(config):
     m = create_model(config)
     criterion = get_loss(config)
-    optimizer = get_optimizer(config, m.parameters())
-    scheduler = get_scheduler(config, optimizer)
-
+    
     print(m)
     print(criterion)
-    print(scheduler)
-
-    # layers = list(criterion.named_parameters()) + \
-    #          list(set(m.named_parameters()) - set(m.backbone.named_parameters()))
-    # for l in layers:
-    #     print(l)
-    
-    input_ = torch.randn((16, 6, 512, 512))
+        
+    input_ = torch.randn((16, 6, 224, 224))
     label_ = torch.tensor([1, 2, 3, 4] * 4)
 
     output = m(input_)    

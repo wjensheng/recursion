@@ -1,11 +1,11 @@
 setup:
   stage: True # False takes in all cells
   cell_type: 3
-  version: 'resnet18-lookahead'
+  version: 'efficientnet-b0'
   run_test: False
 
 submission:
-  pattern: 'cosface'
+  pattern: 'efficientnet-b0'
 
 data:
   train: 'train.csv' # 'U2OS_train_small.csv'
@@ -13,7 +13,8 @@ data:
 model:
   image_size: 320
   num_classes: 1108
-  arch: 'resnet18'
+  arch: 'efficientnet-b0'
+  antialias: False
   
 train:
   batch_size: 48
@@ -38,7 +39,8 @@ optimizer:
 
 scheduler:
   name: 'look_ahead' # cosine
-  # params:
+  params:
+    k: 10
     # eta_min: 0.00003
     # T_max: 276
     # step_size: 30

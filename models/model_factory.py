@@ -5,12 +5,14 @@ from torchvision import models
 import pretrainedmodels
 import easydict as edict
 import numpy as np
+from efficientnet_pytorch import EfficientNet    
 
 import os
 import models.pooling as pooling
 from models.metric_learning import *
 from models.resnet import *
 from models.densenet import *
+from models.efficient import *
 
 class AdaptiveConcatPool2d(nn.Module):
     def __init__(self):
@@ -40,6 +42,54 @@ def create_new_conv(trained_kernel):
 
     return new_conv
 
+def resnet_remove_head(backbone):    
+    # change first filter
+    trained_kernel = backbone.conv1
+    backbone.conv1 = create_new_conv(trained_kernel)
+
+    # get in_features
+    final_in_features = backbone.fc.in_features            
+
+    # remove head
+    backbone = nn.Sequential(*list(backbone.children())[:-2])
+
+    return backbone, final_in_features
+
+
+def desnet_remove_head(backbone):
+    trained_kernel = backbone.features.conv0            
+    backbone.features.conv0 = create_new_conv(trained_kernel)
+
+    final_in_features = backbone.last_linear.in_features
+
+    backbone = nn.Sequential(*list(backbone.features)[:-1])
+
+    return backbone, final_in_features
+
+
+def effnet_remove_head(backbone, model_name):    
+    trained_kernel = backbone._conv_stem
+
+    trained_kernel_weights = trained_kernel.weight    
+
+    new_conv = Conv2dStaticSamePadding(in_channels=6, 
+                                       out_channels=trained_kernel.out_channels, 
+                                       kernel_size=trained_kernel.kernel_size, 
+                                       stride=trained_kernel.stride,
+                                       image_size=EfficientNet.get_image_size(model_name),
+                                       bias=False)
+    
+    with torch.no_grad():
+        new_conv.weight[:,:] = torch.stack([torch.mean(trained_kernel_weights, 1)]*6, dim=1)
+
+    backbone._conv_stem = new_conv
+
+    final_in_features = backbone._fc.in_features
+
+    backbone = nn.Sequential(*list(backbone.children())[:-2])
+
+    return backbone, final_in_features            
+
 
 class RecursionNet(nn.Module):
 
@@ -59,28 +109,23 @@ class RecursionNet(nn.Module):
             else:
                 self.backbone.load_state_dict(torch.load(file_name, map_location=torch.device('cpu'))['state_dict'])
 
-            # change first filter
-            trained_kernel = self.backbone.conv1
-            self.backbone.conv1 = create_new_conv(trained_kernel)
-
-            # get in_features
-            final_in_features = self.backbone.fc.in_features            
-
-            # remove head
-            self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
+            self.backbone, final_in_features = resnet_remove_head(self.backbone)
             
         else:
-            # self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)
-            self.backbone = globals().get(model_name)(filter_size=filter_size, pretrained=True)
+            if 'dense' in model_name:
+                self.backbone = getattr(pretrainedmodels, model_name)(num_classes=1000)                
+                self.backbone, final_in_features = desnet_remove_head(self.backbone)
 
-            trained_kernel = self.backbone.features.conv0            
-            self.backbone.features.conv0 = create_new_conv(trained_kernel)
+            elif 'efficient' in model_name:
+                self.backbone = EfficientNet.from_pretrained(model_name, num_classes=num_classes)
+                self.backbone, final_in_features = effnet_remove_head(self.backbone, model_name)
 
-            final_in_features = self.backbone.last_linear.in_features
+            elif 'resnet' in model_name:
+                raise NotImplementedError
 
-            self.backbone = nn.Sequential(*list(self.backbone.features)[:-1])            
-
-                        
+            else:
+                raise ValueError('Only densenet and efficientnet supported!')
+                                        
         self.pooling = AdaptiveConcatPool2d()
         self.flatten = Flatten()        
         self.bn1 = nn.BatchNorm1d(final_in_features * 2)
