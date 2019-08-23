@@ -31,7 +31,7 @@ loss:
     in_features: 1024
   
 optimizer:
-  name: 'radam'
+  name: 'radam' # look_ahead
   params:
     lr: 0.0005
     weight_decay: 0.01

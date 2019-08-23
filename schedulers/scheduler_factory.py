@@ -1,5 +1,6 @@
 import os
 import copy
+import itertools as it
 
 import numpy as np
 from tqdm import tqdm
@@ -40,6 +41,9 @@ def cosine(optimizer, last_epoch, T_max=50, eta_min=0.00001, **_):
     return lr_scheduler.CosineAnnealingLR(optimizer, T_max=T_max, eta_min=eta_min,
                                           last_epoch=last_epoch)
 
+
+def look_ahead(optimizer, alpha=0.5, k=6):
+    return LookAhead(base_optimizer=optimizer, alpha=alpha, k=k)
 
 class CyclicLR(object):
     def __init__(self, optimizer, base_lr=3e-5, max_lr=1e-3,
@@ -132,14 +136,6 @@ class CyclicLR(object):
                + 'base_lr=' + str(self.base_lr) \
                + ', max_lr=' + str(self.max_lr) \
                + ', step_size=' + str(self.step_size) + ')'
-
-
-# def cyclic(optimizer, last_epoch, base_lr=3e-5, max_lr=1e-3,
-#               step_size=2000, mode='triangular', gamma=1.,
-#               scale_fn=None, scale_mode='cycle', last_batch_iteration=-1):
-#     return CyclicLR(optimizer, base_lr=base_lr, max_lr=max_lr,
-#                     step_size=step_size, mode=mode, gamma=gamma,
-#                     scale_fn=scale_fn, scale_mode=scale_mode, last_batch_iteration=last_batch_iteration)
 
 
 def cyclic(optimizer, last_epoch, base_lr=3e-3, max_lr=1e-3, step_size_up=2000, step_size_down=None, mode='triangular', gamma=1.0, scale_fn=None, scale_mode='cycle', cycle_momentum=True, base_momentum=0.8, max_momentum=0.9,):
@@ -373,6 +369,42 @@ class LRFinder(object):
         plt.xlabel("Learning rate")
         plt.ylabel("Loss")
         plt.show()
+
+
+class LookAhead(Optimizer):
+    def __init__(self, base_optimizer,alpha=0.5, k=5):
+        if not 0.0 <= alpha <= 1.0:
+            raise ValueError(f'Invalid slow update rate: {alpha}')
+        if not 1 <= k:
+            raise ValueError(f'Invalid LookAhead steps: {k}')
+        self.optimizer = base_optimizer
+        self.param_groups = self.optimizer.param_groups
+        self.alpha = alpha
+        self.k = k
+        for group in self.param_groups:
+            group["step_counter"] = 0
+        self.slow_weights = [[p.clone().detach() for p in group['params']]
+                                for group in self.param_groups]
+
+        for w in it.chain(*self.slow_weights):
+            w.requires_grad = False
+
+    def step(self, closure=None):
+        loss = None
+        if closure is not None:
+            loss = closure()
+        loss = self.optimizer.step()
+        for group,slow_weights in zip(self.param_groups,self.slow_weights):
+            group['step_counter'] += 1
+            if group['step_counter'] % self.k != 0:
+                continue
+            for p,q in zip(group['params'],slow_weights):
+                if p.grad is None:
+                    continue
+                q.data.add_(self.alpha,p.data - q.data)
+                p.data.copy_(q.data)
+        return loss
+
 
 def get_scheduler(config, optimizer, last_epoch=-1):
     func = globals().get(config.scheduler.name)

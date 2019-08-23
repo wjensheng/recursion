@@ -260,7 +260,7 @@ def test_model(config):
     m = create_model(config)
     criterion = get_loss(config)
 
-    # print(m)
+    print(m)
     print(criterion)
 
     # layers = list(criterion.named_parameters()) + \
@@ -268,7 +268,7 @@ def test_model(config):
     # for l in layers:
     #     print(l)
     
-    input_ = torch.randn((16, 6, 224, 224))
+    input_ = torch.randn((16, 6, 512, 512))
     label_ = torch.tensor([1, 2, 3, 4] * 4)
 
     output = m(input_)    
