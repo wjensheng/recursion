@@ -92,6 +92,9 @@ def get_dataframes(config):
     
     train_df, valid_df = manual_split(train_df)
 
+    print('train_df----valid_df----test_df')
+    print(len(train_df), '\t----', len(valid_df), '  ----', len(test_df))
+
     return train_df, valid_df, test_df
 
 
