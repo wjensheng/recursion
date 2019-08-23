@@ -42,7 +42,7 @@ def cosine(optimizer, last_epoch, T_max=50, eta_min=0.00001, **_):
                                           last_epoch=last_epoch)
 
 
-def look_ahead(optimizer, alpha=0.5, k=6):
+def look_ahead(optimizer, last_epoch, alpha=0.5, k=6):
     return LookAhead(base_optimizer=optimizer, alpha=alpha, k=k)
 
 class CyclicLR(object):
@@ -372,7 +372,7 @@ class LRFinder(object):
 
 
 class LookAhead(Optimizer):
-    def __init__(self, base_optimizer,alpha=0.5, k=5):
+    def __init__(self, base_optimizer, alpha=0.5, k=5):
         if not 0.0 <= alpha <= 1.0:
             raise ValueError(f'Invalid slow update rate: {alpha}')
         if not 1 <= k:
@@ -404,6 +404,11 @@ class LookAhead(Optimizer):
                 q.data.add_(self.alpha,p.data - q.data)
                 p.data.copy_(q.data)
         return loss
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(' \
+               'alpha=' + str(self.alpha) + \
+               ', k=' + str(self.k) + ')'
 
 
 def get_scheduler(config, optimizer, last_epoch=-1):

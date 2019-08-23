@@ -259,9 +259,12 @@ def run(config):
 def test_model(config):
     m = create_model(config)
     criterion = get_loss(config)
+    optimizer = get_optimizer(config, m.parameters())
+    scheduler = get_scheduler(config, optimizer)
 
     print(m)
     print(criterion)
+    print(scheduler)
 
     # layers = list(criterion.named_parameters()) + \
     #          list(set(m.named_parameters()) - set(m.backbone.named_parameters()))

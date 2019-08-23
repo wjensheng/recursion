@@ -1,7 +1,7 @@
 setup:
   stage: True # False takes in all cells
   cell_type: 3
-  version: 'resnet18-step'
+  version: 'resnet18-lookahead'
   run_test: False
 
 submission:
@@ -26,19 +26,19 @@ test:
   batch_size: 96
   
 loss: 
-  name: 'cross_entropy' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+  name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
   params:
-    in_features: 1024
+    in_features: 512
   
 optimizer:
-  name: 'radam' # look_ahead
+  name: 'radam' 
   params:
     lr: 0.0005
-    weight_decay: 0.01
+    weight_decay: 0.0
 
 scheduler:
-  name: 'step' # cosine
-  params:
+  name: 'look_ahead' # cosine
+  # params:
     # eta_min: 0.00003
     # T_max: 276
-    step_size: 30
+    # step_size: 30
