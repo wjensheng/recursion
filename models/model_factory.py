@@ -5,7 +5,7 @@ from torchvision import models
 import pretrainedmodels
 import easydict as edict
 import numpy as np
-from efficientnet_pytorch import EfficientNet    
+# from efficientnet_pytorch import EfficientNet    
 
 import os
 import models.pooling as pooling

@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import math
-from efficientnet_pytorch import EfficientNet
+# from efficientnet_pytorch import EfficientNet
 
 class Identity(nn.Module):
     def __init__(self,):
