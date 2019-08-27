@@ -16,8 +16,8 @@ def _get_default_config(filename: str, args: Any) -> edict:
     # setups
     cfg.setup = edict()
     cfg.setup.stage = True
-    cfg.setup.cell_type = 3 # must be stage 1
-    cfg.setup.version = 'first_attempt'
+    cfg.setup.cell_type = 3 
+    cfg.setup.version = 'default'
     cfg.setup.run_test = False    
     cfg.setup.project = 'recursion'
 

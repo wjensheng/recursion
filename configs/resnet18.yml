@@ -1,17 +1,12 @@
 setup:
-  stage: True # False takes in all cells
   cell_type: 3
-  version: 'resnet18-lookahead'
+  version: 'default'
   run_test: False
 
 submission:
-  pattern: 'cosface'
-
-data:
-  train: 'train.csv' # 'U2OS_train_small.csv'
+  pattern: 'default'
 
 model:
-  # image_size: 320
   arch: 'resnet18'
   
 # train:

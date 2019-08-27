@@ -1,42 +1,44 @@
 setup:
-  stage: True # False takes in all cells
   cell_type: 3
-  version: 'densenet201'
-  run_test: True 
+  version: 'default'
+  run_test: False 
   project: 'recursion-densenet'  
 
 submission:
-  pattern: 'cosface'
-
-data:
-  train: 'train.csv'
+  pattern: 'default'
 
 model:
-  image_size: 256
-  num_classes: 1108
-  antialias: False
   arch: 'densenet201'
+  antialias: False
   
-train:
-  batch_size: 16
-  num_epochs: 30
+# train:
+#   batch_size: 32 # min 16
+#   num_epochs: 50 # 60 
+#   # num_grad_acc: 2 # None, 2, 4
   
-val:
-  batch_size: 32
+# val:
+#   batch_size: 48 # double the train batch_size
 
-test:
-  batch_size: 32
+# test:
+#   batch_size: 48
   
-loss:
-  name: 'cross_entropy' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+# loss: # do not change loss.name for now
+#   name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+#   params:
+#     in_features: 512 # 1024  
+#     bestfitting: False # try with True
+#     ls: False
   
-optimizer:
-  name: 'radam'
-  params:
-    lr: 0.0003
+# optimizer:
+#   name: 'radam'
+#   params:
+#     lr: 0.0005
+#     weight_decay: 0 # 0.01
 
-scheduler:
-  name: 'cosine'
-  params:
-    eta_min: 0.00003
-    T_max: 276
+# scheduler:
+#   name: 'step' # 'cosine'
+#   params:
+#     step_size: 20 # step
+#     gamma: 0.1 # step
+#     # eta_min: 0.00003 # cosine, 0.1 * lr
+#     # T_max: 276 # cosine # 2 * bs

@@ -1,47 +1,42 @@
 setup:
-  stage: True # False takes in all cells
   cell_type: 3
-  version: 'resnet50'
-  run_test: False  
+  version: 'default'
+  run_test: False
 
 submission:
-  pattern: 'default' # change to sth meaningful when run_test is True
-
-data:
-  train: 'train.csv'
+  pattern: 'default'
 
 model:
-  image_size: 256
   arch: 'resnet50'
   
-train:
-  batch_size: 32 # min 16
-  num_epochs: 50 # 60 
-  # num_grad_acc: 2 # None, 2, 4
+# train:
+#   batch_size: 32 # min 16
+#   num_epochs: 50 # 60 
+#   # num_grad_acc: 2 # None, 2, 4
   
-val:
-  batch_size: 48 # double the train batch_size
+# val:
+#   batch_size: 48 # double the train batch_size
 
-test:
-  batch_size: 48
+# test:
+#   batch_size: 48
   
-loss: # do not change loss.name for now
-  name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
-  params:
-    in_features: 512 # 1024  
-    bestfitting: False # try with True
-    ls: False
+# loss: # do not change loss.name for now
+#   name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+#   params:
+#     in_features: 512 # 1024  
+#     bestfitting: False # try with True
+#     ls: False
   
-optimizer:
-  name: 'radam'
-  params:
-    lr: 0.0005
-    weight_decay: 0 # 0.01
+# optimizer:
+#   name: 'radam'
+#   params:
+#     lr: 0.0005
+#     weight_decay: 0 # 0.01
 
-scheduler:
-  name: 'step' # 'cosine'
-  params:
-    step_size: 20 # step
-    gamma: 0.1 # step
-    # eta_min: 0.00003 # cosine, 0.1 * lr
-    # T_max: 276 # cosine # 2 * bs
+# scheduler:
+#   name: 'step' # 'cosine'
+#   params:
+#     step_size: 20 # step
+#     gamma: 0.1 # step
+#     # eta_min: 0.00003 # cosine, 0.1 * lr
+#     # T_max: 276 # cosine # 2 * bs
