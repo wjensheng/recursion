@@ -14,3 +14,4 @@ easydict==1.9
 PyYAML==3.13
 pytorchcv==0.0.48
 wandb
+# efficientnet_pytorch

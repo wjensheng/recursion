@@ -117,8 +117,9 @@ class RecursionNet(nn.Module):
                 self.backbone, final_in_features = desnet_remove_head(self.backbone)
 
             elif 'efficient' in model_name:
-                self.backbone = EfficientNet.from_pretrained(model_name, num_classes=num_classes)
-                self.backbone, final_in_features = effnet_remove_head(self.backbone, model_name)
+                raise NotImplementedError
+                # self.backbone = EfficientNet.from_pretrained(model_name, num_classes=num_classes)
+                # self.backbone, final_in_features = effnet_remove_head(self.backbone, model_name)
 
             elif 'resnet' in model_name:
                 raise NotImplementedError
@@ -126,27 +127,27 @@ class RecursionNet(nn.Module):
             else:
                 raise ValueError('Only densenet and efficientnet supported!')
                                         
-        # self.pooling = AdaptiveConcatPool2d()
-        # self.flatten = Flatten()        
-        # self.bn1 = nn.BatchNorm1d(final_in_features * 2)
-        # self.fc1 = nn.Linear(final_in_features * 2, final_in_features)
-        # self.relu = nn.ReLU(inplace=True)
-        # self.bn2 = nn.BatchNorm1d(final_in_features)   
-        # self.dropout1 = nn.Dropout(p=0.25)
-        # self._init_params()  
+        self.pooling = AdaptiveConcatPool2d()
+        self.flatten = Flatten()        
+        self.bn1 = nn.BatchNorm1d(final_in_features * 2)
+        self.fc1 = nn.Linear(final_in_features * 2, final_in_features)
+        self.relu = nn.ReLU(inplace=True)
+        self.bn2 = nn.BatchNorm1d(final_in_features)   
+        self.dropout1 = nn.Dropout(p=0.25)
+        self._init_params()  
 
-        # if loss_module == 'arcface':
-        #     self.final = ArcMarginProduct(final_in_features, num_classes)
-        # elif loss_module == 'cosface':
-        #     self.final = AddMarginProduct(final_in_features, num_classes)
-        # elif loss_module == 'adacos':
-        #     self.final = AdaCos(final_in_features, num_classes)
-        # elif loss_module == 'sphereface':
-        #     self.final = SphereProduct(final_in_features, num_classes)
-        # elif loss_module == 'amsoftmax':
-        #     self.final = AdaptiveMargin(final_in_features, num_classes)
-        # else:
-        #     self.final = nn.Linear(final_in_features, num_classes)
+        if loss_module == 'arcface':
+            self.final = ArcMarginProduct(final_in_features, num_classes)
+        elif loss_module == 'cosface':
+            self.final = AddMarginProduct(final_in_features, num_classes)
+        elif loss_module == 'adacos':
+            self.final = AdaCos(final_in_features, num_classes)
+        elif loss_module == 'sphereface':
+            self.final = SphereProduct(final_in_features, num_classes)
+        elif loss_module == 'amsoftmax':
+            self.final = AdaptiveMargin(final_in_features, num_classes)
+        else:
+            self.final = nn.Linear(final_in_features, num_classes)
 
     def _init_params(self):
         nn.init.kaiming_normal_(self.fc1.weight)
@@ -158,19 +159,19 @@ class RecursionNet(nn.Module):
         
     def forward(self, x):        
         feature = self.extract_feat(x)
-        # logits = self.final(feature)
-        # return logits
+        logits = self.final(feature)
+        # return logits # efficientnet
         return feature
 
     def extract_feat(self, x):
         x = self.backbone(x)
-        # x = self.pooling(x)
-        # x = self.flatten(x)        
-        # x = self.bn1(x)
-        # x = self.fc1(x)
-        # x = self.relu(x)        
-        # x = self.bn2(x)
-        # x = self.dropout1(x)
+        x = self.pooling(x)
+        x = self.flatten(x)        
+        x = self.bn1(x)
+        x = self.fc1(x)
+        x = self.relu(x)        
+        x = self.bn2(x)
+        x = self.dropout1(x)
         return x
 
 def get_model(config):
