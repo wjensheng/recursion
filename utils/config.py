@@ -94,6 +94,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.loss.name = 'arcface' # 'arcface', 'cosface', 'softmax', 'sphere'
     cfg.loss.params = edict()
     cfg.loss.params.gamma = 1
+    cfg.loss.params.bestfitting = False
     cfg.loss.params.in_features = 512
     cfg.loss.params.out_features = 1108
     
