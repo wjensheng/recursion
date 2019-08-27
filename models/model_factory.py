@@ -160,8 +160,8 @@ class RecursionNet(nn.Module):
     def forward(self, x):        
         feature = self.extract_feat(x)
         logits = self.final(feature)
-        # return logits # efficientnet
-        return feature
+        return logits
+        # return feature
 
     def extract_feat(self, x):
         x = self.backbone(x)
