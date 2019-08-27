@@ -306,6 +306,9 @@ def parse_args():
     parser.add_argument("--num_epochs", 
                         dest='num_epochs', help="number of epochs to train", 
                         type=int, default=30)
+    parser.add_argument("--batch_size", 
+                        dest='batch_size', help="number of batch_size for train", 
+                        type=int, default=32)
     parser.add_argument("--loss", 
                         dest='loss', help="loss function", 
                         type=str, default='cosface')

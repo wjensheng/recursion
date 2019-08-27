@@ -10,9 +10,7 @@ model:
   arch: 'resnet50'
   
 # train:
-#   batch_size: 32 # min 16
-#   num_epochs: 50 # 60 
-#   # num_grad_acc: 2 # None, 2, 4
+  # batch_size: 32 # 16, 24, 32
   
 # val:
 #   batch_size: 48 # double the train batch_size
