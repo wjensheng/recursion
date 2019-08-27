@@ -2,39 +2,44 @@ setup:
   stage: True # False takes in all cells
   cell_type: 3
   version: 'resnet50'
-  run_test: True 
+  run_test: False  
 
 submission:
-  pattern: 'cosface'
+  pattern: 'default' # change to sth meaningful when run_test is True
 
 data:
   train: 'train.csv'
 
 model:
   image_size: 256
-  num_classes: 1108
   arch: 'resnet50'
   
 train:
-  batch_size: 32
-  num_epochs: 30
+  batch_size: 32 # min 16
+  num_epochs: 50 # 60 
+  # num_grad_acc: 2 # None, 2, 4
   
 val:
-  batch_size: 48
+  batch_size: 48 # double the train batch_size
 
 test:
   batch_size: 48
   
-loss:
+loss: # do not change loss.name for now
   name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+  params:
+    in_features: 512 # 1024  
   
 optimizer:
-  name: 'adamw'
+  name: 'radam'
   params:
-    lr: 0.0003
+    lr: 0.0005
+    weight_decay: 0 # 0.01
 
 scheduler:
-  name: 'cosine'
+  name: 'step' # 'cosine'
   params:
-    eta_min: 0.00003
-    T_max: 276    
+    step_size: 20 # step
+    gamma: 0.5 # step
+    # eta_min: 0.00003 # cosine
+    # T_max: 276 # cosine
