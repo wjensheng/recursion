@@ -261,11 +261,11 @@ def cross_entropy(**_):
 def focal(**_):
     return FocalLoss(gamma=1)
 
-def arcface(**_):
-    return ArcFaceLoss(s=65.0, m=0.5, easy_margin=False, bestfitting=False, ls=False)
+def arcface(bestfitting, ls, **_):
+    return ArcFaceLoss(s=65.0, m=0.5, easy_margin=False, bestfitting=bestfitting, ls=ls)
 
-def cosface(**_):
-    return CosFaceLoss(s=30.0, m=0.40, bestfitting=False, ls=False) 
+def cosface(bestfitting, ls, **_):
+    return CosFaceLoss(s=30.0, m=0.40, bestfitting=bestfitting, ls=ls) 
 
 def adacos(in_features, out_features, **_):
     return AdaCosLoss(in_features, out_features, m=0.50, ls_eps=0, theta_zero=math.pi/4)

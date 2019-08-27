@@ -286,6 +286,17 @@ def test_ds(config):
         
 def parse_args():
     parser = argparse.ArgumentParser(description='RXRX')
+
+    def str2bool(v):
+        if isinstance(v, bool):
+            return v
+        if v.lower() in ('yes', 'true', 't', 'y', '1'):
+            return True
+        elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+            return False
+        else:
+            raise argparse.ArgumentTypeError('Boolean value expected.')
+
     parser.add_argument('--config', 
                         help='model configuration file (YAML)', 
                         type=str, required=True)
@@ -300,10 +311,10 @@ def parse_args():
                         type=str, default='cosface')
     parser.add_argument("--bestfitting", 
                         dest='bestfitting', help="bestfitting", 
-                        type=bool, default=False)
+                        type=str2bool, default=False)
     parser.add_argument("--ls", 
                         dest='ls', help="label smoothing", 
-                        type=bool, default=False)    
+                        type=str2bool, default=False)    
     parser.add_argument("--optim_lr", 
                         dest='optim_lr', help="learning rate for optimizer", 
                         type=float, default=0.0005)
