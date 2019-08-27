@@ -30,6 +30,7 @@ loss: # do not change loss.name for now
   params:
     in_features: 512 # 1024  
     bestfitting: False # try with True
+    ls: False
   
 optimizer:
   name: 'radam'
@@ -41,6 +42,6 @@ scheduler:
   name: 'step' # 'cosine'
   params:
     step_size: 20 # step
-    gamma: 0.5 # step
-    # eta_min: 0.00003 # cosine
-    # T_max: 276 # cosine
+    gamma: 0.1 # step
+    # eta_min: 0.00003 # cosine, 0.1 * lr
+    # T_max: 276 # cosine # 2 * bs

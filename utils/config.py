@@ -58,7 +58,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.train = edict()
     cfg.train.batch_size = 64 
     cfg.train.num_epochs = 50
-    cfg.train.num_grad_acc = None
+    cfg.train.num_grad_acc = 0
     # cfg.train.num_ttas = 1
     
     # valid
@@ -95,6 +95,7 @@ def _get_default_config(filename: str, args: Any) -> edict:
     cfg.loss.params = edict()
     cfg.loss.params.gamma = 1
     cfg.loss.params.bestfitting = False
+    cfg.loss.params.ls = False
     cfg.loss.params.in_features = 512
     cfg.loss.params.out_features = 1108
     
@@ -117,16 +118,22 @@ def load_config(config_path: str, args: Any) -> edict:
         yaml_config = edict(yaml.load(f, Loader=yaml.SafeLoader))
 
     config = _get_default_config(config_path, args)
+
+    config.model.image_size = args.image_size
+    config.train.num_epochs = args.num_epochs
+    config.loss.name = args.loss
+    config.loss.params.bestfitting = args.bestfitting
+    config.loss.params.ls = args.ls
+    config.optimizer.params.lr = args.optim_lr
+    config.optimizer.params.weight_decay = args.optim_wd
+    config.train.num_grad_acc = args.num_grad_acc
+    config.scheduler.name = args.scheduler
+    config.scheduler.params.step_size = args.step_size
+    config.scheduler.params.eta_min = args.eta_min
+    config.scheduler.params.T_max = args.t_max    
+
     _merge_config(yaml_config, config)
-
-    # config.model.image_size = args.image_size
-    # config.train.num_epochs = args.num_epochs
-    # config.loss.name = args.loss
-    # config.optimizer.params.lr = args.optim_lr
-    # config.optimizer.params.weight_decay = args.optim_wd
-    # config.scheduler.params.eta_min = args.eta_min
-    # config.scheduler.params.T_max = args.t_max    
-
+    
     return config
 
 

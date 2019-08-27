@@ -11,33 +11,32 @@ data:
   train: 'train.csv' # 'U2OS_train_small.csv'
 
 model:
-  image_size: 320
-  num_classes: 1108
+  # image_size: 320
   arch: 'resnet18'
   
-train:
-  batch_size: 48
-  num_epochs: 60
+# train:
+#   batch_size: 48
+  # num_epochs: 60
   
-val:
-  batch_size: 96
+# val:
+#   batch_size: 96
 
-test:
-  batch_size: 96
+# test:
+#   batch_size: 96
   
-loss: 
-  name: 'cross_entropy' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
-  params:
-    in_features: 512
+# loss: 
+#   name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+#   params:
+#     in_features: 512
   
-optimizer:
-  name: 'radam' 
-  params:
-    lr: 0.0005
-    weight_decay: 0.0
+# optimizer:
+#   name: 'radam' 
+#   params:
+#     lr: 0.0005
+#     weight_decay: 0.0
 
-scheduler:
-  name: 'look_ahead' # cosine
+# scheduler:
+#   name: 'look_ahead' # cosine
   # params:
     # eta_min: 0.00003
     # T_max: 276

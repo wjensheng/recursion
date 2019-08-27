@@ -10,9 +10,9 @@ from easydict import EasyDict as edict
 class ArcFaceLoss(nn.modules.Module):
     """"https://www.kaggle.com/c/human-protein-atlas-image-classification/discussion/78109"""
 
-    def __init__(self, s=65.0, m=0.5, easy_margin=False, bestfitting=False):
+    def __init__(self, s=65.0, m=0.5, easy_margin=False, bestfitting=False, ls=False):
         super(ArcFaceLoss, self).__init__()
-        self.classify_loss = nn.CrossEntropyLoss() # LabelSmoothingCrossEntropy 
+        self.classify_loss = nn.CrossEntropyLoss() if not ls else LabelSmoothingCrossEntropy()
         self.bestfitting = bestfitting
         self.s = s
         self.m = m
@@ -56,14 +56,15 @@ class ArcFaceLoss(nn.modules.Module):
         return self.__class__.__name__ + '(' \
                + 's=' + str(self.s) \
                + ', m=' + str(self.m) \
+               + ', classify_loss=' + str(self.classify_loss) \
                + ', bestfitting=' + str(self.bestfitting) + ')'
-
+    
 
 class CosFaceLoss(nn.modules.Module):
 
-    def __init__(self, s=30.0, m=0.40, bestfitting=False):
+    def __init__(self, s=30.0, m=0.40, bestfitting=False, ls=False):
         super(CosFaceLoss, self).__init__()
-        self.classify_loss = nn.CrossEntropyLoss() # LabelSmoothingCrossEntropy
+        self.classify_loss = nn.CrossEntropyLoss() if not ls else LabelSmoothingCrossEntropy()
         self.bestfitting = bestfitting
         self.s = s
         self.m = m
@@ -97,6 +98,7 @@ class CosFaceLoss(nn.modules.Module):
         return self.__class__.__name__ + '(' \
                + 's=' + str(self.s) \
                + ', m=' + str(self.m) \
+               + ', classify_loss=' + str(self.classify_loss) \
                + ', bestfitting=' + str(self.bestfitting) + ')'
 
 
@@ -260,10 +262,10 @@ def focal(**_):
     return FocalLoss(gamma=1)
 
 def arcface(**_):
-    return ArcFaceLoss(s=65.0, m=0.5, easy_margin=False, bestfitting=False)
+    return ArcFaceLoss(s=65.0, m=0.5, easy_margin=False, bestfitting=False, ls=False)
 
 def cosface(**_):
-    return CosFaceLoss(s=30.0, m=0.40, bestfitting=False) 
+    return CosFaceLoss(s=30.0, m=0.40, bestfitting=False, ls=False) 
 
 def adacos(in_features, out_features, **_):
     return AdaCosLoss(in_features, out_features, m=0.50, ls_eps=0, theta_zero=math.pi/4)
