@@ -121,6 +121,7 @@ def load_config(config_path: str, args: Any) -> edict:
 
     config.model.image_size = args.image_size
     config.train.num_epochs = args.num_epochs
+    config.train.batch_size = args.batch_size
     config.loss.name = args.loss
     config.loss.params.bestfitting = args.bestfitting
     config.loss.params.ls = args.ls
