@@ -1,8 +1,11 @@
 # NOTE:
-# This script contains only experiments to find the best loss function.
+# This script contains 12 experiments for 
+# each architecture (resnet50 & densenet201)
+# to find the best loss function.
 # Arguments ls and bestfitting only needed for loss=arcface or cosface.
+
 # After running all experiments, i.e., script finishes running,
-# tune learning rate for the best loss function.
+# tune learning rate for the best loss function. 
 # Find the best num_grad_acc, from 0, 2, 4, 8
 # Optim_wd can set to 0.01 once the best num_grad_acc is found.
 
