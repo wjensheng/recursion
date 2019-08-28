@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 import math
 import argparse
 import pprint
@@ -204,6 +205,12 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
             best_score = val_accuracy
             best_epoch = epoch
             best_model = model
+
+        # if does not perform better than baseline,
+        # kill the program
+        if epoch >= 30 and val_accuracy < 0.45:
+            print('worse than baseline!')
+            sys.exit()
                     
     checkpoint = f't{config.setup.cell_type}_e{best_epoch:02d}_{best_score:.04f}.pth'
     torch.save(best_model.state_dict(), os.path.join(config.saved.model_dir, checkpoint))
