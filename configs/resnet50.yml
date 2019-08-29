@@ -31,6 +31,7 @@ optimizer:
 #     lr: 0.0005
 #     weight_decay: 0 # 0.01
 
+<<<<<<< HEAD
 # scheduler:
 #   name: 'step' # 'cosine'
 #   params:
@@ -38,3 +39,12 @@ optimizer:
 #     gamma: 0.1 # step
 #     # eta_min: 0.00003 # cosine, 0.1 * lr
 #     # T_max: 276 # cosine # 2 * bs
+=======
+scheduler:
+  name: 'step' # 'cosine'
+  params:
+    step_size: 30 # step
+    gamma: 0.5 # step
+    # eta_min: 0.00003 # cosine
+    # T_max: 276 # cosine
+>>>>>>> 0363004af476bef237e45a34a1e767757b90a060
