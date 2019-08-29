@@ -25,8 +25,8 @@ model:
 #     bestfitting: False # try with True
 #     ls: False
   
-# optimizer:
-#   name: 'radam'
+optimizer:
+  name: 'radam'
 #   params:
 #     lr: 0.0005
 #     weight_decay: 0 # 0.01
