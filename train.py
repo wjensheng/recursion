@@ -208,7 +208,7 @@ def train(config, model, valid_df, train_loader, val_loader, criterion, optimize
 
         # if does not perform better than baseline,
         # kill the program
-        if epoch >= 30 and val_accuracy < 0.45:
+        if epoch >= 20 and val_accuracy < 0.4:
             print('worse than baseline!')
             sys.exit()
                     
