@@ -109,7 +109,12 @@ class RecursionNet(nn.Module):
             else:
                 self.backbone.load_state_dict(torch.load(file_name, map_location=torch.device('cpu'))['state_dict'])
 
-            self.backbone, final_in_features = resnet_remove_head(self.backbone)
+            if 'resnet' in model_name:
+                self.backbone, final_in_features = resnet_remove_head(self.backbone)
+            elif 'dense' in model_name:
+                self.backbone, final_in_features = desnet_remove_head(self.backbone)
+            else:
+                raise ValueError('Only resnet and densenet121 supported for antialias!')
             
         else:
             if 'dense' in model_name:

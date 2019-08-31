@@ -8,8 +8,8 @@ submission:
   pattern: 'default'
 
 model:
-  arch: 'densenet201'
-  antialias: False
+  arch: 'densenet121'
+  antialias: True
   
 # train:
 #   batch_size: 32 # min 16
