@@ -36,6 +36,9 @@ def get_two_sites(config, df, tsfm, mode):
     cell_mean = g.mean().values
     cell_std = g.std().values
 
+    print('mean: ',cell_mean)
+    print('std: ',cell_std)
+
     ds_s1 = DefaultDataset(df, 
                            config.data.data_dir,
                            mean=cell_mean,
@@ -96,7 +99,7 @@ def get_dataframes(config):
     train_df = pd.read_csv(os.path.join(config.data.data_dir, 
                                         config.data.train))
     test_df = pd.read_csv(os.path.join(config.data.data_dir, 
-                                       config.  data.test))
+                                       config.data.test))
 
     # stage 1: train on all dataset, valid on last batches
     if config.setup.stage:
@@ -104,10 +107,7 @@ def get_dataframes(config):
         test_df = filter_experiments(test_df, CELL_TYPE[config.setup.cell_type])
     
     train_df, valid_df = manual_split(train_df)
-
-    print('train_df----valid_df----test_df')
-    print(len(train_df), '\t----', len(valid_df), '  ----', len(test_df))
-
+    
     return train_df, valid_df, test_df
 
 

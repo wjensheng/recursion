@@ -60,7 +60,7 @@ def desnet_remove_head(backbone):
     trained_kernel = backbone.features.conv0            
     backbone.features.conv0 = create_new_conv(trained_kernel)
 
-    final_in_features = backbone.last_linear.in_features
+    final_in_features = backbone.classifier.in_features
 
     backbone = nn.Sequential(*list(backbone.features)[:-1])
 
