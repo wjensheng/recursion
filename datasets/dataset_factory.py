@@ -27,14 +27,27 @@ from .default import DefaultDataset
 CELL_TYPE = ['HEPG2', 'HUVEC', 'RPE', 'U2OS']
 
 def get_two_sites(config, df, tsfm, mode):
+    stats = pd.read_csv(os.path.join(config.data.data_dir, 'pixel_stats.csv'))
+
+    cell_type_stats = filter_experiments(stats, CELL_TYPE[config.setup.cell_type])
+
+    g = cell_type_stats.groupby('channel')['mean']
+
+    cell_mean = g.mean().values
+    cell_std = g.std().values
+
     ds_s1 = DefaultDataset(df, 
                            config.data.data_dir,
+                           mean=cell_mean,
+                           std=cell_std,
                            site=1,
                            transform=tsfm,
                            mode=mode)
 
     ds_s2 = DefaultDataset(df, 
                            config.data.data_dir,
+                           mean=cell_mean,
+                           std=cell_std,                           
                            site=2,
                            transform=tsfm,
                            mode=mode)
