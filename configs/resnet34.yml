@@ -1,0 +1,40 @@
+setup:
+  cell_type: 3
+  version: 'default'
+  run_test: False
+  project: 'monday'
+
+submission:
+  pattern: 'default'
+
+model:
+  arch: 'resnet34'
+  antialias: True
+  
+# train:
+#   batch_size: 48
+  # num_epochs: 60
+  
+# val:
+#   batch_size: 96
+
+# test:
+#   batch_size: 96
+  
+loss: 
+  name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+  params:
+    in_features: 1024
+  
+optimizer:
+  name: 'radam' 
+#   params:
+#     lr: 0.0005
+#     weight_decay: 0.0
+
+# scheduler:
+#   name: 'look_ahead' # cosine
+  # params:
+    # eta_min: 0.00003
+    # T_max: 276
+    # step_size: 30

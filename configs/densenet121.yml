@@ -2,7 +2,7 @@ setup:
   cell_type: 3
   version: 'default'
   run_test: False 
-  project: 'recursion-densenet'  
+  project: 'monday'  
 
 submission:
   pattern: 'default'
