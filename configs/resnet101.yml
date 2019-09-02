@@ -18,10 +18,10 @@ model:
 # test:
 #   batch_size: 48
   
-# loss: # do not change loss.name for now
-#   name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
-#   params:
-#     in_features: 512 # 1024  
+loss: # do not change loss.name for now
+  name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+  params:
+    in_features: 1024 # 1024  
 #     bestfitting: False # try with True
 #     ls: False
   
