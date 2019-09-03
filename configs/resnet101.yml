@@ -1,8 +1,9 @@
 setup:
   stage: True # False takes in all cells
   cell_type: 3
-  version: 'resnet18_cosface_radam_t3_tta'
-  run_test: True 
+  version: 'default'
+  run_test: False
+  project: 'dandy-cloud'
 
 submission:
   pattern: 'cosface'
@@ -13,7 +14,7 @@ data:
 model:
   image_size: 320
   num_classes: 1108
-  arch: 'resnet18'
+  arch: 'resnet101'
   
 train:
   batch_size: 48
@@ -26,18 +27,18 @@ test:
   batch_size: 96
   
 loss: 
-  name: 'cross_entropy' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
+  name: 'cosface' # arcface, cosface, adacos, sphereface, amsoftmax, focal, ls_cross_entropy, cross_entropy, normsoftmax
   params:
     in_features: 1024
   
 optimizer:
   name: 'radam'
   params:
-    lr: 0.0003
-    weight_decay: 0.01
+    lr: 0.0005
+    # weight_decay: 0.01
 
 scheduler:
   name: 'cosine'
   params:
-    eta_min: 0.00003
+    eta_min: 0.00005
     T_max: 276

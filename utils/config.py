@@ -117,13 +117,12 @@ def load_config(config_path: str, args: Any) -> edict:
     config = _get_default_config(config_path, args)
     _merge_config(yaml_config, config)
 
-    # config.model.image_size = args.image_size
-    # config.train.num_epochs = args.num_epochs
-    # config.loss.name = args.loss
-    # config.optimizer.params.lr = args.optim_lr
-    # config.optimizer.params.weight_decay = args.optim_wd
-    # config.scheduler.params.eta_min = args.eta_min
-    # config.scheduler.params.T_max = args.t_max    
+    config.train.batch_size = args.batch_size
+    config.optimizer.params.lr = args.optim_lr
+    config.scheduler.name = args.scheduler
+    config.scheduler.params.step_size = args.step_size
+    config.scheduler.params.eta_min = args.eta_min
+    config.scheduler.params.T_max = args.t_max    
 
     return config
 

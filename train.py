@@ -294,27 +294,24 @@ def parse_args():
     parser.add_argument('--config', 
                         help='model configuration file (YAML)', 
                         type=str, required=True)
-    # parser.add_argument("--image_size", 
-    #                     dest='image_size', help="size of an image", 
-    #                     type=int, default=320)
-    # parser.add_argument("--num_epochs", 
-    #                     dest='num_epochs', help="number of epochs to train", 
-    #                     type=int, default=30)
-    # parser.add_argument("--loss", 
-    #                     dest='loss', help="loss function", 
-    #                     type=str)
-    # parser.add_argument("--optim_lr", 
-    #                     dest='optim_lr', help="learning rate for optimizer", 
-    #                     type=float)
-    # parser.add_argument("--optim_wd", 
-    #                     dest='optim_wd', help="weight decay for optimizer", 
-    #                     type=float)
-    # parser.add_argument("--eta_min", 
-    #                     dest='eta_min', help="eta min for SGDR", 
-    #                     type=float)
-    # parser.add_argument("--t_max", 
-    #                     dest='t_max', help="T max for SGDR", 
-    #                     type=float)
+    parser.add_argument("--optim_lr", 
+                        dest='optim_lr', help="learning rate for optimizer", 
+                        type=float, default=0.0005)
+    parser.add_argument("--batch_size", 
+                        dest='batch_size', help="number of batch_size for train", 
+                        type=int, default=32)
+    parser.add_argument("--scheduler", 
+                        dest='scheduler', help="scheduler", 
+                        type=str, default='step')
+    parser.add_argument("--step_size", 
+                        dest='step_size', help="step_size for step optimizer", 
+                        type=int, default=40)
+    parser.add_argument("--eta_min", 
+                        dest='eta_min', help="eta min for SGDR", 
+                        type=float, default=0.00005)
+    parser.add_argument("--t_max", 
+                        dest='t_max', help="T max for SGDR", 
+                        type=float, default=276)                        
     args = parser.parse_args()
     return args
 

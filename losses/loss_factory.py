@@ -41,12 +41,12 @@ class ArcFaceLoss(nn.modules.Module):
         output = (one_hot * phi) + ((1.0 - one_hot) * cosine)
         output *= self.s
 
-        loss = self.classify_loss(output, labels)
+        # loss = self.classify_loss(output, labels)
 
-        # loss1 = self.classify_loss(output, labels)
-        # loss2 = self.classify_loss(cosine, labels)
-        # gamma=1
-        # loss=(loss1+gamma*loss2)/(1+gamma)
+        loss1 = self.classify_loss(output, labels)
+        loss2 = self.classify_loss(cosine, labels)
+        gamma=1
+        loss=(loss1+gamma*loss2)/(1+gamma)
 
         return loss
 
