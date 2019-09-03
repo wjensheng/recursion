@@ -120,6 +120,7 @@ def load_config(config_path: str, args: Any) -> edict:
     config = _get_default_config(config_path, args)
 
     config.model.image_size = args.image_size
+    config.setup.cell_type = args.cell_type
     config.train.num_epochs = args.num_epochs
     config.train.batch_size = args.batch_size
     config.loss.name = args.loss

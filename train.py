@@ -307,6 +307,9 @@ def parse_args():
     parser.add_argument('--config', 
                         help='model configuration file (YAML)', 
                         type=str, required=True)
+    parser.add_argument('--cell_type', 
+                        help='cell_type', 
+                        type=int, default=3)
     parser.add_argument("--image_size", 
                         dest='image_size', help="size of an image", 
                         type=int, default=320)
