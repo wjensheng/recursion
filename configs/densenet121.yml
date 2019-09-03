@@ -2,7 +2,7 @@ setup:
   cell_type: 3
   version: 'default'
   run_test: False 
-  project: 'monday'  
+  project: 'tuesday'  
 
 submission:
   pattern: 'default'
