@@ -39,8 +39,8 @@ class RecursionNet(nn.Module):
                  fc_dim=512, loss_module='softmax', filter_size=5):
         super(RecursionNet, self).__init__()        
                 
-        self.backbone = resnet18(filter_size=filter_size)
-        self.backbone.load_state_dict(torch.load('weights/resnet18_lpf%i.pth.tar'%filter_size, map_location=torch.device(DEVICE))['state_dict'])
+        self.backbone = resnet101(filter_size=filter_size)
+        self.backbone.load_state_dict(torch.load('weights/resnet101_lpf%i.pth.tar'%filter_size, map_location=torch.device(DEVICE))['state_dict'])
 
         print(self.backbone)
 
@@ -412,6 +412,15 @@ def resnet18(pretrained=False, filter_size=1, pool_only=True, **kwargs):
         model.load_state_dict(model_zoo.load_url(model_urls['resnet18']))
     return model
 
+def resnet101(pretrained=False, filter_size=1, pool_only=True, **kwargs):
+    """Constructs a ResNet-101 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = ResNet(Bottleneck, [3, 4, 23, 3], filter_size=filter_size, pool_only=pool_only, **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(model_urls['resnet101']))
+    return model
 
 def get_model(config):
     n_classes = config.model.num_classes
