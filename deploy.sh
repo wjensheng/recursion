@@ -7,52 +7,10 @@ chmod u+rwx data/pixel_stats.csv
 # cosface, ls=false, bestfitting=true
 python3 train.py --config=configs/resnet34.yml \
                  --num_epochs=60 \
-                 --batch_size=48 \
-                 --image_size=320 \
-                 --loss=cosface \
-                 --optim_lr=0.0003 \
-                 --optim_wd=0 \
-                 --num_grad_acc=0 \
-                 --ls=false \
-                 --bestfitting=true \
-                 --scheduler=step \
-                 --step_size=40
-
-# cosface, ls=false, bestfitting=true
-python3 train.py --config=configs/resnet34.yml \
-                 --num_epochs=60 \
-                 --batch_size=48 \
-                 --image_size=320 \
-                 --loss=cosface \
-                 --optim_lr=0.0005 \
-                 --optim_wd=0 \
-                 --num_grad_acc=0 \
-                 --ls=false \
-                 --bestfitting=true \
-                 --scheduler=step \
-                 --step_size=40
-
-# cosface, ls=false, bestfitting=true
-python3 train.py --config=configs/resnet34.yml \
-                 --num_epochs=60 \
-                 --batch_size=16 \
-                 --image_size=320 \
-                 --loss=cosface \
-                 --optim_lr=0.0005 \
-                 --optim_wd=0 \
-                 --num_grad_acc=0 \
-                 --ls=false \
-                 --bestfitting=true \
-                 --scheduler=step \
-                 --step_size=40
-
-# cosface, ls=false, bestfitting=true
-python3 train.py --config=configs/resnet34.yml \
-                 --num_epochs=60 \
                  --batch_size=24 \
                  --image_size=320 \
                  --loss=cosface \
-                 --optim_lr=0.0005 \
+                 --optim_lr=0.001 \
                  --optim_wd=0 \
                  --num_grad_acc=0 \
                  --ls=false \
@@ -66,21 +24,7 @@ python3 train.py --config=configs/resnet34.yml \
                  --batch_size=32 \
                  --image_size=320 \
                  --loss=cosface \
-                 --optim_lr=0.0005 \
-                 --optim_wd=0 \
-                 --num_grad_acc=0 \
-                 --ls=false \
-                 --bestfitting=true \
-                 --scheduler=step \
-                 --step_size=40
-
-
-python3 train.py --config=configs/resnet34.yml \
-                 --num_epochs=60 \
-                 --batch_size=48 \
-                 --image_size=320 \
-                 --loss=cosface \
-                 --optim_lr=0.0007 \
+                 --optim_lr=0.001 \
                  --optim_wd=0 \
                  --num_grad_acc=0 \
                  --ls=false \
@@ -91,7 +35,7 @@ python3 train.py --config=configs/resnet34.yml \
 # cosface, ls=false, bestfitting=true
 python3 train.py --config=configs/resnet34.yml \
                  --num_epochs=60 \
-                 --batch_size=48 \
+                 --batch_size=64 \
                  --image_size=320 \
                  --loss=cosface \
                  --optim_lr=0.001 \
@@ -103,56 +47,13 @@ python3 train.py --config=configs/resnet34.yml \
                  --step_size=40
 
 
-# ======= densenet121 =========
 # cosface, ls=false, bestfitting=true
-python3 train.py --config=configs/densenet121.yml \
+python3 train.py --config=configs/resnet34.yml \
                  --num_epochs=60 \
                  --batch_size=32 \
                  --image_size=320 \
                  --loss=cosface \
-                 --optim_lr=0.0003 \
-                 --optim_wd=0 \
-                 --num_grad_acc=0 \
-                 --ls=false \
-                 --bestfitting=true \
-                 --scheduler=step \
-                 --step_size=40
-
-# cosface, ls=false, bestfitting=true
-python3 train.py --config=configs/densenet121.yml \
-                 --num_epochs=60 \
-                 --batch_size=16 \
-                 --image_size=320 \
-                 --loss=cosface \
-                 --optim_lr=0.0005 \
-                 --optim_wd=0 \
-                 --num_grad_acc=0 \
-                 --ls=false \
-                 --bestfitting=true \
-                 --scheduler=step \
-                 --step_size=40
-
-# cosface, ls=false, bestfitting=true
-python3 train.py --config=configs/densenet121.yml \
-                 --num_epochs=60 \
-                 --batch_size=24 \
-                 --image_size=320 \
-                 --loss=cosface \
-                 --optim_lr=0.0005 \
-                 --optim_wd=0 \
-                 --num_grad_acc=0 \
-                 --ls=false \
-                 --bestfitting=true \
-                 --scheduler=step \
-                 --step_size=40
-
-# cosface, ls=false, bestfitting=true
-python3 train.py --config=configs/densenet121.yml \
-                 --num_epochs=60 \
-                 --batch_size=32 \
-                 --image_size=320 \
-                 --loss=cosface \
-                 --optim_lr=0.0005 \
+                 --optim_lr=0.003 \
                  --optim_wd=0 \
                  --num_grad_acc=0 \
                  --ls=false \
@@ -161,81 +62,97 @@ python3 train.py --config=configs/densenet121.yml \
                  --step_size=40
 
 
-python3 train.py --config=configs/densenet121.yml \
-                 --num_epochs=60 \
-                 --batch_size=32 \
-                 --image_size=320 \
-                 --loss=cosface \
-                 --optim_lr=0.0007 \
-                 --optim_wd=0 \
-                 --num_grad_acc=0 \
-                 --ls=false \
-                 --bestfitting=true \
-                 --scheduler=step \
-                 --step_size=40
+# # ======= densenet121 =========
+# # cosface, ls=false, bestfitting=true
+# python3 train.py --config=configs/densenet121.yml \
+#                  --num_epochs=60 \
+#                  --batch_size=32 \
+#                  --image_size=320 \
+#                  --loss=cosface \
+#                  --optim_lr=0.0003 \
+#                  --optim_wd=0 \
+#                  --num_grad_acc=0 \
+#                  --ls=false \
+#                  --bestfitting=true \
+#                  --scheduler=step \
+#                  --step_size=40
 
-# cosface, ls=false, bestfitting=true
-python3 train.py --config=configs/densenet121.yml \
-                 --num_epochs=60 \
-                 --batch_size=32 \
-                 --image_size=320 \
-                 --loss=cosface \
-                 --optim_lr=0.001 \
-                 --optim_wd=0 \
-                 --num_grad_acc=0 \
-                 --ls=false \
-                 --bestfitting=true \
-                 --scheduler=step \
-                 --step_size=40                 
+# # cosface, ls=false, bestfitting=true
+# python3 train.py --config=configs/densenet121.yml \
+#                  --num_epochs=60 \
+#                  --batch_size=16 \
+#                  --image_size=320 \
+#                  --loss=cosface \
+#                  --optim_lr=0.0005 \
+#                  --optim_wd=0 \
+#                  --num_grad_acc=0 \
+#                  --ls=false \
+#                  --bestfitting=true \
+#                  --scheduler=step \
+#                  --step_size=40
+
+# # cosface, ls=false, bestfitting=true
+# python3 train.py --config=configs/densenet121.yml \
+#                  --num_epochs=60 \
+#                  --batch_size=24 \
+#                  --image_size=320 \
+#                  --loss=cosface \
+#                  --optim_lr=0.0005 \
+#                  --optim_wd=0 \
+#                  --num_grad_acc=0 \
+#                  --ls=false \
+#                  --bestfitting=true \
+#                  --scheduler=step \
+#                  --step_size=40
+
+# # cosface, ls=false, bestfitting=true
+# python3 train.py --config=configs/densenet121.yml \
+#                  --num_epochs=60 \
+#                  --batch_size=32 \
+#                  --image_size=320 \
+#                  --loss=cosface \
+#                  --optim_lr=0.0005 \
+#                  --optim_wd=0 \
+#                  --num_grad_acc=0 \
+#                  --ls=false \
+#                  --bestfitting=true \
+#                  --scheduler=step \
+#                  --step_size=40
+
+
+# python3 train.py --config=configs/densenet121.yml \
+#                  --num_epochs=60 \
+#                  --batch_size=32 \
+#                  --image_size=320 \
+#                  --loss=cosface \
+#                  --optim_lr=0.0007 \
+#                  --optim_wd=0 \
+#                  --num_grad_acc=0 \
+#                  --ls=false \
+#                  --bestfitting=true \
+#                  --scheduler=step \
+#                  --step_size=40
+
+# # cosface, ls=false, bestfitting=true
+# python3 train.py --config=configs/densenet121.yml \
+#                  --num_epochs=60 \
+#                  --batch_size=32 \
+#                  --image_size=320 \
+#                  --loss=cosface \
+#                  --optim_lr=0.001 \
+#                  --optim_wd=0 \
+#                  --num_grad_acc=0 \
+#                  --ls=false \
+#                  --bestfitting=true \
+#                  --scheduler=step \
+#                  --step_size=40                 
 
 
 # ====== resnet101 ======
 # cosface, ls=false, bestfitting=true
 python3 train.py --config=configs/resnet101.yml \
                  --num_epochs=60 \
-                 --batch_size=48 \
-                 --image_size=320 \
-                 --loss=cosface \
-                 --optim_lr=0.0003 \
-                 --optim_wd=0 \
-                 --num_grad_acc=0 \
-                 --ls=false \
-                 --bestfitting=true \
-                 --scheduler=step \
-                 --step_size=40
-
-# cosface, ls=false, bestfitting=true
-python3 train.py --config=configs/resnet101.yml \
-                 --num_epochs=60 \
-                 --batch_size=48 \
-                 --image_size=320 \
-                 --loss=cosface \
-                 --optim_lr=0.0005 \
-                 --optim_wd=0 \
-                 --num_grad_acc=0 \
-                 --ls=false \
-                 --bestfitting=true \
-                 --scheduler=step \
-                 --step_size=40
-
-# cosface, ls=false, bestfitting=true
-python3 train.py --config=configs/resnet101.yml \
-                 --num_epochs=60 \
-                 --batch_size=16 \
-                 --image_size=320 \
-                 --loss=cosface \
-                 --optim_lr=0.0005 \
-                 --optim_wd=0 \
-                 --num_grad_acc=0 \
-                 --ls=false \
-                 --bestfitting=true \
-                 --scheduler=step \
-                 --step_size=40
-
-# cosface, ls=false, bestfitting=true
-python3 train.py --config=configs/resnet101.yml \
-                 --num_epochs=60 \
-                 --batch_size=24 \
+                 --batch_size=32 \
                  --image_size=320 \
                  --loss=cosface \
                  --optim_lr=0.0005 \
@@ -252,7 +169,7 @@ python3 train.py --config=configs/resnet101.yml \
                  --batch_size=32 \
                  --image_size=320 \
                  --loss=cosface \
-                 --optim_lr=0.0005 \
+                 --optim_lr=0.0007 \
                  --optim_wd=0 \
                  --num_grad_acc=0 \
                  --ls=false \
@@ -260,13 +177,27 @@ python3 train.py --config=configs/resnet101.yml \
                  --scheduler=step \
                  --step_size=40
 
-
+# cosface, ls=false, bestfitting=true
 python3 train.py --config=configs/resnet101.yml \
                  --num_epochs=60 \
-                 --batch_size=48 \
+                 --batch_size=32 \
                  --image_size=320 \
                  --loss=cosface \
-                 --optim_lr=0.0007 \
+                 --optim_lr=0.001 \
+                 --optim_wd=0 \
+                 --num_grad_acc=0 \
+                 --ls=false \
+                 --bestfitting=true \
+                 --scheduler=step \
+                 --step_size=40
+
+# cosface, ls=false, bestfitting=true
+python3 train.py --config=configs/resnet101.yml \
+                 --num_epochs=60 \
+                 --batch_size=24 \
+                 --image_size=320 \
+                 --loss=cosface \
+                 --optim_lr=0.001 \
                  --optim_wd=0 \
                  --num_grad_acc=0 \
                  --ls=false \
@@ -286,4 +217,21 @@ python3 train.py --config=configs/resnet101.yml \
                  --ls=false \
                  --bestfitting=true \
                  --scheduler=step \
-                 --step_size=40                 
+                 --step_size=40
+
+
+# cosface, ls=false, bestfitting=true
+python3 train.py --config=configs/resnet101.yml \
+                 --num_epochs=60 \
+                 --batch_size=32 \
+                 --image_size=320 \
+                 --loss=cosface \
+                 --optim_lr=0.003 \
+                 --optim_wd=0 \
+                 --num_grad_acc=0 \
+                 --ls=false \
+                 --bestfitting=true \
+                 --scheduler=step \
+                 --step_size=40
+
+gcloud beta compute instances stop

@@ -2,6 +2,7 @@ setup:
   cell_type: 3
   version: 'default'
   run_test: False
+  project: 'monday'
 
 submission:
   pattern: 'default'
@@ -26,7 +27,7 @@ loss: # do not change loss.name for now
 #     ls: False
   
 optimizer:
-  name: 'adamw'
+  name: 'radam'
 #   params:
 #     lr: 0.0005
 #     weight_decay: 0 # 0.01
