@@ -1,11 +1,11 @@
 setup:
   cell_type: 3
   version: 'default'
-  run_test: False 
+  run_test: True 
   project: 'tuesday'  
 
 submission:
-  pattern: 'default'
+  pattern: 'densenet-radam'
 
 model:
   arch: 'densenet121'
